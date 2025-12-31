@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -55,6 +59,8 @@ body {
 .divider {
     background-color: rgba(0, 0, 0, 0.1);
     transition: background-color 0.1s;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .divider:hover {
@@ -63,13 +69,13 @@ body {
 
 .horizontal-divider {
     height: 6px;
-    width: 100%;
+    align-self: stretch;
     cursor: ns-resize;
 }
 
 .vertical-divider {
     width: 6px;
-    height: 100%;
+    align-self: stretch;
     cursor: ew-resize;
 }
 
