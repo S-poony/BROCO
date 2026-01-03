@@ -5,9 +5,11 @@ import { setupExportHandlers } from './js/export.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
-        // Ctrl Key for Cursor
-        if (e.key === 'Control') {
+        // Ctrl Key for Cursor (only if Shift is not held)
+        if (e.ctrlKey && !e.shiftKey) {
             document.body.classList.add('ctrl-pressed');
+        } else if (e.shiftKey) {
+            document.body.classList.remove('ctrl-pressed');
         }
 
         // Undo: Ctrl + Z
@@ -24,8 +26,13 @@ function setupGlobalHandlers() {
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.key === 'Control') {
-            document.body.classList.remove('ctrl-pressed');
+        if (e.key === 'Control' || e.key === 'Shift') {
+            // Update cursor based on final state of modifiers
+            if (e.ctrlKey && !e.shiftKey) {
+                document.body.classList.add('ctrl-pressed');
+            } else {
+                document.body.classList.remove('ctrl-pressed');
+            }
         }
     });
 

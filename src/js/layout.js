@@ -12,7 +12,8 @@ export function handleSplitClick(event) {
 
     const rectElement = event.currentTarget;
 
-    if (event.ctrlKey) {
+    // Ctrl + Click (without Shift) = Delete
+    if (event.ctrlKey && !event.shiftKey) {
         event.stopPropagation();
         saveState();
         deleteRectangle(rectElement);
@@ -26,15 +27,19 @@ export function handleSplitClick(event) {
     // Stop propagation so clicking a leaf doesn't trigger parent split handlers
     event.stopPropagation();
 
-    // if contains image, toggle object-fit instead of splitting
+    // Image logic
     const img = rectElement.querySelector('img');
-    if (img) {
+    const removeBtn = rectElement.querySelector('.remove-image-btn');
+
+    if (img && !event.shiftKey) {
+        // Toggle object-fit instead of splitting if Shift is not held
         saveState();
         const currentFit = img.style.objectFit || 'cover';
         img.style.objectFit = currentFit === 'cover' ? 'contain' : 'cover';
         return;
     }
 
+    // If we are here, we are either splitting an empty rect OR splitting an image rect with Shift held
     saveState();
     rectElement.setAttribute('data-split-state', 'split');
 
@@ -83,6 +88,15 @@ export function handleSplitClick(event) {
     rectElement.appendChild(rectA);
     rectElement.appendChild(divider);
     rectElement.appendChild(rectB);
+
+    // If there was an image, move it to the target sub-rectangle
+    if (img) {
+        const targetRect = event.ctrlKey ? rectB : rectA;
+        targetRect.innerHTML = ''; // Clear label
+        targetRect.style.position = 'relative';
+        targetRect.appendChild(img);
+        if (removeBtn) targetRect.appendChild(removeBtn);
+    }
 }
 
 export function deleteRectangle(rectElement) {
