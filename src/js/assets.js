@@ -143,8 +143,11 @@ export function setupDropHandlers() {
             removeBtn.onclick = (event) => {
                 event.stopPropagation();
                 saveState();
-                target.innerHTML = target.id.replace('rect-', ''); // Restore label
-                target.style.position = '';
+                const hostRect = event.currentTarget.closest('.splittable-rect');
+                if (hostRect) {
+                    hostRect.innerHTML = hostRect.id.replace('rect-', ''); // Restore label
+                    hostRect.style.position = '';
+                }
             };
 
             target.appendChild(img);

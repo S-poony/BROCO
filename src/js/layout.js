@@ -113,7 +113,10 @@ export function deleteRectangle(rectElement) {
         sibling.remove();
     } else {
         parent.setAttribute('data-split-state', 'unsplit');
-        parent.innerHTML = sibling.innerHTML;
+        // Move children from sibling to parent to preserve listeners
+        while (sibling.firstChild) {
+            parent.appendChild(sibling.firstChild);
+        }
         sibling.remove();
     }
 
