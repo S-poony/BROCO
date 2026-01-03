@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { findNodeById } from './layout.js';
 import { A4_PAPER_ID } from './constants.js';
 import { importedAssets, attachImageDragHandlers } from './assets.js';
-import { handleSplitClick, startDrag } from './layout.js';
+import { handleSplitClick, startDrag, startEdgeDrag } from './layout.js';
 
 export function renderLayout(container, node) {
     // Top-level paper handling: ensure we don't accidentally turn the paper into rect-1
@@ -11,6 +11,7 @@ export function renderLayout(container, node) {
         const rootElement = createDOMRect(node, null);
         container.appendChild(rootElement);
         renderNodeRecursive(rootElement, node);
+        addEdgeHandles(container);
         return;
     }
     renderNodeRecursive(container, node);
@@ -123,4 +124,15 @@ function createDOMDivider(parentNode, rectA, rectB) {
     divider.addEventListener('mousedown', startDrag);
     divider.addEventListener('touchstart', startDrag, { passive: false });
     return divider;
+}
+
+function addEdgeHandles(container) {
+    const edges = ['top', 'bottom', 'left', 'right'];
+    edges.forEach(edge => {
+        const handle = document.createElement('div');
+        handle.className = `edge-handle edge-${edge}`;
+        handle.addEventListener('mousedown', (e) => startEdgeDrag(e, edge));
+        handle.addEventListener('touchstart', (e) => startEdgeDrag(e, edge), { passive: false });
+        container.appendChild(handle);
+    });
 }

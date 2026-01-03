@@ -82,7 +82,7 @@ export function handleSplitClick(event) {
 }
 
 export function deleteRectangle(rectElement) {
-    if (rectElement.id === A4_PAPER_ID || rectElement.id === 'rect-1') {
+    if (rectElement.id === A4_PAPER_ID) {
         return;
     }
 
@@ -105,11 +105,13 @@ export function deleteRectangle(rectElement) {
     renderLayout(document.getElementById(A4_PAPER_ID), state.layout);
 }
 
-export function startDrag(event) {
+export function startDrag(event, dividerElement = null) {
     event.preventDefault();
-    saveState();
+    if (!dividerElement) saveState();
 
-    const divider = event.currentTarget;
+    const divider = dividerElement || event.currentTarget;
+    if (!divider) return;
+
     state.activeDivider = divider;
 
     const rectAId = divider.getAttribute('data-rect-a-id');
@@ -149,6 +151,52 @@ export function startDrag(event) {
     document.addEventListener('touchmove', onDrag, { passive: false });
     document.addEventListener('touchend', stopDrag);
     document.body.classList.add('no-select');
+}
+
+export function startEdgeDrag(event, edge) {
+    event.preventDefault();
+    event.stopPropagation();
+    saveState();
+
+    const clientX = event.clientX || event.touches[0].clientX;
+    const clientY = event.clientY || event.touches[0].clientY;
+
+    const oldLayout = state.layout;
+    const orientation = (edge === 'left' || edge === 'right') ? 'vertical' : 'horizontal';
+
+    // Create the new split node that will wrap the current layout
+    const newRoot = {
+        id: `rect-${++state.currentId}`, // This ID will be updated by renderer to paper ID anyway but good for consistency
+        splitState: 'split',
+        orientation: orientation,
+        children: []
+    };
+
+    const newRect = {
+        id: `rect-${++state.currentId}`,
+        splitState: 'unsplit',
+        image: null,
+        size: '0%' // Start with 0 size
+    };
+
+    // Old layout wrapped
+    const oldLayoutNode = { ...oldLayout };
+    oldLayoutNode.size = '100%';
+
+    if (edge === 'left' || edge === 'top') {
+        newRoot.children = [newRect, oldLayoutNode];
+    } else {
+        newRoot.children = [oldLayoutNode, newRect];
+    }
+
+    state.layout = newRoot;
+    renderLayout(document.getElementById(A4_PAPER_ID), state.layout);
+
+    // Now trigger the normal drag on the newly created divider
+    const divider = document.querySelector(`.divider[data-parent-id="${newRoot.id}"]`);
+    if (divider) {
+        startDrag(event, divider);
+    }
 }
 
 function onDrag(event) {
