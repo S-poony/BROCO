@@ -101,8 +101,10 @@ function handleSplitClick(event) {
 // --- Deletion & Collapse Logic ---
 
 function deleteRectangle(rectElement) {
+    console.log('Deleting rectangle:', rectElement.id);
     // Cannot delete the root container
     if (rectElement.id === A4_PAPER_ID || rectElement.id === 'rect-1') {
+        console.warn('Cannot delete root');
         return;
     }
 
@@ -114,13 +116,16 @@ function deleteRectangle(rectElement) {
     const sibling = children.find(child => child.classList.contains('splittable-rect') && child !== rectElement);
     const divider = children.find(child => child.classList.contains('divider'));
 
-    if (!sibling) return;
+    if (!sibling) {
+    return;
+    }
 
     // Promote sibling content/state to parent
     const isSiblingSplit = sibling.getAttribute('data-split-state') === 'split';
 
-    // Clear parent contents
-    parent.innerHTML = '';
+    // Surgical removal instead of innerHTML = ''
+    rectElement.remove();
+    if (divider) divider.remove();
 
     // Reset orientation classes on parent
     parent.classList.remove('flex-row', 'flex-col');
@@ -131,25 +136,49 @@ function deleteRectangle(rectElement) {
         parent.classList.add('flex', siblingOrientation);
         parent.setAttribute('data-split-state', 'split');
 
-        // Move all children (rects and divider)
+        // Move all children
         while (sibling.firstChild) {
             const child = sibling.firstChild;
-            if (child.classList && child.classList.contains('divider')) {
-                // Update divider's parent reference
+            if (child.nodeType === 1 && child.classList.contains('divider')) {
                 child.setAttribute('data-parent-id', parent.id);
             }
             parent.appendChild(child);
         }
+        sibling.remove();
     } else {
         // Sibling is a leaf, parent becomes a leaf
         parent.setAttribute('data-split-state', 'unsplit');
         parent.innerHTML = sibling.innerHTML;
-        // Re-attach click handler since it was removed or never there if parent was already split
-        // Actually handleSplitClick is always on any .splittable-rect
+        sibling.remove();
     }
 
-    // Re-ensure parent has the click handler (it should already have it, but just in case of innerHTML wipe)
+    // Ensure parent remains clickable and consistent
+    if (!parent.classList.contains('flex')) {
+        parent.classList.add('flex', 'items-center', 'justify-center');
+    }
+
     parent.addEventListener('click', handleSplitClick);
+}
+
+// --- Cursor State Logic ---
+
+function setupCtrlHandler() {
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Control') {
+            document.body.classList.add('ctrl-pressed');
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'Control') {
+            document.body.classList.remove('ctrl-pressed');
+        }
+    });
+
+    // Handle initial state if needed
+    window.addEventListener('blur', () => {
+        document.body.classList.remove('ctrl-pressed');
+    });
 }
 
 // --- Divider & Drag Logic ---
@@ -284,8 +313,10 @@ function stopDrag() {
 
 function initialize() {
     const initialRect = document.getElementById('rect-1');
-    // Attach the click handler to the initial rectangle
+    // Attach handlers to the initial rectangle
     initialRect.addEventListener('click', handleSplitClick);
+
+    setupCtrlHandler();
 }
 
 // Run initialization when the document is ready
