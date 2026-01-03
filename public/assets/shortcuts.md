@@ -1,5 +1,11 @@
 ## Shortcuts and controls
 
+### Global
+
+`ctrl + z` = undo
+`ctrl + y` = redo
+`ctrl + shift + z` = redo
+
 ### Rectangle
 
 `click` = split
