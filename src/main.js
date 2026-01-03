@@ -1,5 +1,6 @@
 import { undo, redo } from './js/history.js';
 import { handleSplitClick, rebindEvents } from './js/layout.js';
+import { setupAssetHandlers, setupDropHandlers } from './js/assets.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -38,6 +39,8 @@ function initialize() {
         initialRect.addEventListener('click', handleSplitClick);
     }
 
+    setupAssetHandlers();
+    setupDropHandlers();
     setupGlobalHandlers();
 }
 
