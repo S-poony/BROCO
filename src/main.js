@@ -51,6 +51,44 @@ function initialize() {
     setupDropHandlers();
     setupExportHandlers();
     setupGlobalHandlers();
+    loadShortcuts();
+}
+
+async function loadShortcuts() {
+    const container = document.getElementById('shortcuts-content');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/assets/shortcuts.md');
+        if (!response.ok) throw new Error('Failed to load shortcuts');
+        const text = await response.text();
+
+        // Very basic MD parser for this specific file
+        const html = text
+            .split('\n')
+            .map(line => {
+                line = line.trim();
+                if (line.startsWith('##')) {
+                    return `<h2>${line.replace('##', '').trim()}</h2>`;
+                }
+                if (line.startsWith('***')) {
+                    return '<hr>';
+                }
+                if (line.includes('=')) {
+                    const [key, desc] = line.split('=').map(s => s.trim());
+                    return `<p><strong>${key}</strong>: ${desc}</p>`;
+                }
+                if (line === '') return '';
+                return `<p>${line}</p>`;
+            })
+            .join('');
+
+        container.className = 'shortcuts-content';
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading shortcuts:', error);
+        container.innerHTML = '<p>Shortcuts list currently unavailable.</p>';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initialize);
