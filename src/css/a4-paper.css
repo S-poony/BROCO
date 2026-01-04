@@ -1,0 +1,162 @@
+/* A4 Paper Container */
+.a4-paper {
+    width: 210mm;
+    /* Fixed A4 width */
+    min-width: 210mm;
+    aspect-ratio: 1 / 1.414;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    background-color: white;
+    border: 1px solid #d1d5db;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+}
+
+/* Ensure initial rectangle fills container */
+#rect-1 {
+    width: 100%;
+    height: 100%;
+}
+
+/* Style for the draggable divider */
+.divider {
+    background-color: rgba(0, 0, 0, 0.1);
+    transition: background-color 0.1s;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.divider:hover {
+    background-color: rgb(138, 138, 199);
+}
+
+.horizontal-divider {
+    height: 6px;
+    align-self: stretch;
+    cursor: ns-resize;
+}
+
+.vertical-divider {
+    width: 6px;
+    align-self: stretch;
+    cursor: ew-resize;
+}
+
+/* Ensure all rectangles fill their containers */
+.splittable-rect,
+.split-container {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    /* For absolutely positioned elements inside */
+}
+
+/* Visual styling for generated rectangles */
+.rectangle-base {
+    background-color: #ffffff;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.rectangle-base:hover {
+    background-color: #e0e7ff;
+}
+
+/* Visual styling for initial rectangle */
+.rectangle-initial {
+    background-color: #ffffff;
+    color: #6b7280;
+    font-size: 1.125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.rectangle-initial:hover {
+    background-color: #e0e7ff;
+}
+
+/* Image removal button */
+.remove-image-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #d1d5db;
+    color: #374151;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s;
+    padding: 0;
+    padding-bottom: 2px;
+}
+
+.remove-image-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #dc2626;
+}
+
+.splittable-rect:hover .remove-image-btn {
+    display: flex;
+}
+
+/* Edge Handle Styles for Inward Dragging */
+.edge-handle {
+    position: absolute;
+    z-index: 100;
+    transition: background-color 0.2s;
+    background-color: transparent;
+}
+
+.edge-handle:hover {
+    background-color: rgba(79, 70, 229, 0.2);
+}
+
+.edge-top {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+    cursor: ns-resize;
+}
+
+.edge-bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+    cursor: ns-resize;
+}
+
+.edge-left {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 12px;
+    cursor: ew-resize;
+}
+
+.edge-right {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    cursor: ew-resize;
+}
+
+/* Ctrl key held style */
+.ctrl-pressed .splittable-rect {
+    cursor: cell !important;
+}

@@ -1,0 +1,110 @@
+/* Sidebar Styles */
+.sidebar {
+    position: absolute;
+    right: 2rem;
+    width: 250px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    top: 0;
+    z-index: 2;
+}
+
+.left-sidebar {
+    right: auto;
+    left: 2rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-left: 4px solid #4f46e5;
+}
+
+.shortcuts-content h2,
+.shortcuts-content h3 {
+    margin-top: 1.25rem;
+    font-size: 1.125rem;
+    color: #111827;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.25rem;
+}
+
+.shortcuts-content h3 {
+    border-bottom: none;
+    font-size: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.shortcuts-content h2:first-child,
+.shortcuts-content h3:first-child {
+    margin-top: 0;
+}
+
+.shortcuts-content h2::before {
+    content: '⌨️';
+    font-size: 1rem;
+}
+
+.shortcuts-content p {
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.shortcuts-content strong,
+.shortcuts-content code {
+    color: #111827;
+    background: #f3f4f6;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.825rem;
+}
+
+.shortcuts-content ul {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.shortcuts-content li {
+    font-size: 0.875rem;
+    color: #4b5563;
+    margin-bottom: 0.25rem;
+}
+
+.asset-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.asset-item {
+    aspect-ratio: 1;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    cursor: grab;
+    transition: transform 0.1s;
+}
+
+.asset-item:active {
+    cursor: grabbing;
+}
+
+.asset-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
