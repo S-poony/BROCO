@@ -91,19 +91,16 @@ async function performExport(format) {
         tempContainer.appendChild(paperWrapper);
 
 
-        renderLayout(paperWrapper, pageLayout);
-
-
-        // We need to trick renderer to treat this as root.
+        // Create a root div inside paperWrapper that matches the root style
         paperWrapper.innerHTML = '';
         const exportRoot = document.createElement('div');
         exportRoot.id = pageLayout.id;
-        // We need to match the root style
         exportRoot.className = 'splittable-rect rectangle-base flex items-center justify-center w-full h-full';
         exportRoot.style.width = '100%';
         exportRoot.style.height = '100%';
         paperWrapper.appendChild(exportRoot);
 
+        // Render the actual layout into the export root
         renderLayout(exportRoot, pageLayout);
 
         // 3. Image Swap
