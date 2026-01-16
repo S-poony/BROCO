@@ -48,17 +48,27 @@ export function setupExportHandlers() {
 }
 
 async function performExport(format) {
-    // We need to render each page to a temporary container, capture it, then move to the next
-    // To avoid flashing content on screen, we'll use a hidden container
+    // 1. Create a Clean Export Container
+
+    const EXPORT_WIDTH = 794; // Standard screen A4 width
+    const EXPORT_HEIGHT = 1123; // Standard screen A4 height
+
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'fixed';
-    tempContainer.style.top = '-9999px';
+    tempContainer.style.top = '0';
     tempContainer.style.left = '0';
-    // Match A4 paper dimensions and class
-    tempContainer.className = 'a4-paper';
-    tempContainer.style.width = '210mm';
-    tempContainer.style.height = 'calc(210mm * 1.414)';
-    tempContainer.style.zoom = '200%'; // High res capture
+    tempContainer.style.zIndex = '-9999'; // Behind everything but rendered
+    tempContainer.style.width = `${EXPORT_WIDTH}px`;
+    tempContainer.style.height = `${EXPORT_HEIGHT}px`;
+    tempContainer.style.backgroundColor = '#ffffff';
+    tempContainer.style.boxSizing = 'border-box';
+    // CRITICAL: Remove any external styles that might affect it
+    tempContainer.style.margin = '0';
+    tempContainer.style.padding = '0';
+    tempContainer.style.border = 'none';
+    tempContainer.style.boxShadow = 'none';
+
+    tempContainer.className = 'export-container';
     document.body.appendChild(tempContainer);
 
     const zip = (format === 'png' || format === 'jpeg') ? new JSZip() : null;
@@ -67,39 +77,67 @@ async function performExport(format) {
     for (let i = 0; i < state.pages.length; i++) {
         const pageLayout = state.pages[i];
 
-        // Render this page to the temp container
-        // We need to clear it first similar to renderer logic but applied to this temp node
+        // 2. Render Page
         tempContainer.innerHTML = '';
-        renderLayout(tempContainer, pageLayout);
+        // We create a wrapper that mimics the A4 paper styling but WITHOUT the unwanted external layout props (shadows)
+        const paperWrapper = document.createElement('div');
+        paperWrapper.className = 'a4-paper'; // Keeps internal styling
+        paperWrapper.style.width = '100%';
+        paperWrapper.style.height = '100%';
+        paperWrapper.style.boxShadow = 'none'; // Force remove shadow
+        paperWrapper.style.border = 'none'; // Force remove border
+        paperWrapper.style.margin = '0';
+        paperWrapper.style.zoom = '1'; // Force zoom reset
+        tempContainer.appendChild(paperWrapper);
 
-        // Swap images for high-res
-        await swapImagesForHighRes(tempContainer);
 
-        // Capture
+        renderLayout(paperWrapper, pageLayout);
+
+
+        // We need to trick renderer to treat this as root.
+        paperWrapper.innerHTML = '';
+        const exportRoot = document.createElement('div');
+        exportRoot.id = pageLayout.id;
+        // We need to match the root style
+        exportRoot.className = 'splittable-rect rectangle-base flex items-center justify-center w-full h-full';
+        exportRoot.style.width = '100%';
+        exportRoot.style.height = '100%';
+        paperWrapper.appendChild(exportRoot);
+
+        renderLayout(exportRoot, pageLayout);
+
+        // 3. Image Swap
+        await swapImagesForHighRes(paperWrapper);
+
+        // 4. Clean up UI elements (Remove buttons)
+        const removeBtns = paperWrapper.querySelectorAll('.remove-image-btn');
+        removeBtns.forEach(btn => btn.remove());
+
+        // 5. Capture
+        // Scale 3 gives ~300 DPI effectively (794 * 3 / 8.27in ~ 288 DPI)
         const canvas = await html2canvas(tempContainer, {
-            scale: 2,
+            scale: 3,
             useCORS: true,
             logging: false,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            width: EXPORT_WIDTH,
+            height: EXPORT_HEIGHT,
+            windowWidth: EXPORT_WIDTH,
+            windowHeight: EXPORT_HEIGHT
         });
 
         const fileName = `page-${i + 1}`;
 
         if (format === 'pdf') {
             const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
 
-            // If first page, create PDF, else add page
-            // Orientation based on dimensions (A4 can be landscape if design dictates, but usually portrait container)
-            // But canvas dimensions depend on zoom and scale.
-            // Let's standardise to A4 points.
-            const pdfWidth = 595.28; // A4 pt width
-            const pdfHeight = 841.89; // A4 pt height
+            // PDF A4 Dimensions (Points)
+            const PDF_W = 595.28;
+            const PDF_H = 841.89;
 
             if (!pdf) {
                 pdf = new jsPDF({
-                    orientation: 'portrait',
+                    orientation: 'portrait', // A4 is portrait
                     unit: 'pt',
                     format: 'a4'
                 });
@@ -107,12 +145,12 @@ async function performExport(format) {
                 pdf.addPage();
             }
 
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, PDF_W, PDF_H);
 
         } else if (zip) {
             const ext = format === 'jpeg' ? 'jpg' : 'png';
             const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-            const dataUrl = canvas.toDataURL(mime, format === 'jpeg' ? 0.9 : 1.0);
+            const dataUrl = canvas.toDataURL(mime, format === 'jpeg' ? 0.95 : 1.0);
             const base64Data = dataUrl.split(',')[1];
 
             zip.file(`${fileName}.${ext}`, base64Data, { base64: true });
@@ -140,14 +178,15 @@ async function swapImagesForHighRes(container) {
             return new Promise((resolve) => {
                 const tempImg = new Image();
                 tempImg.onload = () => {
-                    // html2canvas object-fit workaround: background image
                     const parent = img.parentElement;
                     if (parent) {
+                        // Apply background image to parent div
                         parent.style.backgroundImage = `url(${asset.fullResData})`;
+                        // Use inline style object-fit if present, else cover
                         parent.style.backgroundSize = img.style.objectFit || 'cover';
                         parent.style.backgroundPosition = 'center';
                         parent.style.backgroundRepeat = 'no-repeat';
-                        img.style.display = 'none';
+                        img.style.display = 'none'; // Hide original
                     }
                     resolve();
                 };
@@ -169,14 +208,4 @@ function downloadBlob(blob, filename) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-}
-
-function downloadImage(dataUrl, filename) {
-    // Deprecated for zip/pdf flow but kept if needed
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
