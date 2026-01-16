@@ -1,5 +1,5 @@
 import { A4_PAPER_ID } from './constants.js';
-import { state } from './state.js';
+import { state, getCurrentPage } from './state.js';
 import { saveState } from './history.js';
 import { renderLayout } from './renderer.js';
 
@@ -34,7 +34,7 @@ export function handleSplitClick(event) {
     }
 
     const rectElement = event.currentTarget;
-    const node = findNodeById(state.layout, rectElement.id);
+    const node = findNodeById(getCurrentPage(), rectElement.id);
     if (!node || node.splitState === 'split') return;
 
     // Stop propagation so clicking a leaf doesn't trigger parent split handlers
@@ -51,7 +51,7 @@ export function handleSplitClick(event) {
     if (node.image && !event.shiftKey) {
         saveState();
         node.image.fit = node.image.fit === 'cover' ? 'contain' : 'cover';
-        renderLayout(document.getElementById(A4_PAPER_ID), state.layout);
+        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
         return;
     }
 
@@ -78,7 +78,7 @@ export function handleSplitClick(event) {
         node.image = null;
     }
 
-    renderLayout(document.getElementById(A4_PAPER_ID), state.layout);
+    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
 }
 
 export function deleteRectangle(rectElement) {
@@ -86,7 +86,7 @@ export function deleteRectangle(rectElement) {
         return;
     }
 
-    const parentNode = findParentNode(state.layout, rectElement.id);
+    const parentNode = findParentNode(getCurrentPage(), rectElement.id);
     if (!parentNode) return;
 
     const siblingNode = parentNode.children.find(c => c.id !== rectElement.id);
@@ -102,7 +102,7 @@ export function deleteRectangle(rectElement) {
         parentNode.orientation = null;
     }
 
-    renderLayout(document.getElementById(A4_PAPER_ID), state.layout);
+    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
 }
 
 export function startDrag(event, dividerElement = null) {
@@ -161,7 +161,7 @@ export function startEdgeDrag(event, edge) {
     const clientX = event.clientX || event.touches[0].clientX;
     const clientY = event.clientY || event.touches[0].clientY;
 
-    const oldLayout = state.layout;
+    const oldLayout = getCurrentPage();
     const orientation = (edge === 'left' || edge === 'right') ? 'vertical' : 'horizontal';
 
     // Create the new split node that will wrap the current layout
@@ -189,8 +189,8 @@ export function startEdgeDrag(event, edge) {
         newRoot.children = [oldLayoutNode, newRect];
     }
 
-    state.layout = newRoot;
-    renderLayout(document.getElementById(A4_PAPER_ID), state.layout);
+    state.pages[state.currentPageIndex] = newRoot;
+    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
 
     // Now trigger the normal drag on the newly created divider
     const divider = document.querySelector(`.divider[data-parent-id="${newRoot.id}"]`);
@@ -249,7 +249,7 @@ function stopDrag() {
     const pB = parseFloat(orientation === 'vertical' ? rectB.style.width : rectB.style.height);
 
     // Sync back to state
-    const parentNode = findNodeById(state.layout, divider.parentId);
+    const parentNode = findNodeById(getCurrentPage(), divider.parentId);
     if (parentNode && parentNode.children) {
         const nodeA = findNodeById(parentNode, divider.rectAId);
         const nodeB = findNodeById(parentNode, divider.rectBId);

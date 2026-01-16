@@ -2,9 +2,11 @@ import { undo, redo } from './js/history.js';
 import { handleSplitClick, rebindEvents } from './js/layout.js';
 import { setupAssetHandlers, setupDropHandlers } from './js/assets.js';
 import { setupExportHandlers } from './js/export.js';
-import { state } from './js/state.js';
+import { state, getCurrentPage } from './js/state.js';
 import { renderLayout } from './js/renderer.js';
 import { marked } from 'marked';
+
+import { setupPageHandlers } from './js/pages.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -50,9 +52,10 @@ function initialize() {
     setupExportHandlers();
     setupGlobalHandlers();
     loadShortcuts();
+    setupPageHandlers();
 
     // Initial render from state
-    renderLayout(document.getElementById('a4-paper'), state.layout);
+    renderLayout(document.getElementById('a4-paper'), getCurrentPage());
 }
 
 async function loadShortcuts() {

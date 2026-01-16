@@ -1,7 +1,10 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import JSZip from 'jszip';
 import { importedAssets } from './assets.js';
 import { A4_PAPER_ID } from './constants.js';
+import { state } from './state.js';
+import { renderLayout } from './renderer.js';
 
 export function setupExportHandlers() {
     const exportBtn = document.getElementById('export-layout-btn');
@@ -45,47 +48,110 @@ export function setupExportHandlers() {
 }
 
 async function performExport(format) {
-    const paper = document.getElementById(A4_PAPER_ID);
-    if (!paper) return;
+    // We need to render each page to a temporary container, capture it, then move to the next
+    // To avoid flashing content on screen, we'll use a hidden container
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.left = '0';
+    // Match A4 paper dimensions and class
+    tempContainer.className = 'a4-paper';
+    tempContainer.style.width = '210mm';
+    tempContainer.style.height = 'calc(210mm * 1.414)';
+    tempContainer.style.zoom = '200%'; // High res capture
+    document.body.appendChild(tempContainer);
 
-    // 1. Create a clone to manipulate for export without affecting the UI
-    const clone = paper.cloneNode(true);
+    const zip = (format === 'png' || format === 'jpeg') ? new JSZip() : null;
+    let pdf = null;
 
-    // Position the clone off-screen but visible enough for html2canvas
-    clone.style.position = 'fixed';
-    clone.style.top = '-9999px';
-    clone.style.left = '0';
-    clone.style.width = paper.offsetWidth + 'px';
-    clone.style.height = paper.offsetHeight + 'px';
-    clone.style.zoom = '200%'; // Zoom the clone to double the size of the export
-    document.body.appendChild(clone);
+    for (let i = 0; i < state.pages.length; i++) {
+        const pageLayout = state.pages[i];
 
-    // 2. Swap low-res images for high-res ones in the clone
-    const imageElements = clone.querySelectorAll('img[data-asset-id]');
-    const swapPromises = Array.from(imageElements).map((img, index) => {
+        // Render this page to the temp container
+        // We need to clear it first similar to renderer logic but applied to this temp node
+        tempContainer.innerHTML = '';
+        renderLayout(tempContainer, pageLayout);
+
+        // Swap images for high-res
+        await swapImagesForHighRes(tempContainer);
+
+        // Capture
+        const canvas = await html2canvas(tempContainer, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+
+        const fileName = `page-${i + 1}`;
+
+        if (format === 'pdf') {
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+
+            // If first page, create PDF, else add page
+            // Orientation based on dimensions (A4 can be landscape if design dictates, but usually portrait container)
+            // But canvas dimensions depend on zoom and scale.
+            // Let's standardise to A4 points.
+            const pdfWidth = 595.28; // A4 pt width
+            const pdfHeight = 841.89; // A4 pt height
+
+            if (!pdf) {
+                pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+            } else {
+                pdf.addPage();
+            }
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+        } else if (zip) {
+            const ext = format === 'jpeg' ? 'jpg' : 'png';
+            const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const dataUrl = canvas.toDataURL(mime, format === 'jpeg' ? 0.9 : 1.0);
+            const base64Data = dataUrl.split(',')[1];
+
+            zip.file(`${fileName}.${ext}`, base64Data, { base64: true });
+        }
+    }
+
+    document.body.removeChild(tempContainer);
+
+    const timestamp = new Date().getTime();
+    if (format === 'pdf' && pdf) {
+        pdf.save(`layout-export-${timestamp}.pdf`);
+    } else if (zip) {
+        const content = await zip.generateAsync({ type: 'blob' });
+        downloadBlob(content, `layout-export-${timestamp}.zip`);
+    }
+}
+
+async function swapImagesForHighRes(container) {
+    const imageElements = container.querySelectorAll('img[data-asset-id]');
+    const swapPromises = Array.from(imageElements).map((img) => {
         const assetId = img.getAttribute('data-asset-id');
         const asset = importedAssets.find(a => a.id === assetId);
-
-        // Get the current object-fit from the original paper image
-        const originalImages = paper.querySelectorAll('img[data-asset-id]');
-        const currentFit = originalImages[index] ? originalImages[index].style.objectFit || 'cover' : 'cover';
 
         if (asset && asset.fullResData) {
             return new Promise((resolve) => {
                 const tempImg = new Image();
                 tempImg.onload = () => {
-                    // Workaround for html2canvas object-fit
+                    // html2canvas object-fit workaround: background image
                     const parent = img.parentElement;
                     if (parent) {
                         parent.style.backgroundImage = `url(${asset.fullResData})`;
-                        parent.style.backgroundSize = currentFit;
+                        parent.style.backgroundSize = img.style.objectFit || 'cover';
                         parent.style.backgroundPosition = 'center';
                         parent.style.backgroundRepeat = 'no-repeat';
-                        img.style.display = 'none'; // Hide the original img tag
+                        img.style.display = 'none';
                     }
                     resolve();
                 };
-                tempImg.onerror = resolve; // Continue even if one fails
+                tempImg.onerror = resolve;
                 tempImg.src = asset.fullResData;
             });
         }
@@ -93,43 +159,20 @@ async function performExport(format) {
     });
 
     await Promise.all(swapPromises);
+}
 
-    // 3. Render the clone to canvas
-    // Use a higher scale for better quality (retina-like)
-    const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-    });
-
-    // 4. Clean up the clone
-    document.body.removeChild(clone);
-
-    // 5. Trigger download based on format
-    const fileName = `layout-export-${new Date().getTime()}`;
-
-    if (format === 'png') {
-        downloadImage(canvas.toDataURL('image/png'), `${fileName}.png`);
-    } else if (format === 'jpeg') {
-        downloadImage(canvas.toDataURL('image/jpeg', 0.9), `${fileName}.jpg`);
-    } else if (format === 'pdf') {
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        const pdf = new jsPDF({
-            orientation: paper.offsetWidth > paper.offsetHeight ? 'landscape' : 'portrait',
-            unit: 'px',
-            format: [canvas.width / 2, canvas.height / 2] // match the scaled canvas size back to original pixels
-        });
-
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`${fileName}.pdf`);
-    }
+function downloadBlob(blob, filename) {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
 function downloadImage(dataUrl, filename) {
+    // Deprecated for zip/pdf flow but kept if needed
     const link = document.createElement('a');
     link.href = dataUrl;
     link.download = filename;

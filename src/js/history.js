@@ -6,7 +6,8 @@ let redoStack = [];
 
 export function saveState() {
     undoStack.push({
-        layout: JSON.parse(JSON.stringify(state.layout)),
+        pages: JSON.parse(JSON.stringify(state.pages)),
+        currentPageIndex: state.currentPageIndex,
         currentId: state.currentId
     });
     if (undoStack.length > MAX_HISTORY) {
@@ -19,7 +20,8 @@ export function undo(rebindCallback) {
     if (undoStack.length === 0) return;
 
     redoStack.push({
-        layout: JSON.parse(JSON.stringify(state.layout)),
+        pages: JSON.parse(JSON.stringify(state.pages)),
+        currentPageIndex: state.currentPageIndex,
         currentId: state.currentId
     });
 
@@ -31,7 +33,8 @@ export function redo(rebindCallback) {
     if (redoStack.length === 0) return;
 
     undoStack.push({
-        layout: JSON.parse(JSON.stringify(state.layout)),
+        pages: JSON.parse(JSON.stringify(state.pages)),
+        currentPageIndex: state.currentPageIndex,
         currentId: state.currentId
     });
 
@@ -40,7 +43,11 @@ export function redo(rebindCallback) {
 }
 
 function restoreState(snapshot, rebindCallback) {
-    state.layout = snapshot.layout;
+    state.pages = snapshot.pages;
+    state.currentPageIndex = snapshot.currentPageIndex;
     updateCurrentId(snapshot.currentId);
     if (rebindCallback) rebindCallback();
+
+    // Also trigger an update of the pages sidebar if it exists (we'll implement this later via an event or direct call)
+    document.dispatchEvent(new CustomEvent('stateRestored'));
 }

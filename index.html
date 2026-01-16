@@ -16,30 +16,36 @@
         <h1>Interactive Document Layout</h1>
 
         <div class="main-layout">
-            <div class="main-layout">
-                <!-- A4 Paper Container -->
-                <div id="a4-paper" class="a4-paper">
-                    <!-- Initial Rectangle -->
-                    <div id="rect-1"
-                        class="splittable-rect rectangle-initial flex items-center justify-center w-full h-full"
-                        data-split-state="unsplit">
-                        Click to Split (Initial A4 Page)
-                    </div>
+            <!-- Pages Sidebar -->
+            <aside id="pages-sidebar">
+                <button id="add-page-btn" class="btn-primary w-full">+ Add Page</button>
+                <div id="pages-list">
+                    <!-- Thumbnails start here -->
                 </div>
+            </aside>
 
-                <!-- Sidebar for Assets and Shortcuts -->
-                <aside class="sidebar">
-                    <button id="import-assets-btn" class="btn-primary">Import Assets</button>
-                    <div id="asset-list" class="asset-list">
-                        <!-- Assets will appear here -->
-                    </div>
-                    <hr>
-                    <button id="export-layout-btn" class="btn-secondary">Export Layout</button>
-                    <hr>
-                    <!-- Shortcuts Content -->
-                    <div id="shortcuts-content" class="shortcuts-content">Loading shortcuts...</div>
-                </aside>
+            <!-- A4 Paper Container -->
+            <div id="a4-paper" class="a4-paper">
+                <!-- Initial Rectangle -->
+                <div id="rect-1"
+                    class="splittable-rect rectangle-initial flex items-center justify-center w-full h-full"
+                    data-split-state="unsplit">
+                    Click to Split (Initial A4 Page)
+                </div>
             </div>
+
+            <!-- Sidebar for Assets and Shortcuts -->
+            <aside class="sidebar">
+                <button id="import-assets-btn" class="btn-primary">Import Assets</button>
+                <div id="asset-list" class="asset-list">
+                    <!-- Assets will appear here -->
+                </div>
+                <hr>
+                <button id="export-layout-btn" class="btn-secondary">Export Layout</button>
+                <hr>
+                <!-- Shortcuts Content -->
+                <div id="shortcuts-content" class="shortcuts-content">Loading shortcuts...</div>
+            </aside>
         </div>
     </div>
 
