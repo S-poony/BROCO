@@ -95,6 +95,7 @@ export function renderPageList() {
 
 function renderMiniLayout(container, node) {
     container.innerHTML = '';
+    container.style.backgroundColor = '#fff'; // Default background
 
     // Recursive function similar to renderer.js but for simple boxes
     function buildMiniRecursive(parentNode, domNode) {
@@ -103,20 +104,21 @@ function renderMiniLayout(container, node) {
             domNode.classList.add('flex');
             domNode.style.width = '100%';
             domNode.style.height = '100%';
+            domNode.style.gap = '1px'; // Constant width separator
+            domNode.style.backgroundColor = '#ccc'; // Separator color
 
             parentNode.children.forEach(child => {
                 const childDiv = document.createElement('div');
-                childDiv.style.flex = '1'; // Simplify sizing for thumbnail mostly
-                // Or try to respect size
+                childDiv.style.flex = '1';
                 if (child.size) {
                     if (parentNode.orientation === 'vertical') childDiv.style.width = child.size;
                     else childDiv.style.height = child.size;
                 }
 
                 childDiv.className = 'mini-rect';
-                childDiv.style.border = '1px solid #ccc';
-                childDiv.style.boxSizing = 'border-box';
+                childDiv.style.backgroundColor = '#fff'; // Cover parent's separator color
                 childDiv.style.position = 'relative';
+                // Remove individual borders to avoid growing thickness
 
                 buildMiniRecursive(child, childDiv);
                 domNode.appendChild(childDiv);
@@ -125,6 +127,7 @@ function renderMiniLayout(container, node) {
             // Leaf
             domNode.style.width = '100%';
             domNode.style.height = '100%';
+            domNode.style.backgroundColor = '#fff';
             if (parentNode.image) {
                 domNode.style.backgroundColor = '#e0e7ff'; // Indicate image presence
                 domNode.innerHTML = '<span style="font-size:8px">🖼️</span>';
