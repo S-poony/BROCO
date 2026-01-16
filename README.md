@@ -6,7 +6,7 @@ The goal of this project is to be connected with [Pages](https://pages.lojkine.a
 - [x] undo redo
 - [x] export to pdf
 - [x] smart delete rectangles 
-- [ ] add pages
+- [x] add pages
 - [ ] add text
 	- [ ] auto orientation based on rectangle ratio
 - [ ] export to Pages
