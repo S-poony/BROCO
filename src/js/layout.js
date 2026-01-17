@@ -28,6 +28,11 @@ export function findParentNode(root, childId) {
 }
 
 export function handleSplitClick(event) {
+    // If we just finished editing text, clicking elsewhere should only exit edit mode
+    if (window._justFinishedEditing) {
+        return;
+    }
+
     // If click was on the remove button, don't do anything here
     if (event.target.closest('.remove-image-btn')) {
         return;

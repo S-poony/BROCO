@@ -276,6 +276,12 @@ function renderTextContent(container, node, startInEditMode = false) {
         editor.classList.add('hidden');
         preview.innerHTML = marked.parse(node.text || '') || '<span class="text-placeholder">Click to edit...</span>';
         preview.classList.remove('hidden');
+
+        // Prevent accidental splitting when clicking away from an active editor
+        window._justFinishedEditing = true;
+        setTimeout(() => {
+            window._justFinishedEditing = false;
+        }, 200);
     });
 
     // Remove button
