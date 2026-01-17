@@ -39,6 +39,12 @@ body {
     .main-layout {
         flex-direction: column;
         align-items: center;
+        padding: 0.5rem;
+        gap: 1rem;
+    }
+
+    #app {
+        padding: 0.5rem;
     }
 }
 

@@ -14,6 +14,24 @@
     flex-shrink: 0;
 }
 
+@media (max-width: 768px) {
+    .a4-paper {
+        zoom: 45%;
+    }
+}
+
+@media (max-width: 480px) {
+    .a4-paper {
+        zoom: 35%;
+    }
+}
+
+@media (max-width: 350px) {
+    .a4-paper {
+        zoom: 30%;
+    }
+}
+
 /* Ensure initial rectangle fills container */
 #rect-1 {
     width: 100%;
@@ -164,4 +182,11 @@
 /* Ctrl key held style */
 .ctrl-pressed .splittable-rect {
     cursor: cell !important;
+}
+
+/* Touch Drag Highlights */
+.splittable-rect.touch-drag-over {
+    background-color: rgba(79, 70, 229, 0.2) !important;
+    outline: 2px dashed #4f46e5 !important;
+    outline-offset: -2px;
 }

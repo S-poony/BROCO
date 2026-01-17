@@ -101,6 +101,11 @@ function renderAssetList() {
             window._sourceRect = null;
         });
 
+        // Touch support for mobile dragging
+        item.addEventListener('touchstart', (e) => handleTouchStart(e, asset), { passive: false });
+        item.addEventListener('touchmove', handleTouchMove, { passive: false });
+        item.addEventListener('touchend', handleTouchEnd);
+
         const removeBtn = item.querySelector('.remove');
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -115,6 +120,88 @@ function renderAssetList() {
 
         assetList.appendChild(item);
     });
+}
+
+function handleTouchStart(e, asset) {
+    window._draggedAsset = asset;
+    window._sourceRect = null;
+
+    // Create ghost element for visual feedback
+    const ghost = document.createElement('img');
+    ghost.src = asset.lowResData;
+    ghost.id = 'drag-ghost';
+    ghost.style.position = 'fixed';
+    ghost.style.width = '60px';
+    ghost.style.height = '60px';
+    ghost.style.objectFit = 'cover';
+    ghost.style.pointerEvents = 'none';
+    ghost.style.zIndex = '10000';
+    ghost.style.opacity = '0.8';
+    ghost.style.borderRadius = '8px';
+    ghost.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
+    ghost.style.border = '2px solid #4f46e5';
+
+    const touch = e.touches[0];
+    ghost.style.left = `${touch.clientX - 30}px`;
+    ghost.style.top = `${touch.clientY - 30}px`;
+
+    document.body.appendChild(ghost);
+    window._touchGhost = ghost;
+}
+
+function handleTouchMove(e) {
+    if (!window._draggedAsset || !window._touchGhost) return;
+    // Prevent scrolling while dragging
+    if (e.cancelable) e.preventDefault();
+
+    const touch = e.touches[0];
+    window._touchGhost.style.left = `${touch.clientX - 30}px`;
+    window._touchGhost.style.top = `${touch.clientY - 30}px`;
+
+    // Visual feedback for potential drop target
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetElement = target?.closest('.splittable-rect');
+
+    // Remove highlight from all rects
+    document.querySelectorAll('.splittable-rect').forEach(el => el.classList.remove('touch-drag-over'));
+
+    if (targetElement) {
+        const node = findNodeById(getCurrentPage(), targetElement.id);
+        if (node && node.splitState === 'unsplit' && !node.text) {
+            targetElement.classList.add('touch-drag-over');
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    if (!window._draggedAsset) return;
+
+    const touch = e.changedTouches[0];
+    if (window._touchGhost) {
+        window._touchGhost.remove();
+        window._touchGhost = null;
+    }
+
+    // Remove feedback highlighting
+    document.querySelectorAll('.splittable-rect').forEach(el => el.classList.remove('touch-drag-over'));
+
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetElement = target?.closest('.splittable-rect');
+
+    if (targetElement) {
+        const targetNode = findNodeById(getCurrentPage(), targetElement.id);
+        if (targetNode && targetNode.splitState === 'unsplit' && !targetNode.text) {
+            saveState();
+            targetNode.image = {
+                assetId: window._draggedAsset.id,
+                fit: 'cover'
+            };
+            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+        }
+    }
+
+    window._draggedAsset = null;
 }
 
 async function removeAsset(assetId) {
