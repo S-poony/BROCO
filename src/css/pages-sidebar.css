@@ -1,8 +1,6 @@
 /* Pages Sidebar */
 #pages-sidebar {
-    position: absolute;
-    left: 2rem;
-    top: 2rem;
+    position: relative;
     width: 200px;
     background: white;
     border: 1px solid #d1d5db;
@@ -14,7 +12,8 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     max-height: calc(100vh - 4rem);
     overflow-y: auto;
-    z-index: 100;
+    z-index: 10;
+    flex-shrink: 0;
 }
 
 #pages-list {
@@ -109,4 +108,33 @@
 .page-thumbnail-item.drag-over {
     border-color: #4f46e5;
     background-color: #c7d2fe;
+}
+
+@media (max-width: 1024px) {
+    #pages-sidebar {
+        width: 100%;
+        max-height: none;
+        overflow-y: visible;
+        flex-direction: row;
+        align-items: center;
+        order: -1;
+    }
+
+    #add-page-btn {
+        width: auto !important;
+        white-space: nowrap;
+    }
+
+    #pages-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: thin;
+        flex-grow: 1;
+        margin-left: 1rem;
+    }
+
+    .page-thumbnail-item {
+        flex-shrink: 0;
+    }
 }

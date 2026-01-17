@@ -24,13 +24,22 @@ body {
 
 .main-layout {
     display: flex;
+    flex-direction: row;
     width: 100%;
-    max-width: 100vw;
+    max-width: 1400px;
     align-items: flex-start;
     justify-content: center;
     position: relative;
-    padding: 0 320px 0 320px;
-    /* Balanced padding to keep center centered if sidebar is 280px + 2rem */
+    padding: 1rem;
+    gap: 2rem;
+    margin: 0 auto;
+}
+
+@media (max-width: 1024px) {
+    .main-layout {
+        flex-direction: column;
+        align-items: center;
+    }
 }
 
 h1 {

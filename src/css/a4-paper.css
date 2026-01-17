@@ -1,4 +1,3 @@
-/* A4 Paper Container */
 .a4-paper {
     width: 210mm;
     /* Fixed A4 width */
@@ -10,7 +9,9 @@
     overflow: hidden;
     position: relative;
     display: flex;
-    zoom: 60%; /* modified in export.js */
+    zoom: 60%;
+    /* modified in export.js */
+    flex-shrink: 0;
 }
 
 /* Ensure initial rectangle fills container */
@@ -47,7 +48,8 @@
 /* Edge Handle Styles for Inward Dragging */
 .edge-handle {
     position: absolute;
-    z-index: 2;  /* over images but under sidebars */
+    z-index: 2;
+    /* over images but under sidebars */
     transition: background-color 0.2s;
     background-color: transparent;
 }
