@@ -47,40 +47,6 @@
     font-style: italic;
 }
 
-.text-drag-handle {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #d1d5db;
-    color: #9ca3af;
-    font-size: 10px;
-    cursor: grab;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.text-drag-handle:hover {
-    background: #e0e7ff;
-    color: #4f46e5;
-    border-color: #4f46e5;
-}
-
-.text-drag-handle:active {
-    cursor: grabbing;
-}
-
-.splittable-rect:hover .text-drag-handle {
-    display: flex;
-}
-
 .text-editor {
     width: 100%;
     min-height: 100%;

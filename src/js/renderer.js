@@ -125,9 +125,10 @@ function renderTextContent(container, node) {
     const editorContainer = document.createElement('div');
     editorContainer.className = 'text-editor-container';
 
-    // Preview (shown by default)
+    // Preview (shown by default) - draggable like images
     const preview = document.createElement('div');
     preview.className = 'markdown-content';
+    preview.draggable = true;
     preview.innerHTML = marked.parse(node.text || '') || '<span class="text-placeholder">Click to edit...</span>';
 
     // Editor (hidden by default)
@@ -136,8 +137,26 @@ function renderTextContent(container, node) {
     editor.value = node.text || '';
     editor.placeholder = 'Write Markdown here...';
 
-    // Click preview to enter edit mode
+    // Drag preview to move text (like images)
+    preview.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', 'text-content');
+        window._draggedText = node.text;
+        window._sourceRect = container;
+        window._sourceTextNode = node;
+        container.classList.add('moving-text');
+    });
+    preview.addEventListener('dragend', () => {
+        container.classList.remove('moving-text');
+    });
+
+    // Click preview: check modifiers first, then enter edit mode
     preview.addEventListener('click', (e) => {
+        // Let Shift+click and Ctrl+click bubble to split/delete handlers
+        if (e.shiftKey || e.ctrlKey) {
+            // Don't stop propagation - let it reach handleSplitClick
+            return;
+        }
+        // Plain click: enter edit mode
         e.stopPropagation();
         preview.classList.add('hidden');
         editor.classList.remove('hidden');
@@ -160,24 +179,6 @@ function renderTextContent(container, node) {
         preview.classList.remove('hidden');
     });
 
-    // Drag handle for moving text
-    const dragHandle = document.createElement('div');
-    dragHandle.className = 'text-drag-handle';
-    dragHandle.innerHTML = '⋮⋮';
-    dragHandle.title = 'Drag to move text';
-    dragHandle.draggable = true;
-    dragHandle.addEventListener('click', (e) => e.stopPropagation());
-    dragHandle.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', 'text-content');
-        window._draggedText = node.text;
-        window._sourceRect = container;
-        window._sourceTextNode = node;
-        container.classList.add('moving-text');
-    });
-    dragHandle.addEventListener('dragend', () => {
-        container.classList.remove('moving-text');
-    });
-
     // Remove button
     const removeBtn = document.createElement('button');
     removeBtn.className = 'remove-text-btn';
@@ -195,7 +196,6 @@ function renderTextContent(container, node) {
 
     editorContainer.appendChild(preview);
     editorContainer.appendChild(editor);
-    editorContainer.appendChild(dragHandle);
     editorContainer.appendChild(removeBtn);
     container.appendChild(editorContainer);
 }
