@@ -87,6 +87,17 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
     flex-shrink: 0;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    padding: 2px;
+    border-radius: 0.5rem;
+}
+
+.asset-list.drag-over,
+.asset-list.touch-drag-over {
+    background-color: rgba(79, 70, 229, 0.1);
+    border-color: #4f46e5;
+    border-style: dashed;
 }
 
 @media (max-width: 1024px) {

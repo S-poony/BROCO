@@ -32,6 +32,42 @@ export function setupAssetHandlers() {
         renderAssetList();
         fileInput.value = ''; // Reset for next import
     });
+
+    // Handle dropping layout images/text back to asset list to delete them
+    const assetList = document.getElementById('asset-list');
+    assetList.addEventListener('dragover', (e) => {
+        if (window._sourceRect) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            assetList.classList.add('drag-over');
+        }
+    });
+
+    assetList.addEventListener('dragleave', () => {
+        assetList.classList.remove('drag-over');
+    });
+
+    assetList.addEventListener('drop', (e) => {
+        assetList.classList.remove('drag-over');
+        if (window._sourceRect) {
+            e.preventDefault();
+            saveState();
+
+            const sourceNode = findNodeById(getCurrentPage(), window._sourceRect.id);
+            if (sourceNode) {
+                if (window._draggedAsset) sourceNode.image = null;
+                if (window._draggedText !== undefined) sourceNode.text = null;
+            }
+
+            window._draggedAsset = null;
+            window._draggedText = undefined;
+            window._sourceRect = null;
+            window._sourceTextNode = null;
+
+            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+        }
+    });
 }
 
 async function processFile(file) {
@@ -102,7 +138,7 @@ function renderAssetList() {
         });
 
         // Touch support for mobile dragging
-        item.addEventListener('touchstart', (e) => handleTouchStart(e, asset), { passive: false });
+        item.addEventListener('touchstart', (e) => handleTouchStart(e, { asset }), { passive: false });
         item.addEventListener('touchmove', handleTouchMove, { passive: false });
         item.addEventListener('touchend', handleTouchEnd);
 
@@ -122,24 +158,43 @@ function renderAssetList() {
     });
 }
 
-function handleTouchStart(e, asset) {
-    window._draggedAsset = asset;
-    window._sourceRect = null;
+export function handleTouchStart(e, dragData) {
+    const { asset, text, sourceRect, sourceTextNode } = dragData;
+
+    window._draggedAsset = asset || null;
+    window._draggedText = text !== undefined ? text : undefined;
+    window._sourceRect = sourceRect || null;
+    window._sourceTextNode = sourceTextNode || null;
 
     // Create ghost element for visual feedback
-    const ghost = document.createElement('img');
-    ghost.src = asset.lowResData;
+    const ghost = document.createElement('div');
     ghost.id = 'drag-ghost';
     ghost.style.position = 'fixed';
     ghost.style.width = '60px';
     ghost.style.height = '60px';
-    ghost.style.objectFit = 'cover';
     ghost.style.pointerEvents = 'none';
     ghost.style.zIndex = '10000';
     ghost.style.opacity = '0.8';
     ghost.style.borderRadius = '8px';
     ghost.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
     ghost.style.border = '2px solid #4f46e5';
+    ghost.style.display = 'flex';
+    ghost.style.alignItems = 'center';
+    ghost.style.justifyContent = 'center';
+    ghost.style.backgroundColor = 'white';
+
+    if (asset) {
+        const img = document.createElement('img');
+        img.src = asset.lowResData;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '6px';
+        ghost.appendChild(img);
+    } else if (text !== undefined) {
+        ghost.innerHTML = '📝';
+        ghost.style.fontSize = '24px';
+    }
 
     const touch = e.touches[0];
     ghost.style.left = `${touch.clientX - 30}px`;
@@ -147,10 +202,14 @@ function handleTouchStart(e, asset) {
 
     document.body.appendChild(ghost);
     window._touchGhost = ghost;
+
+    if (sourceRect) {
+        sourceRect.classList.add(asset ? 'moving-image' : 'moving-text');
+    }
 }
 
-function handleTouchMove(e) {
-    if (!window._draggedAsset || !window._touchGhost) return;
+export function handleTouchMove(e) {
+    if ((!window._draggedAsset && window._draggedText === undefined) || !window._touchGhost) return;
     // Prevent scrolling while dragging
     if (e.cancelable) e.preventDefault();
 
@@ -161,20 +220,28 @@ function handleTouchMove(e) {
     // Visual feedback for potential drop target
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetElement = target?.closest('.splittable-rect');
+    const targetAssetList = target?.closest('#asset-list');
 
-    // Remove highlight from all rects
+    // Remove highlight from all rects and sidebar
     document.querySelectorAll('.splittable-rect').forEach(el => el.classList.remove('touch-drag-over'));
+    document.getElementById('asset-list')?.classList.remove('touch-drag-over');
 
-    if (targetElement) {
+    if (targetAssetList && window._sourceRect) {
+        targetAssetList.classList.add('touch-drag-over');
+    } else if (targetElement) {
         const node = findNodeById(getCurrentPage(), targetElement.id);
-        if (node && node.splitState === 'unsplit' && !node.text) {
+        if (node && node.splitState === 'unsplit') {
+            // Block image drops on text rectangles and vice versa
+            if (window._draggedAsset && node.text) return;
+            if (window._draggedText !== undefined && node.image) return;
+
             targetElement.classList.add('touch-drag-over');
         }
     }
 }
 
-function handleTouchEnd(e) {
-    if (!window._draggedAsset) return;
+export function handleTouchEnd(e) {
+    if (!window._draggedAsset && window._draggedText === undefined) return;
 
     const touch = e.changedTouches[0];
     if (window._touchGhost) {
@@ -184,24 +251,64 @@ function handleTouchEnd(e) {
 
     // Remove feedback highlighting
     document.querySelectorAll('.splittable-rect').forEach(el => el.classList.remove('touch-drag-over'));
+    document.getElementById('asset-list')?.classList.remove('touch-drag-over');
+
+    if (window._sourceRect) {
+        window._sourceRect.classList.remove('moving-image', 'moving-text');
+    }
 
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetElement = target?.closest('.splittable-rect');
+    const targetAssetList = target?.closest('#asset-list');
 
-    if (targetElement) {
+    if (targetAssetList && window._sourceRect) {
+        // Drop back to sidebar = delete instance
+        saveState();
+        const sourceNode = findNodeById(getCurrentPage(), window._sourceRect.id);
+        if (sourceNode) {
+            if (window._draggedAsset) sourceNode.image = null;
+            if (window._draggedText !== undefined) sourceNode.text = null;
+        }
+        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+        document.dispatchEvent(new CustomEvent('layoutUpdated'));
+    } else if (targetElement) {
         const targetNode = findNodeById(getCurrentPage(), targetElement.id);
-        if (targetNode && targetNode.splitState === 'unsplit' && !targetNode.text) {
-            saveState();
-            targetNode.image = {
-                assetId: window._draggedAsset.id,
-                fit: 'cover'
-            };
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
-            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+        if (targetNode && targetNode.splitState === 'unsplit') {
+            // Handle text drop
+            if (window._draggedText !== undefined && !targetNode.image) {
+                saveState();
+                if (window._sourceTextNode) {
+                    window._sourceTextNode.text = null;
+                }
+                targetNode.text = window._draggedText;
+                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            }
+            // Handle image drop
+            else if (window._draggedAsset && !targetNode.text) {
+                saveState();
+                let fit = 'cover';
+                if (window._sourceRect) {
+                    const sourceNode = findNodeById(getCurrentPage(), window._sourceRect.id);
+                    if (sourceNode && sourceNode.image) {
+                        fit = sourceNode.image.fit;
+                        sourceNode.image = null;
+                    }
+                }
+                targetNode.image = {
+                    assetId: window._draggedAsset.id,
+                    fit: fit
+                };
+                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            }
         }
     }
 
     window._draggedAsset = null;
+    window._draggedText = undefined;
+    window._sourceRect = null;
+    window._sourceTextNode = null;
 }
 
 async function removeAsset(assetId) {
@@ -275,6 +382,11 @@ export function attachImageDragHandlers(img, asset, hostRectElement) {
     img.addEventListener('dragend', () => {
         hostRectElement.classList.remove('moving-image');
     });
+
+    // Touch support
+    img.addEventListener('touchstart', (e) => handleTouchStart(e, { asset, sourceRect: hostRectElement }), { passive: false });
+    img.addEventListener('touchmove', handleTouchMove, { passive: false });
+    img.addEventListener('touchend', handleTouchEnd);
 }
 
 export function setupDropHandlers() {

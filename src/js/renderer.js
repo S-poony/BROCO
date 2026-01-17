@@ -1,7 +1,7 @@
 import { state, getCurrentPage } from './state.js';
 import { findNodeById } from './layout.js';
 import { A4_PAPER_ID } from './constants.js';
-import { importedAssets, attachImageDragHandlers } from './assets.js';
+import { importedAssets, attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd } from './assets.js';
 import { handleSplitClick, startDrag, startEdgeDrag } from './layout.js';
 import { marked } from 'marked';
 
@@ -161,6 +161,11 @@ function renderTextContent(container, node, startInEditMode = false) {
         container.classList.remove('moving-text');
     });
 
+    // Touch support for text
+    preview.addEventListener('touchstart', (e) => handleTouchStart(e, { text: node.text, sourceRect: container, sourceTextNode: node }), { passive: false });
+    preview.addEventListener('touchmove', handleTouchMove, { passive: false });
+    preview.addEventListener('touchend', handleTouchEnd);
+
     // Click preview: check modifiers first, then enter edit mode
     preview.addEventListener('click', (e) => {
         // Let Shift+click and Ctrl+click bubble to split/delete handlers
@@ -307,6 +312,11 @@ function attachTextDragHandlers(editorContainer, node, hostRectElement) {
     editorContainer.addEventListener('dragend', () => {
         hostRectElement.classList.remove('moving-text');
     });
+
+    // Touch support
+    editorContainer.addEventListener('touchstart', (e) => handleTouchStart(e, { text: node.text, sourceRect: hostRectElement, sourceTextNode: node }), { passive: false });
+    editorContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    editorContainer.addEventListener('touchend', handleTouchEnd);
 }
 
 function createDOMRect(node, parentOrientation) {
