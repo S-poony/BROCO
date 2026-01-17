@@ -132,39 +132,39 @@ function renderMiniLayout(container, node) {
     container.style.backgroundColor = '#fff'; // Default background
 
     // Recursive function similar to renderer.js but for simple boxes
-    function buildMiniRecursive(parentNode, domNode) {
-        if (parentNode.splitState === 'split') {
-            domNode.classList.add(parentNode.orientation === 'vertical' ? 'flex-row' : 'flex-col');
-            domNode.classList.add('flex');
-            domNode.style.width = '100%';
-            domNode.style.height = '100%';
-            domNode.style.gap = '1px'; // Constant width separator
-            domNode.style.backgroundColor = '#ccc'; // Separator color
+    function buildMiniRecursive(node, domNode) {
+        if (node.splitState === 'split') {
+            domNode.style.display = 'flex';
+            domNode.style.flexDirection = node.orientation === 'vertical' ? 'row' : 'column';
+            domNode.style.gap = '1px';
+            domNode.style.backgroundColor = '#d1d5db'; // Same as main layout border/divider color
 
-            parentNode.children.forEach(child => {
+            node.children.forEach(child => {
                 const childDiv = document.createElement('div');
-                childDiv.style.flex = '1';
-                if (child.size) {
-                    if (parentNode.orientation === 'vertical') childDiv.style.width = child.size;
-                    else childDiv.style.height = child.size;
-                }
-
                 childDiv.className = 'mini-rect';
-                childDiv.style.backgroundColor = '#fff'; // Cover parent's separator color
+                childDiv.style.backgroundColor = '#fff';
                 childDiv.style.position = 'relative';
-                // Remove individual borders to avoid growing thickness
+                childDiv.style.minWidth = '0';
+                childDiv.style.minHeight = '0';
+
+                if (child.size) {
+                    // Extract numeric value from "50%" or similar
+                    const growValue = parseFloat(child.size);
+                    childDiv.style.flex = `${growValue} 1 0px`;
+                } else {
+                    childDiv.style.flex = '1 1 0px';
+                }
 
                 buildMiniRecursive(child, childDiv);
                 domNode.appendChild(childDiv);
             });
         } else {
             // Leaf
-            domNode.style.width = '100%';
-            domNode.style.height = '100%';
             domNode.style.backgroundColor = '#fff';
-            if (parentNode.image) {
+            if (node.image) {
                 domNode.style.backgroundColor = '#e0e7ff'; // Indicate image presence
-                domNode.innerHTML = '<span style="font-size:8px">🖼️</span>';
+                domNode.innerHTML = '🖼️';
+                domNode.style.fontSize = '8px';
                 domNode.style.display = 'flex';
                 domNode.style.justifyContent = 'center';
                 domNode.style.alignItems = 'center';
