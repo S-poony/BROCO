@@ -5,6 +5,12 @@ import { importedAssets, attachImageDragHandlers } from './assets.js';
 import { handleSplitClick, startDrag, startEdgeDrag } from './layout.js';
 import { marked } from 'marked';
 
+// Configure marked for GFM and better line breaks
+marked.use({
+    gfm: true,
+    breaks: true
+});
+
 export function renderLayout(container, node) {
     // Top-level paper handling: ensure we don't accidentally turn the paper into rect-1
     if (container.id === A4_PAPER_ID) {
@@ -158,8 +164,7 @@ function renderTextContent(container, node, startInEditMode = false) {
     // Click preview: check modifiers first, then enter edit mode
     preview.addEventListener('click', (e) => {
         // Let Shift+click and Ctrl+click bubble to split/delete handlers
-        if (e.shiftKey || e.ctrlKey) {
-            // Don't stop propagation - let it reach handleSplitClick
+        if (e.shiftKey || e.ctrlKey || e.altKey) {
             return;
         }
         // Plain click: enter edit mode
@@ -169,13 +174,84 @@ function renderTextContent(container, node, startInEditMode = false) {
         editor.focus();
     });
 
-    // Prevent editor click from bubbling
-    editor.addEventListener('click', (e) => e.stopPropagation());
+    // Editor click: allow Shift+click to bubble for splitting even while editing
+    editor.addEventListener('click', (e) => {
+        if (e.shiftKey || e.ctrlKey || e.altKey) {
+            return;
+        }
+        e.stopPropagation();
+    });
 
     // Sync text on input
     editor.addEventListener('input', () => {
         node.text = editor.value;
+        // Also update preview in real-time so it's ready when switching back
+        preview.innerHTML = marked.parse(node.text || '') || '<span class="text-placeholder">Click to edit...</span>';
         document.dispatchEvent(new CustomEvent('layoutUpdated'));
+    });
+
+    // Auto-pairing and Obsidian-like behavior
+    editor.addEventListener('keydown', (e) => {
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const value = editor.value;
+
+        // Auto-pairing character map
+        const pairs = {
+            '(': ')',
+            '[': ']',
+            '{': '}',
+            '"': '"',
+            "'": "'",
+            '*': '*',
+            '_': '_',
+            '`': '`'
+        };
+
+        if (pairs[e.key]) {
+            e.preventDefault();
+            const selection = value.substring(start, end);
+            let charToInsert = e.key;
+            let closingChar = pairs[e.key];
+
+            // Special case for double brackets [[ ]]
+            if (e.key === '[' && value[start - 1] === '[') {
+                editor.value = value.substring(0, start) + '[' + selection + ']]' + value.substring(end);
+                editor.selectionStart = start + 1;
+                editor.selectionEnd = start + 1 + selection.length;
+            } else {
+                editor.value = value.substring(0, start) + charToInsert + selection + closingChar + value.substring(end);
+                editor.selectionStart = start + 1;
+                editor.selectionEnd = start + 1 + selection.length;
+            }
+
+            editor.dispatchEvent(new Event('input'));
+            return;
+        }
+
+        // Tab for indentation
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const before = value.substring(0, start);
+            const after = value.substring(end);
+            editor.value = before + '  ' + after;
+            editor.selectionStart = editor.selectionEnd = start + 2;
+            editor.dispatchEvent(new Event('input'));
+            return;
+        }
+
+        // Auto-list on Enter
+        if (e.key === 'Enter') {
+            const line = value.substring(0, start).split('\n').pop();
+            const listMatch = line.match(/^(\s*)([-*+]|\d+\.)(\s+)/);
+            if (listMatch) {
+                e.preventDefault();
+                const prefix = '\n' + listMatch[1] + listMatch[2] + listMatch[3];
+                editor.value = value.substring(0, start) + prefix + value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + prefix.length;
+                editor.dispatchEvent(new Event('input'));
+            }
+        }
     });
 
     // Exit edit mode on blur (click away)
@@ -247,7 +323,7 @@ function createDOMRect(node, parentOrientation) {
 
 function createDOMDivider(parentNode, rectA, rectB) {
     const divider = document.createElement('div');
-    divider.className = `divider no-select flex-shrink-0 ${parentNode.orientation}-divider`;
+    divider.className = `divider no - select flex - shrink - 0 ${parentNode.orientation} -divider`;
     divider.setAttribute('data-orientation', parentNode.orientation);
     divider.setAttribute('data-rect-a-id', rectA.id);
     divider.setAttribute('data-rect-b-id', rectB.id);
@@ -262,7 +338,7 @@ function addEdgeHandles(container) {
     const edges = ['top', 'bottom', 'left', 'right'];
     edges.forEach(edge => {
         const handle = document.createElement('div');
-        handle.className = `edge-handle edge-${edge}`;
+        handle.className = `edge - handle edge - ${edge} `;
         handle.addEventListener('mousedown', (e) => startEdgeDrag(e, edge));
         handle.addEventListener('touchstart', (e) => startEdgeDrag(e, edge), { passive: false });
         container.appendChild(handle);

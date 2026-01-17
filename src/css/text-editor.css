@@ -78,34 +78,57 @@
 }
 
 .markdown-content h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0.5rem 0 1rem 0;
     color: #111827;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0.25rem;
 }
 
 .markdown-content h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.75rem 0;
     color: #1f2937;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 0.125rem;
 }
 
 .markdown-content h3 {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     font-weight: 600;
-    margin: 0 0 0.5rem 0;
+    margin: 0.5rem 0 0.5rem 0;
     color: #374151;
 }
 
+.markdown-content h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0.5rem 0;
+    color: #4b5563;
+}
+
+.markdown-content h5,
+.markdown-content h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0.5rem 0;
+    color: #6b7280;
+}
+
 .markdown-content p {
-    margin: 0 0 0.5rem 0;
+    margin: 0.75rem 0;
 }
 
 .markdown-content ul,
 .markdown-content ol {
-    margin: 0 0 0.5rem 0;
+    margin: 0.75rem 0;
     padding-left: 1.5rem;
+}
+
+.markdown-content li {
+    margin: 0.25rem 0;
 }
 
 .markdown-content code {
