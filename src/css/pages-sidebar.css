@@ -58,7 +58,7 @@
 
 .page-thumbnail-preview {
     width: 80px;
-    height: 113px;
+    aspect-ratio: 1 / 1.414;
     background: white;
     border: 1px solid #d1d5db;
     overflow: hidden;
@@ -155,7 +155,7 @@
 
     .page-thumbnail-preview {
         width: 40px;
-        height: 56px;
+        aspect-ratio: 1 / 1.414;
     }
 
     .page-number {

@@ -99,7 +99,7 @@ function renderLeafNode(container, node) {
 
         const prompt = document.createElement('div');
         prompt.className = 'text-prompt';
-        prompt.textContent = 'Click to write';
+        prompt.textContent = 'Click here to write';
         container.appendChild(prompt);
 
         // Handle click on prompt to start editing
