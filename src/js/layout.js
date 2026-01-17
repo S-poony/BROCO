@@ -45,10 +45,17 @@ export function handleSplitClick(event) {
     // Stop propagation so clicking a leaf doesn't trigger parent split handlers
     event.stopPropagation();
 
-    // Ctrl + Click (without Shift) = Delete
+    // Ctrl + Click (without Shift) = Delete content or rectangle
     if (event.ctrlKey && !event.shiftKey) {
         saveState();
-        deleteRectangle(rectElement);
+        if (node.image || node.text !== null) {
+            node.image = null;
+            node.text = null;
+            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+        } else {
+            deleteRectangle(rectElement);
+        }
         return;
     }
 

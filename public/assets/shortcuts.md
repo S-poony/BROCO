@@ -9,7 +9,7 @@
 ### Rectangle
 
 `click` = split
-`ctrl + click` = delete
+`ctrl + click` = delete content or rectangle
 `alt + click` = alternate split 
 
 ***
