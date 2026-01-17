@@ -28,3 +28,91 @@ export function createDivider(parentRect, orientation, rectA, rectB, startDrag) 
 
     return divider;
 }
+
+/**
+ * Custom replacement for native confirm()
+ * @param {string} message 
+ * @param {string} title 
+ * @param {string} okText
+ * @returns {Promise<boolean>}
+ */
+export function showConfirm(message, title = 'Are you sure?', okText = 'Confirm') {
+    const modal = document.getElementById('confirmation-modal');
+    const titleEl = document.getElementById('confirm-title');
+    const messageEl = document.getElementById('confirm-message');
+    const okBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+
+    if (!modal || !titleEl || !messageEl || !okBtn || !cancelBtn) {
+        // Fallback if DOM not fully ready
+        return Promise.resolve(window.confirm(message));
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    okBtn.textContent = okText;
+    cancelBtn.style.display = 'block'; // Ensure cancel is visible
+    modal.classList.add('active');
+
+    return new Promise((resolve) => {
+        const cleanup = (result) => {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            modal.removeEventListener('click', onOverlay);
+            resolve(result);
+        };
+
+        const onOk = () => cleanup(true);
+        const onCancel = () => cleanup(false);
+        const onOverlay = (e) => {
+            if (e.target === modal) cleanup(false);
+        };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onOverlay);
+    });
+}
+
+/**
+ * Custom replacement for native alert()
+ * @param {string} message 
+ * @param {string} title 
+ * @returns {Promise<void>}
+ */
+export function showAlert(message, title = 'Notification') {
+    const modal = document.getElementById('confirmation-modal');
+    const titleEl = document.getElementById('confirm-title');
+    const messageEl = document.getElementById('confirm-message');
+    const okBtn = document.getElementById('confirm-ok');
+    const cancelBtn = document.getElementById('confirm-cancel');
+
+    if (!modal || !titleEl || !messageEl || !okBtn || !cancelBtn) {
+        window.alert(message);
+        return Promise.resolve();
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    okBtn.textContent = 'OK';
+    cancelBtn.style.display = 'none'; // Hide cancel for alerts
+    modal.classList.add('active');
+
+    return new Promise((resolve) => {
+        const cleanup = () => {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            modal.removeEventListener('click', onOverlay);
+            resolve();
+        };
+
+        const onOk = () => cleanup();
+        const onOverlay = (e) => {
+            if (e.target === modal) cleanup();
+        };
+
+        okBtn.addEventListener('click', onOk);
+        modal.addEventListener('click', onOverlay);
+    });
+}

@@ -2,6 +2,7 @@ import { state, addPage, duplicatePage, switchPage, deletePage, reorderPage, get
 import { renderLayout } from './renderer.js';
 import { A4_PAPER_ID } from './constants.js';
 import { saveState } from './history.js';
+import { showConfirm, showAlert } from './utils.js';
 
 export function setupPageHandlers() {
     const addPageBtn = document.getElementById('add-page-btn');
@@ -61,17 +62,18 @@ export function renderPageList() {
         deleteBtn.className = 'delete-page-btn';
         deleteBtn.innerHTML = '×';
         deleteBtn.title = 'Delete Page';
-        deleteBtn.onclick = (e) => {
+        deleteBtn.onclick = async (e) => {
             e.stopPropagation();
             if (state.pages.length > 1) {
-                if (confirm('Are you sure you want to delete this page?')) {
+                const confirmed = await showConfirm('Are you sure you want to delete this page?');
+                if (confirmed) {
                     saveState();
                     deletePage(index);
                     renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
                     renderPageList();
                 }
             } else {
-                alert('Cannot delete the last page.');
+                showAlert('Cannot delete the last page.', 'Action Restricted');
             }
         };
 

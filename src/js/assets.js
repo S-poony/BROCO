@@ -3,6 +3,7 @@ import { state, getCurrentPage } from './state.js';
 import { findNodeById } from './layout.js';
 import { renderLayout } from './renderer.js';
 import { A4_PAPER_ID } from './constants.js';
+import { showConfirm } from './utils.js';
 
 export let importedAssets = []; // This will act as our asset registry
 
@@ -312,7 +313,8 @@ export function handleTouchEnd(e) {
 }
 
 async function removeAsset(assetId) {
-    if (!confirm('Are you sure you want to remove this asset? All instances in the layout will be deleted.')) return;
+    const confirmed = await showConfirm('Are you sure you want to remove this asset? All instances in the layout will be deleted.');
+    if (!confirmed) return;
 
     saveState();
 

@@ -5,6 +5,7 @@ import { importedAssets } from './assets.js';
 import { A4_PAPER_ID } from './constants.js';
 import { state } from './state.js';
 import { renderLayout } from './renderer.js';
+import { showAlert } from './utils.js';
 
 const BASE_A4_WIDTH = 794;
 const BASE_A4_HEIGHT = 1123;
@@ -57,7 +58,7 @@ export function setupExportHandlers() {
             await performExport(format, qualityMultiplier);
         } catch (error) {
             console.error('Export failed:', error);
-            alert('Export failed. Please try again.');
+            showAlert('Export failed. Please try again.', 'Export Error');
         } finally {
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Download';
