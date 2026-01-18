@@ -29,8 +29,8 @@ function setupGlobalHandlers() {
             redo(rebindEvents);
         }
 
-        // Create Text: Enter (if hovering over an empty rectangle)
-        if (e.key === 'Enter') {
+        // Create Text: Tab (if hovering over an empty rectangle)
+        if (e.key === 'Tab') {
             const target = e.target;
             const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
