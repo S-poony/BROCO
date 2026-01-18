@@ -72,7 +72,8 @@ body {
     }
 }
 
-h1 {
+/* Title styling - only for workspace title, not markdown content */
+.workspace-wrapper > h1 {
     position: absolute;
     top: -3rem;
     left: 0;
