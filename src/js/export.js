@@ -5,7 +5,7 @@ import { assetManager } from './AssetManager.js';
 import { A4_PAPER_ID } from './constants.js';
 import { state } from './state.js';
 import { renderLayout } from './renderer.js';
-import { showAlert } from './utils.js';
+import { showAlert, showPublishSuccess } from './utils.js';
 
 const BASE_A4_WIDTH = 794;
 const BASE_A4_HEIGHT = 1123;
@@ -313,12 +313,21 @@ async function performPublishFlipbook(qualityMultiplier) {
 
         const result = await response.json();
         if (result.url) {
+            // Requirement 1: Open in new tab automatically
             window.open(result.url, '_blank');
-            showAlert(`Flipbook published successfully!\n\nURL: ${result.url}`, 'Success');
+            // We'll show the success modal AFTER the loading overlay is cleared in finally
+            window._pendingSuccessUrl = result.url;
         }
     } finally {
         document.body.removeChild(tempContainer);
         if (loadingOverlay) loadingOverlay.classList.remove('active');
+
+        // If we have a pending success URL, show the modal now that the loading screen is gone
+        if (window._pendingSuccessUrl) {
+            const url = window._pendingSuccessUrl;
+            delete window._pendingSuccessUrl;
+            await showPublishSuccess(url);
+        }
     }
 }
 

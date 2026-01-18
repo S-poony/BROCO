@@ -136,6 +136,33 @@
         </div>
     </div>
 
+    <!-- Publish Success Modal -->
+    <div id="publish-success-modal" class="modal-overlay">
+        <div class="modal-content success-content">
+            <div class="success-icon">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="30" stroke="#10B981" stroke-width="4" />
+                    <path d="M20 32L28 40L44 24" stroke="#10B981" stroke-width="4" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </div>
+            <h2>Flipbook Published!</h2>
+            <p>Your interactive document is now live and ready to be shared with the world.</p>
+
+            <div class="link-sharing-box">
+                <input type="text" id="success-url-input" readonly>
+                <button id="copy-url-btn" class="btn-primary">
+                    <span class="btn-label">Copy</span>
+                </button>
+            </div>
+
+            <div class="modal-actions vertical">
+                <button id="success-open-btn" class="btn-primary full-width">View Flipbook</button>
+                <button id="success-close-btn" class="btn-text">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Loading Overlay -->
     <div id="export-loading" class="modal-overlay">
         <div class="modal-content loading-content">

@@ -138,3 +138,67 @@ export function showAlert(message, title = 'Notification') {
         modal.addEventListener('click', onOverlay);
     });
 }
+
+/**
+ * Shows the specialized success modal for flipbook publishing
+ * @param {string} url 
+ * @returns {Promise<void>}
+ */
+export function showPublishSuccess(url) {
+    const modal = document.getElementById('publish-success-modal');
+    const urlInput = document.getElementById('success-url-input');
+    const copyBtn = document.getElementById('copy-url-btn');
+    const openBtn = document.getElementById('success-open-btn');
+    const closeBtn = document.getElementById('success-close-btn');
+
+    if (!modal || !urlInput || !copyBtn || !openBtn || !closeBtn) {
+        window.alert(`Flipbook published successfully!\n\nURL: ${url}`);
+        return Promise.resolve();
+    }
+
+    urlInput.value = url;
+    modal.classList.add('active');
+
+    return new Promise((resolve) => {
+        const cleanup = () => {
+            modal.classList.remove('active');
+            copyBtn.removeEventListener('click', onCopy);
+            openBtn.removeEventListener('click', onOpen);
+            closeBtn.removeEventListener('click', onClose);
+            modal.removeEventListener('click', onOverlay);
+            resolve();
+        };
+
+        const onCopy = () => {
+            urlInput.select();
+            document.execCommand('copy');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = 'Copied!';
+            copyBtn.classList.remove('btn-primary');
+            copyBtn.style.backgroundColor = '#10B981'; // Green success
+            copyBtn.style.color = 'white';
+
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.add('btn-primary');
+                copyBtn.style.backgroundColor = '';
+                copyBtn.style.color = '';
+            }, 2000);
+        };
+
+        const onOpen = () => {
+            window.open(url, '_blank');
+        };
+
+        const onClose = () => cleanup();
+
+        const onOverlay = (e) => {
+            if (e.target === modal) cleanup();
+        };
+
+        copyBtn.addEventListener('click', onCopy);
+        openBtn.addEventListener('click', onOpen);
+        closeBtn.addEventListener('click', onClose);
+        modal.addEventListener('click', onOverlay);
+    });
+}
