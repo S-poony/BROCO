@@ -4,6 +4,7 @@ import { GHOST_SIZE } from './constants.js';
  * @typedef {Object} DragData
  * @property {import('./AssetManager.js').Asset} [asset]
  * @property {string} [text]
+ * @property {number} [pageIndex]
  * @property {HTMLElement} [sourceRect]
  * @property {Object} [sourceTextNode]
  */
@@ -14,6 +15,8 @@ export class DragDropService {
         this.draggedAsset = null;
         /** @type {string|undefined} */
         this.draggedText = undefined;
+        /** @type {number|undefined} */
+        this.draggedPageIndex = undefined;
         /** @type {HTMLElement|null} */
         this.sourceRect = null;
         /** @type {Object|null} */
@@ -35,6 +38,7 @@ export class DragDropService {
     startDrag(data) {
         this.draggedAsset = data.asset || null;
         this.draggedText = data.text !== undefined ? data.text : undefined;
+        this.draggedPageIndex = data.pageIndex !== undefined ? data.pageIndex : undefined;
         this.sourceRect = data.sourceRect || null;
         this.sourceTextNode = data.sourceTextNode || null;
 
@@ -86,6 +90,9 @@ export class DragDropService {
         } else if (data.text !== undefined) {
             ghost.innerHTML = '📝';
             ghost.style.fontSize = '24px';
+        } else if (data.pageIndex !== undefined) {
+            ghost.innerHTML = '📄';
+            ghost.style.fontSize = '24px';
         }
 
         ghost.style.left = `${touch.clientX - GHOST_SIZE / 2}px`;
@@ -125,12 +132,14 @@ export class DragDropService {
         const finalData = {
             asset: this.draggedAsset,
             text: this.draggedText,
+            pageIndex: this.draggedPageIndex,
             sourceRect: this.sourceRect,
             sourceTextNode: this.sourceTextNode
         };
 
         this.draggedAsset = null;
         this.draggedText = undefined;
+        this.draggedPageIndex = undefined;
         this.sourceRect = null;
         this.sourceTextNode = null;
 
@@ -138,7 +147,7 @@ export class DragDropService {
     }
 
     isDragging() {
-        return this.draggedAsset !== null || this.draggedText !== undefined;
+        return this.draggedAsset !== null || this.draggedText !== undefined || this.draggedPageIndex !== undefined;
     }
 }
 

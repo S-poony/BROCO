@@ -3,6 +3,7 @@ import { renderLayout } from './renderer.js';
 import { A4_PAPER_ID } from './constants.js';
 import { saveState } from './history.js';
 import { showConfirm, showAlert } from './utils.js';
+import { dragDropService } from './DragDropService.js';
 
 export function setupPageHandlers() {
     const addPageBtn = document.getElementById('add-page-btn');
@@ -139,8 +140,52 @@ export function renderPageList() {
         item.appendChild(thumbnailContainer);
         item.appendChild(duplicateBtn);
         item.appendChild(deleteBtn);
+
+        // Touch support for reordering using service
+        item.addEventListener('touchstart', (e) => {
+            dragDropService.startTouchDrag(e, { pageIndex: index });
+        }, { passive: false });
+
+        item.addEventListener('touchmove', (e) => {
+            const result = dragDropService.handleTouchMove(e);
+            if (!result) return;
+            updatePageDragFeedback(result.target);
+        }, { passive: false });
+
+        item.addEventListener('touchend', (e) => {
+            const touch = e.changedTouches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            handlePageDropLogic(target);
+            dragDropService.endDrag();
+        });
+
         pagesList.appendChild(item);
     });
+}
+
+function updatePageDragFeedback(target) {
+    // Remove highlight from all thumbnails
+    document.querySelectorAll('.page-thumbnail-item').forEach(el => el.classList.remove('drag-over'));
+
+    const targetItem = target?.closest('.page-thumbnail-item');
+    if (targetItem && dragDropService.draggedPageIndex !== undefined) {
+        targetItem.classList.add('drag-over');
+    }
+}
+
+function handlePageDropLogic(target) {
+    const targetItem = target?.closest('.page-thumbnail-item');
+    if (targetItem && dragDropService.draggedPageIndex !== undefined) {
+        const fromIndex = dragDropService.draggedPageIndex;
+        const toIndex = parseInt(targetItem.dataset.pageIndex, 10);
+
+        if (fromIndex !== toIndex) {
+            saveState();
+            reorderPage(fromIndex, toIndex);
+            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderPageList();
+        }
+    }
 }
 
 function renderMiniLayout(container, node) {

@@ -64,24 +64,29 @@ body {
         gap: 1rem;
         /* Restore gap on mobile */
     }
-
-    h1 {
-        position: static;
-        margin: 1rem 0;
-        text-align: center;
-    }
 }
 
-/* Title styling - only for workspace title, not markdown content */
-.workspace-wrapper > h1 {
+/* Title styling - only for workspace title */
+.main-layout>h1 {
     position: absolute;
-    top: -3rem;
-    left: 0;
+    top: 1rem;
+    left: calc(140px + 3rem);
+    /* sidebar width + main-layout padding + gap */
     margin: 0;
     color: #111827;
     font-size: 1.5rem;
     font-weight: 700;
     white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+    .main-layout>h1 {
+        position: static;
+        margin: 0.5rem 0;
+        text-align: center;
+        order: -2;
+        /* Ensure it's above everything including the page line which is -1 */
+    }
 }
 
 .btn-primary {

@@ -22,6 +22,20 @@
     gap: 0.5rem;
 }
 
+#add-page-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    margin: 0 auto;
+    /* Center in sidebar */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
 .page-thumbnail-item {
     display: flex;
     align-items: center;
@@ -136,8 +150,15 @@
     }
 
     #add-page-btn {
-        width: auto !important;
-        white-space: nowrap;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 20px;
     }
 
     #pages-list {
