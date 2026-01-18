@@ -1,5 +1,5 @@
 import { undo, redo } from './js/history.js';
-import { handleSplitClick, rebindEvents } from './js/layout.js';
+import { handleSplitClick, rebindEvents, createTextInRect } from './js/layout.js';
 import { setupAssetHandlers, setupDropHandlers } from './js/assets.js';
 import { setupExportHandlers } from './js/export.js';
 import { state, getCurrentPage } from './js/state.js';
@@ -27,6 +27,17 @@ function setupGlobalHandlers() {
         if ((e.ctrlKey && e.key.toLowerCase() === 'y') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) {
             e.preventDefault();
             redo(rebindEvents);
+        }
+
+        // Create Text: Enter (if hovering over an empty rectangle)
+        if (e.key === 'Enter') {
+            const target = e.target;
+            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+            if (!isInput && state.hoveredRectId) {
+                e.preventDefault();
+                createTextInRect(state.hoveredRectId);
+            }
         }
     });
 

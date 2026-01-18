@@ -7,7 +7,8 @@ export let state = {
     startSizeB: 0,
     // Multi-page support
     pages: [], // Array of layout objects
-    currentPageIndex: 0
+    currentPageIndex: 0,
+    hoveredRectId: null
 };
 
 // Initialize with one empty page

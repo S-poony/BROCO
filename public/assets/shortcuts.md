@@ -11,6 +11,7 @@
 `click` = split
 `ctrl + click` = delete rectangle
 `alt + click` = alternate split 
+`enter` = write text
 
 ### Rectangle with content
 

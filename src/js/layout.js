@@ -108,6 +108,18 @@ export function handleSplitClick(event) {
     document.dispatchEvent(new CustomEvent('layoutUpdated'));
 }
 
+export function createTextInRect(rectId) {
+    const node = findNodeById(getCurrentPage(), rectId);
+    if (!node || node.splitState === 'split' || node.image || node.text !== null) return;
+
+    saveState();
+    node.text = '';
+    // Mark that we want edit mode
+    node._startInEditMode = true;
+    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+    document.dispatchEvent(new CustomEvent('layoutUpdated'));
+}
+
 export function deleteRectangle(rectElement) {
     if (rectElement.id === A4_PAPER_ID) {
         return;

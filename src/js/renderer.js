@@ -4,7 +4,7 @@ import { A4_PAPER_ID } from './constants.js';
 import { assetManager } from './AssetManager.js';
 import { dragDropService } from './DragDropService.js';
 import { attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd } from './assets.js';
-import { handleSplitClick, startDrag, startEdgeDrag } from './layout.js';
+import { handleSplitClick, startDrag, startEdgeDrag, createTextInRect } from './layout.js';
 import { saveState } from './history.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -108,12 +108,7 @@ function renderLeafNode(container, node) {
         // Handle click on prompt to start editing
         prompt.addEventListener('click', (e) => {
             e.stopPropagation();
-            saveState();
-            node.text = '';
-            // Mark that we want edit mode
-            node._startInEditMode = true;
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
-            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            createTextInRect(node.id);
         });
     }
 
@@ -305,6 +300,15 @@ function createDOMRect(node, parentOrientation) {
     const div = document.createElement('div');
     div.id = node.id;
     div.className = 'splittable-rect rectangle-base flex items-center justify-center';
+
+    div.addEventListener('mouseenter', () => {
+        state.hoveredRectId = node.id;
+    });
+    div.addEventListener('mouseleave', () => {
+        if (state.hoveredRectId === node.id) {
+            state.hoveredRectId = null;
+        }
+    });
 
     if (node.size) {
         if (parentOrientation === 'vertical') {
