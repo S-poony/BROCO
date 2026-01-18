@@ -41,3 +41,37 @@
     -webkit-user-select: none;
     -moz-user-select: none;
 }
+
+/* Icon utility */
+.icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: currentColor;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+}
+
+.icon-add {
+    mask-image: url('../assets/icons/add-circle.svg');
+    -webkit-mask-image: url('../assets/icons/add-circle.svg');
+}
+
+.icon-delete {
+    mask-image: url('../assets/icons/delete.svg');
+    -webkit-mask-image: url('../assets/icons/delete.svg');
+}
+
+.icon-replace {
+    mask-image: url('../assets/icons/replace.svg');
+    -webkit-mask-image: url('../assets/icons/replace.svg');
+}
+
+.icon-duplicate {
+    mask-image: url('../assets/icons/duplicate.svg');
+    -webkit-mask-image: url('../assets/icons/duplicate.svg');
+}

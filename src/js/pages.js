@@ -61,7 +61,7 @@ export function renderPageList() {
         // Delete Button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-page-btn';
-        deleteBtn.innerHTML = '×';
+        deleteBtn.innerHTML = '<span class="icon icon-delete"></span>';
         deleteBtn.title = 'Delete Page';
         deleteBtn.onclick = async (e) => {
             e.stopPropagation();
@@ -81,7 +81,7 @@ export function renderPageList() {
         // Duplicate Button
         const duplicateBtn = document.createElement('button');
         duplicateBtn.className = 'duplicate-page-btn';
-        duplicateBtn.innerHTML = '⧉';
+        duplicateBtn.innerHTML = '<span class="icon icon-duplicate"></span>';
         duplicateBtn.title = 'Duplicate Page';
         duplicateBtn.onclick = (e) => {
             e.stopPropagation();

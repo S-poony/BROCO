@@ -118,12 +118,12 @@ function renderAssetList() {
         const replaceBtn = document.createElement('button');
         replaceBtn.className = 'asset-action-btn replace';
         replaceBtn.title = 'Replace asset';
-        replaceBtn.textContent = '🔄';
+        replaceBtn.innerHTML = '<span class="icon icon-replace"></span>';
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'asset-action-btn remove';
         removeBtn.title = 'Remove asset';
-        removeBtn.textContent = '×';
+        removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
 
         actions.appendChild(replaceBtn);
         actions.appendChild(removeBtn);

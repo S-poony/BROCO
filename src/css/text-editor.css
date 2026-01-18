@@ -209,7 +209,6 @@
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid #d1d5db;
     color: #374151;
-    font-size: 24px;
     cursor: pointer;
     display: none;
     align-items: center;
@@ -217,8 +216,12 @@
     z-index: 10;
     transition: all 0.2s;
     padding: 0;
-    padding-bottom: 2px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-editor-container .remove-text-btn .icon {
+    width: 20px;
+    height: 20px;
 }
 
 .text-editor-container .remove-text-btn:hover {

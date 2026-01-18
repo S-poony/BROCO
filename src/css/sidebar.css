@@ -156,9 +156,14 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 14px;
     color: #374151;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.asset-action-btn .icon {
+    width: 16px;
+    height: 16px;
 }
 
 .asset-action-btn:hover {

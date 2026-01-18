@@ -75,7 +75,8 @@ function renderLeafNode(container, node) {
 
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-image-btn';
-            removeBtn.innerHTML = '×';
+            removeBtn.title = 'Remove image';
+            removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
             removeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -283,7 +284,8 @@ function renderTextContent(container, node, startInEditMode = false) {
     // Remove button
     const removeBtn = document.createElement('button');
     removeBtn.className = 'remove-text-btn';
-    removeBtn.innerHTML = '×';
+    removeBtn.title = 'Remove text';
+    removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
     removeBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
