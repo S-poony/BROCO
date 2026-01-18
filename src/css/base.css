@@ -66,28 +66,6 @@ body {
     }
 }
 
-/* Title styling - only for workspace title */
-.main-layout>h1 {
-    position: absolute;
-    top: 1rem;
-    left: calc(140px + 3rem);
-    /* sidebar width + main-layout padding + gap */
-    margin: 0;
-    color: #111827;
-    font-size: 1.5rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-@media (max-width: 1024px) {
-    .main-layout>h1 {
-        position: static;
-        margin: 0.5rem 0;
-        text-align: center;
-        order: -2;
-        /* Ensure it's above everything including the page line which is -1 */
-    }
-}
 
 .btn-primary {
     background-color: #4f46e5;
@@ -136,4 +114,54 @@ hr {
     border: 0;
     border-top: 1px solid #e5e7eb;
     margin: 1rem 0;
+}
+
+/* File Actions (Save/Open) */
+.file-actions {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 100;
+}
+
+.btn-file {
+    background-color: #4f46e5;
+    color: white;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0 0.75rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.btn-file:hover {
+    background-color: #4338ca;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-file .icon {
+    width: 18px;
+    height: 18px;
+    background-color: white;
+    /* Make icon white on primary background */
+}
+
+@media (max-width: 1024px) {
+    .file-actions {
+        position: static;
+        order: -3;
+        /* Above the title on mobile */
+        justify-content: center;
+        padding: 0.5rem 0;
+    }
 }

@@ -7,6 +7,7 @@ import { renderLayout } from './js/renderer.js';
 import { marked } from 'marked';
 
 import { setupPageHandlers } from './js/pages.js';
+import { setupFileIOHandlers } from './js/fileIO.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -64,6 +65,7 @@ function initialize() {
     setupGlobalHandlers();
     loadShortcuts();
     setupPageHandlers();
+    setupFileIOHandlers();
 
     // Initial render from state
     renderLayout(document.getElementById('a4-paper'), getCurrentPage());

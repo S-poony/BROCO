@@ -75,3 +75,13 @@
     mask-image: url('../assets/icons/duplicate.svg');
     -webkit-mask-image: url('../assets/icons/duplicate.svg');
 }
+
+.icon-save {
+    mask-image: url('../assets/icons/save.svg');
+    -webkit-mask-image: url('../assets/icons/save.svg');
+}
+
+.icon-open {
+    mask-image: url('../assets/icons/open.svg');
+    -webkit-mask-image: url('../assets/icons/open.svg');
+}
