@@ -285,16 +285,12 @@ function onDrag(event) {
         newSizeA = divider.totalSize;
     }
 
-    const percentA = (newSizeA / divider.totalSize) * 100;
-    const percentB = (newSizeB / divider.totalSize) * 100;
+    const totalGrow = (newSizeA + newSizeB) / divider.totalSize * 100;
+    const growA = (newSizeA / divider.totalSize) * 100;
+    const growB = (newSizeB / divider.totalSize) * 100;
 
-    if (orientation === 'vertical') {
-        rectA.style.width = `${percentA}%`;
-        rectB.style.width = `${percentB}%`;
-    } else {
-        rectA.style.height = `${percentA}%`;
-        rectB.style.height = `${percentB}%`;
-    }
+    rectA.style.flexGrow = growA;
+    rectB.style.flexGrow = growB;
 }
 
 function stopDrag() {
@@ -305,8 +301,8 @@ function stopDrag() {
     const rectB = divider.rectB;
     const orientation = divider.getAttribute('data-orientation');
 
-    const pA = parseFloat(orientation === 'vertical' ? rectA.style.width : rectA.style.height);
-    const pB = parseFloat(orientation === 'vertical' ? rectB.style.width : rectB.style.height);
+    const pA = parseFloat(rectA.style.flexGrow);
+    const pB = parseFloat(rectB.style.flexGrow);
 
     // Sync back to state
     const parentNode = findNodeById(getCurrentPage(), divider.parentId);

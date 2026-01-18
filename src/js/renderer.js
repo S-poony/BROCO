@@ -31,7 +31,8 @@ export function renderLayout(container, node) {
 function renderNodeRecursive(element, node) {
     // Clear previous state
     element.innerHTML = '';
-    element.className = 'splittable-rect rectangle-base flex items-center justify-center';
+    // Use classList.add to preserve classes from createDOMRect or other sources
+    element.classList.add('splittable-rect', 'rectangle-base', 'flex', 'items-center', 'justify-center');
     element.style.position = '';
 
     if (node.splitState === 'split') {
@@ -359,17 +360,16 @@ function createDOMRect(node, parentOrientation) {
     });
 
     if (node.size) {
+        div.style.flexGrow = node.size.replace('%', '');
         if (parentOrientation === 'vertical') {
-            div.style.width = node.size;
             div.style.height = '100%';
             div.classList.add('h-full');
         } else if (parentOrientation === 'horizontal') {
-            div.style.height = node.size;
             div.style.width = '100%';
             div.classList.add('w-full');
         }
     } else {
-        // Root or full sized
+        // Root or full sized - defaults from CSS take over (flex-grow: 1, flex-basis: 0)
         div.style.width = '100%';
         div.style.height = '100%';
         div.classList.add('w-full', 'h-full');
