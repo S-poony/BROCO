@@ -1,7 +1,7 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
-import { importedAssets } from './assets.js';
+import { assetManager } from './AssetManager.js';
 import { A4_PAPER_ID } from './constants.js';
 import { state } from './state.js';
 import { renderLayout } from './renderer.js';
@@ -199,7 +199,7 @@ async function swapImagesForHighRes(container) {
     const imageElements = container.querySelectorAll('img[data-asset-id]');
     const swapPromises = Array.from(imageElements).map((img) => {
         const assetId = img.getAttribute('data-asset-id');
-        const asset = importedAssets.find(a => a.id === assetId);
+        const asset = assetManager.getAsset(assetId);
 
         if (asset && asset.fullResData) {
             return new Promise((resolve) => {

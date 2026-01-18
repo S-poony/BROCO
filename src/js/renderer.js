@@ -1,7 +1,9 @@
 import { state, getCurrentPage } from './state.js';
 import { findNodeById } from './layout.js';
 import { A4_PAPER_ID } from './constants.js';
-import { importedAssets, attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd } from './assets.js';
+import { assetManager } from './AssetManager.js';
+import { dragDropService } from './DragDropService.js';
+import { attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd } from './assets.js';
 import { handleSplitClick, startDrag, startEdgeDrag } from './layout.js';
 import { marked } from 'marked';
 
@@ -57,7 +59,7 @@ function renderLeafNode(container, node) {
     container.setAttribute('data-split-state', 'unsplit');
 
     if (node.image) {
-        const asset = importedAssets.find(a => a.id === node.image.assetId);
+        const asset = assetManager.getAsset(node.image.assetId);
         if (asset) {
             container.innerHTML = '';
             container.style.position = 'relative';
@@ -152,13 +154,10 @@ function renderTextContent(container, node, startInEditMode = false) {
     // Drag preview to move text (like images)
     preview.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', 'text-content');
-        window._draggedText = node.text;
-        window._sourceRect = container;
-        window._sourceTextNode = node;
-        container.classList.add('moving-text');
+        dragDropService.startDrag({ text: node.text, sourceRect: container, sourceTextNode: node });
     });
     preview.addEventListener('dragend', () => {
-        container.classList.remove('moving-text');
+        dragDropService.endDrag();
     });
 
     // Touch support for text
@@ -309,14 +308,11 @@ function attachTextDragHandlers(editorContainer, node, hostRectElement) {
     editorContainer.draggable = true;
     editorContainer.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', 'text-content');
-        window._draggedText = node.text;
-        window._sourceRect = hostRectElement;
-        window._sourceTextNode = node;
-        hostRectElement.classList.add('moving-text');
+        dragDropService.startDrag({ text: node.text, sourceRect: hostRectElement, sourceTextNode: node });
     });
 
     editorContainer.addEventListener('dragend', () => {
-        hostRectElement.classList.remove('moving-text');
+        dragDropService.endDrag();
     });
 
     // Touch support
