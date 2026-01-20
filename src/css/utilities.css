@@ -105,3 +105,8 @@
     mask-image: url('../assets/icons/divider.svg');
     -webkit-mask-image: url('../assets/icons/divider.svg');
 }
+
+.icon-keyboard {
+    mask-image: url('../assets/icons/keyboard.svg');
+    -webkit-mask-image: url('../assets/icons/keyboard.svg');
+}

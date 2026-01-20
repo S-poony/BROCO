@@ -49,9 +49,79 @@
     margin-top: 0;
 }
 
-.shortcuts-content h2::before {
-    content: '⌨️';
-    font-size: 1rem;
+/* Shortcuts Dropdown Styling */
+.shortcuts-dropdown {
+    margin-top: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.shortcuts-dropdown summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #374151;
+    list-style: none;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.shortcuts-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.shortcuts-dropdown summary:hover {
+    background: #f3f4f6;
+}
+
+.shortcuts-dropdown[open] {
+    background: #ffffff;
+    border-color: #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.shortcuts-dropdown[open] summary {
+    background: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.summary-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: #4f46e5;
+}
+
+.summary-icon .icon {
+    width: 20px;
+    height: 20px;
+}
+
+.toggle-icon {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shortcuts-dropdown[open] .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.shortcuts-content {
+    padding: 1.25rem;
 }
 
 .shortcuts-content p {
