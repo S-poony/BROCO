@@ -27,11 +27,13 @@
     background-position: center;
     opacity: var(--cover-image-opacity, 0.2);
     pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
     z-index: 1;
     /* Above base background, below rectangles */
 }
 
-.a4-paper.has-cover-image>* {
+.a4-paper.has-cover-image>.splittable-rect {
     position: relative;
     z-index: 2;
 }
@@ -116,7 +118,7 @@
 /* Edge Handle Styles for Inward Dragging */
 .edge-handle {
     position: absolute;
-    z-index: 2;
+    z-index: 50;
     /* over images but under sidebars */
     transition: background-color 0.2s;
     background-color: transparent;
@@ -285,5 +287,7 @@
     padding: 4px 8px;
     border-radius: 4px;
     pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
     z-index: 100;
 }
