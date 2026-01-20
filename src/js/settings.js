@@ -205,7 +205,10 @@ function syncFormWithSettings() {
     const fontSizeSlider = document.getElementById('setting-font-size');
     const fontSizeValue = document.getElementById('font-size-value');
 
-    if (fontSelect) fontSelect.value = settings.text.fontFamily;
+    if (fontSelect) {
+        fontSelect.value = settings.text.fontFamily;
+        fontSelect.style.fontFamily = settings.text.fontFamily;
+    }
     if (fontSizeSlider) fontSizeSlider.value = settings.text.fontSize;
     if (fontSizeValue) fontSizeValue.textContent = `${settings.text.fontSize}px`;
     updateColorUI('text-color', settings.text.textColor);
@@ -315,7 +318,9 @@ function setupTextControls() {
     const fontSizeValue = document.getElementById('font-size-value');
 
     fontSelect?.addEventListener('change', (e) => {
-        updateSetting('text', 'fontFamily', e.target.value);
+        const fontFamily = e.target.value;
+        updateSetting('text', 'fontFamily', fontFamily);
+        if (fontSelect) fontSelect.style.fontFamily = fontFamily;
     });
 
     fontSizeSlider?.addEventListener('input', (e) => {
