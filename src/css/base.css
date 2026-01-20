@@ -172,5 +172,6 @@ hr {
         /* Above the title on mobile */
         justify-content: center;
         padding: 0.5rem 0;
+        gap: 0.5rem;
     }
 }

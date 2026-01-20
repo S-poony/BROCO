@@ -149,27 +149,33 @@ export const FONT_OPTIONS = [
  */
 export function setupSettingsHandlers() {
     const settingsBtn = document.getElementById('settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
+    const settingsContainer = document.getElementById('settings-container'); // Updated ID
     const closeBtn = document.getElementById('settings-close');
+    const closeXBtn = document.getElementById('settings-close-x'); // New close icon
     const resetBtn = document.getElementById('settings-reset');
 
-    if (!settingsBtn || !settingsModal) return;
+    if (!settingsBtn || !settingsContainer) return;
 
-    // Open modal
+    // Open container (Modal or Sidebar)
     settingsBtn.addEventListener('click', () => {
-        settingsModal.classList.add('active');
-        syncFormWithSettings();
+        settingsContainer.classList.toggle('active');
+        if (settingsContainer.classList.contains('active')) {
+            syncFormWithSettings();
+        }
     });
 
-    // Close modal
-    closeBtn?.addEventListener('click', () => {
-        settingsModal.classList.remove('active');
-    });
+    // Close container
+    const closeHandler = () => {
+        settingsContainer.classList.remove('active');
+    };
 
-    // Close on overlay click
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            settingsModal.classList.remove('active');
+    closeBtn?.addEventListener('click', closeHandler);
+    closeXBtn?.addEventListener('click', closeHandler);
+
+    // Close on overlay click (only applies in modal mode)
+    settingsContainer.addEventListener('click', (e) => {
+        if (e.target === settingsContainer) {
+            closeHandler();
         }
     });
 
