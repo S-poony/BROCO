@@ -65,7 +65,7 @@
 /* Style for the draggable divider */
 .divider {
     background-color: var(--divider-color, #d1d5db);
-    transition: all 0.2s;
+    transition: background-color 0.2s;
     flex-shrink: 0;
     flex-grow: 0;
     box-sizing: border-box;
@@ -213,11 +213,25 @@
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
+    position: relative;
     transition: background-color 0.15s ease-in-out;
 }
 
-.rectangle-base:hover {
-    background-color: #e0e7ff;
+.rectangle-base::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    transition: background-color 0.15s;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.rectangle-base:hover::after {
+    background-color: rgba(0, 0, 0, 0.03);
 }
 
 /* Visual styling for initial rectangle */
@@ -227,11 +241,25 @@
     font-size: 1.125rem;
     font-weight: 500;
     cursor: pointer;
+    position: relative;
     transition: background-color 0.15s ease-in-out;
 }
 
-.rectangle-initial:hover {
-    background-color: #e0e7ff;
+.rectangle-initial::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    transition: background-color 0.15s;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.rectangle-initial:hover::after {
+    background-color: rgba(0, 0, 0, 0.03);
 }
 
 /* Image removal button */

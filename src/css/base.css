@@ -43,6 +43,7 @@ body {
     gap: 1rem;
     grid-column: 3;
     justify-self: start;
+    align-items: start;
 }
 
 .workspace-wrapper {
