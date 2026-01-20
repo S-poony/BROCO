@@ -13,16 +13,24 @@
 
     <div id="app">
         <div class="main-layout">
-            <!-- File Actions (Save/Open) -->
+            <!-- File Actions (Save/Open/Settings) -->
             <div class="file-actions">
-                <button id="save-layout-btn" class="btn-file" title="Save Layout">
-                    <span class="icon icon-save"></span>
-                    <span>Save</span>
-                </button>
-                <button id="open-layout-btn" class="btn-file" title="Open Layout">
-                    <span class="icon icon-open"></span>
-                    <span>Open</span>
-                </button>
+                <div class="file-actions-left">
+                    <button id="save-layout-btn" class="btn-file" title="Save Layout">
+                        <span class="icon icon-save"></span>
+                        <span>Save</span>
+                    </button>
+                    <button id="open-layout-btn" class="btn-file" title="Open Layout">
+                        <span class="icon icon-open"></span>
+                        <span>Open</span>
+                    </button>
+                </div>
+                <div class="file-actions-right">
+                    <button id="settings-btn" class="btn-file" title="Settings">
+                        <span class="icon icon-settings"></span>
+                        <span>Settings</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Pages Sidebar -->
@@ -180,6 +188,127 @@
             <div class="spinner"></div>
             <h2 id="loading-status">Generating Export...</h2>
             <p id="loading-progress">Processing page 1 of 1...</p>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content settings-content">
+            <h2>Settings</h2>
+
+            <div class="settings-sections">
+                <!-- Text Settings -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title">
+                        <span class="icon icon-text"></span>
+                        Text
+                    </h3>
+                    <div class="settings-group">
+                        <label for="setting-font-family">Font Family</label>
+                        <select id="setting-font-family" class="settings-select">
+                            <option value="sans-serif">Sans Serif (Default)</option>
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                            <option value="'Lato', sans-serif">Lato</option>
+                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                            <option value="'Playfair Display', serif">Playfair Display</option>
+                            <option value="'Merriweather', serif">Merriweather</option>
+                            <option value="'Georgia', serif">Georgia</option>
+                            <option value="serif">Serif</option>
+                            <option value="'Courier New', monospace">Courier New</option>
+                            <option value="monospace">Monospace</option>
+                        </select>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-label-row">
+                            <label for="setting-font-size">Font Size</label>
+                            <span id="font-size-value" class="settings-value">14px</span>
+                        </div>
+                        <input type="range" id="setting-font-size" min="10" max="24" value="14" class="settings-slider">
+                    </div>
+                    <div class="settings-group">
+                        <label for="setting-text-color">Text Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="setting-text-color" value="#374151" class="settings-color">
+                            <span class="color-value">#374151</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paper Settings -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title">
+                        <span class="icon icon-page"></span>
+                        Paper
+                    </h3>
+                    <div class="settings-group">
+                        <label for="setting-paper-color">Background Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="setting-paper-color" value="#ffffff" class="settings-color">
+                            <span class="color-value">#ffffff</span>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <label>Cover Image</label>
+                        <div class="cover-image-controls">
+                            <div id="cover-image-preview" class="cover-preview">
+                                <span>No image selected</span>
+                            </div>
+                            <div class="cover-actions">
+                                <label for="setting-cover-image" class="btn-secondary btn-small">
+                                    Choose Image
+                                </label>
+                                <input type="file" id="setting-cover-image" accept="image/*" hidden>
+                                <button id="remove-cover-image" class="btn-text btn-small">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-label-row">
+                            <label for="setting-cover-opacity">Cover Opacity</label>
+                            <span id="cover-opacity-value" class="settings-value">20%</span>
+                        </div>
+                        <input type="range" id="setting-cover-opacity" min="5" max="100" value="20"
+                            class="settings-slider">
+                    </div>
+                    <div class="settings-group settings-toggle-group">
+                        <label for="setting-page-numbers">Show Page Numbers</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-page-numbers">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Divider Settings -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title">
+                        <span class="icon icon-divider"></span>
+                        Dividers
+                    </h3>
+                    <div class="settings-group">
+                        <div class="settings-label-row">
+                            <label for="setting-divider-width">Divider Width</label>
+                            <span id="divider-width-value" class="settings-value">5px</span>
+                        </div>
+                        <input type="range" id="setting-divider-width" min="2" max="20" value="5"
+                            class="settings-slider">
+                    </div>
+                    <div class="settings-group">
+                        <label for="setting-divider-color">Divider Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="setting-divider-color" value="#d1d5db" class="settings-color">
+                            <span class="color-value">#d1d5db</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer settings-footer">
+                <button id="settings-reset" class="btn-text">Reset to Defaults</button>
+                <button id="settings-close" class="btn-primary">Done</button>
+            </div>
         </div>
     </div>
 

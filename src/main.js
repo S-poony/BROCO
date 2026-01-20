@@ -6,6 +6,7 @@ import { state, getCurrentPage } from './js/state.js';
 import { renderLayout } from './js/renderer.js';
 import { marked } from 'marked';
 import { DIVIDER_SIZE } from './js/constants.js';
+import { setupSettingsHandlers } from './js/settings.js';
 
 import { setupPageHandlers } from './js/pages.js';
 import { setupFileIOHandlers } from './js/fileIO.js';
@@ -94,6 +95,7 @@ function initialize() {
     setupDropHandlers();
     setupExportHandlers();
     setupGlobalHandlers();
+    setupSettingsHandlers();
     loadShortcuts();
     setupPageHandlers();
     setupFileIOHandlers();

@@ -4,7 +4,7 @@
     min-width: 210mm;
     aspect-ratio: 1 / 1.414;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    background-color: white;
+    background-color: var(--paper-bg-color, white);
     border: 1px solid #d1d5db;
     overflow: hidden;
     position: relative;
@@ -12,6 +12,27 @@
     zoom: 60%;
     /* modified in export.js */
     flex-shrink: 0;
+}
+
+/* Cover image overlay */
+.a4-paper.has-cover-image::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: var(--cover-image);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--cover-image-opacity, 0.2);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.a4-paper.has-cover-image>* {
+    position: relative;
+    z-index: 1;
 }
 
 @media (max-width: 768px) {
@@ -40,7 +61,7 @@
 
 /* Style for the draggable divider */
 .divider {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--divider-color, #d1d5db);
     transition: all 0.2s;
     flex-shrink: 0;
     flex-grow: 0;

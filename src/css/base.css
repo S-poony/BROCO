@@ -117,14 +117,22 @@ hr {
     margin: 1rem 0;
 }
 
-/* File Actions (Save/Open) */
+/* File Actions (Save/Open/Settings) */
 .file-actions {
     position: absolute;
     top: 1rem;
     left: 1rem;
+    right: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+}
+
+.file-actions-left,
+.file-actions-right {
     display: flex;
     gap: 0.5rem;
-    z-index: 100;
 }
 
 .btn-file {

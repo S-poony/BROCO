@@ -102,7 +102,9 @@
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
-    font-size: 0.875rem;
+    font-family: var(--text-font-family, sans-serif);
+    font-size: var(--text-font-size, 0.875rem);
+    color: var(--text-color, inherit);
     line-height: 1.6;
     cursor: text;
     word-break: break-word;

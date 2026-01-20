@@ -5,6 +5,7 @@ import { renderPageList } from './pages.js';
 import { A4_PAPER_ID } from './constants.js';
 import { showAlert } from './utils.js';
 import { saveState } from './history.js';
+import { exportSettings, loadSettings } from './settings.js';
 
 /**
  * Saves the current layout to a .json file
@@ -15,7 +16,8 @@ export function saveLayout() {
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
         currentId: state.currentId,
-        assets: assetManager.getAssets()
+        assets: assetManager.getAssets(),
+        settings: exportSettings()
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -79,6 +81,11 @@ export async function openLayout() {
 
                 // Notify other components if necessary
                 document.dispatchEvent(new CustomEvent('layoutUpdated'));
+
+                // Restore settings if present
+                if (data.settings) {
+                    loadSettings(data.settings);
+                }
 
             } catch (err) {
                 console.error('Failed to open layout:', err);

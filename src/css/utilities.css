@@ -85,3 +85,23 @@
     mask-image: url('../assets/icons/open.svg');
     -webkit-mask-image: url('../assets/icons/open.svg');
 }
+
+.icon-settings {
+    mask-image: url('../assets/icons/settings.svg');
+    -webkit-mask-image: url('../assets/icons/settings.svg');
+}
+
+.icon-text {
+    mask-image: url('../assets/icons/text.svg');
+    -webkit-mask-image: url('../assets/icons/text.svg');
+}
+
+.icon-page {
+    mask-image: url('../assets/icons/page.svg');
+    -webkit-mask-image: url('../assets/icons/page.svg');
+}
+
+.icon-divider {
+    mask-image: url('../assets/icons/divider.svg');
+    -webkit-mask-image: url('../assets/icons/divider.svg');
+}
