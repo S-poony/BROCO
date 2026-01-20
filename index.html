@@ -235,10 +235,34 @@
                             class="settings-slider">
                     </div>
                     <div class="settings-group">
-                        <label for="setting-text-color">Text Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="setting-text-color" value="#374151" class="settings-color">
-                            <span class="color-value">#374151</span>
+                        <label>Text Color</label>
+                        <div class="color-selection-container" data-setting="text-color">
+                            <div class="color-swatch-grid" id="text-color-presets">
+                                <!-- Presets populated by JS -->
+                                <button class="color-swatch" style="background-color: #374151" data-color="#374151"
+                                    title="Charcoal"></button>
+                                <button class="color-swatch" style="background-color: #4f46e5" data-color="#4f46e5"
+                                    title="Indigo"></button>
+                                <button class="color-swatch" style="background-color: #0ea5e9" data-color="#0ea5e9"
+                                    title="Sky"></button>
+                                <button class="color-swatch" style="background-color: #10b981" data-color="#10b981"
+                                    title="Emerald"></button>
+                                <button class="color-swatch" style="background-color: #f59e0b" data-color="#f59e0b"
+                                    title="Amber"></button>
+                                <button class="color-swatch" style="background-color: #ef4444" data-color="#ef4444"
+                                    title="Rose"></button>
+                                <button class="color-swatch" style="background-color: #000000" data-color="#000000"
+                                    title="Black"></button>
+                            </div>
+                            <div class="custom-color-row">
+                                <button class="custom-color-trigger" id="custom-text-color-trigger">
+                                    <div class="custom-color-preview" id="custom-text-color-preview"></div>
+                                    <span>Custom...</span>
+                                </button>
+                                <span class="color-value-text" id="text-color-hex">#374151</span>
+                                <input type="color" id="setting-text-color" value="#374151"
+                                    class="settings-color-input-hidden">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -250,10 +274,31 @@
                         Paper
                     </h3>
                     <div class="settings-group">
-                        <label for="setting-paper-color">Background Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="setting-paper-color" value="#ffffff" class="settings-color">
-                            <span class="color-value">#ffffff</span>
+                        <label>Background Color</label>
+                        <div class="color-selection-container" data-setting="paper-color">
+                            <div class="color-swatch-grid" id="paper-color-presets">
+                                <button class="color-swatch light-color" style="background-color: #ffffff"
+                                    data-color="#ffffff" title="White"></button>
+                                <button class="color-swatch light-color" style="background-color: #fdfbf7"
+                                    data-color="#fdfbf7" title="Cream"></button>
+                                <button class="color-swatch light-color" style="background-color: #f8fafc"
+                                    data-color="#f8fafc" title="Slate"></button>
+                                <button class="color-swatch light-color" style="background-color: #f0fdf4"
+                                    data-color="#f0fdf4" title="Mint"></button>
+                                <button class="color-swatch light-color" style="background-color: #f0f9ff"
+                                    data-color="#f0f9ff" title="Sky"></button>
+                                <button class="color-swatch light-color" style="background-color: #fff1f2"
+                                    data-color="#fff1f2" title="Rose"></button>
+                            </div>
+                            <div class="custom-color-row">
+                                <button class="custom-color-trigger" id="custom-paper-color-trigger">
+                                    <div class="custom-color-preview" id="custom-paper-color-preview"></div>
+                                    <span>Custom...</span>
+                                </button>
+                                <span class="color-value-text" id="paper-color-hex">#ffffff</span>
+                                <input type="color" id="setting-paper-color" value="#ffffff"
+                                    class="settings-color-input-hidden">
+                            </div>
                         </div>
                     </div>
                     <div class="settings-group">
@@ -303,10 +348,29 @@
                             class="settings-slider">
                     </div>
                     <div class="settings-group">
-                        <label for="setting-divider-color">Divider Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="setting-divider-color" value="#d1d5db" class="settings-color">
-                            <span class="color-value">#d1d5db</span>
+                        <label>Divider Color</label>
+                        <div class="color-selection-container" data-setting="divider-color">
+                            <div class="color-swatch-grid" id="divider-color-presets">
+                                <button class="color-swatch light-color" style="background-color: #d1d5db"
+                                    data-color="#d1d5db" title="Light Gray"></button>
+                                <button class="color-swatch" style="background-color: #4f46e5" data-color="#4f46e5"
+                                    title="Indigo"></button>
+                                <button class="color-swatch" style="background-color: #374151" data-color="#374151"
+                                    title="Charcoal"></button>
+                                <button class="color-swatch" style="background-color: #000000" data-color="#000000"
+                                    title="Black"></button>
+                                <button class="color-swatch" style="background-color: #10b981" data-color="#10b981"
+                                    title="Emerald"></button>
+                            </div>
+                            <div class="custom-color-row">
+                                <button class="custom-color-trigger" id="custom-divider-color-trigger">
+                                    <div class="custom-color-preview" id="custom-divider-color-preview"></div>
+                                    <span>Custom...</span>
+                                </button>
+                                <span class="color-value-text" id="divider-color-hex">#d1d5db</span>
+                                <input type="color" id="setting-divider-color" value="#d1d5db"
+                                    class="settings-color-input-hidden">
+                            </div>
                         </div>
                     </div>
                 </div>

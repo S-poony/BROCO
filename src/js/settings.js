@@ -198,30 +198,22 @@ function syncFormWithSettings() {
     const fontSelect = document.getElementById('setting-font-family');
     const fontSizeSlider = document.getElementById('setting-font-size');
     const fontSizeValue = document.getElementById('font-size-value');
-    const textColorInput = document.getElementById('setting-text-color');
 
     if (fontSelect) fontSelect.value = settings.text.fontFamily;
     if (fontSizeSlider) fontSizeSlider.value = settings.text.fontSize;
     if (fontSizeValue) fontSizeValue.textContent = `${settings.text.fontSize}px`;
-    if (textColorInput) {
-        textColorInput.value = settings.text.textColor;
-        updateColorValueDisplay(textColorInput);
-    }
+    updateColorUI('text-color', settings.text.textColor);
 
     // Paper
-    const bgColorInput = document.getElementById('setting-paper-color');
     const coverOpacitySlider = document.getElementById('setting-cover-opacity');
     const coverOpacityValue = document.getElementById('cover-opacity-value');
     const pageNumbersToggle = document.getElementById('setting-page-numbers');
     const coverPreview = document.getElementById('cover-image-preview');
 
-    if (bgColorInput) {
-        bgColorInput.value = settings.paper.backgroundColor;
-        updateColorValueDisplay(bgColorInput);
-    }
     if (coverOpacitySlider) coverOpacitySlider.value = settings.paper.coverImageOpacity * 100;
     if (coverOpacityValue) coverOpacityValue.textContent = `${Math.round(settings.paper.coverImageOpacity * 100)}%`;
     if (pageNumbersToggle) pageNumbersToggle.checked = settings.paper.showPageNumbers;
+    updateColorUI('paper-color', settings.paper.backgroundColor);
 
     if (coverPreview) {
         if (settings.paper.coverImage) {
@@ -234,29 +226,87 @@ function syncFormWithSettings() {
     // Dividers
     const dividerWidthSlider = document.getElementById('setting-divider-width');
     const dividerWidthValue = document.getElementById('divider-width-value');
-    const dividerColorInput = document.getElementById('setting-divider-color');
 
     if (dividerWidthSlider) dividerWidthSlider.value = settings.dividers.width;
     if (dividerWidthValue) dividerWidthValue.textContent = `${settings.dividers.width}px`;
-    if (dividerColorInput) {
-        dividerColorInput.value = settings.dividers.color;
-        updateColorValueDisplay(dividerColorInput);
+    updateColorUI('divider-color', settings.dividers.color);
+}
+
+/**
+ * Update the custom color selection UI
+ * @param {string} type - 'text-color', 'paper-color', or 'divider-color'
+ * @param {string} color - Current color value
+ */
+function updateColorUI(type, color) {
+    const container = document.querySelector(`.color-selection-container[data-setting="${type}"]`);
+    if (!container) return;
+
+    // Update swatches active state
+    const swatches = container.querySelectorAll('.color-swatch');
+    let foundMatch = false;
+    swatches.forEach(swatch => {
+        const swatchColor = swatch.getAttribute('data-color');
+        if (swatchColor.toLowerCase() === color.toLowerCase()) {
+            swatch.classList.add('active');
+            foundMatch = true;
+        } else {
+            swatch.classList.remove('active');
+        }
+    });
+
+    // Update hex display
+    const hexDisplay = document.getElementById(`${type}-hex`);
+    if (hexDisplay) hexDisplay.textContent = color;
+
+    // Update custom preview and hidden input
+    const preview = document.getElementById(`custom-${type}-preview`);
+    if (preview) preview.style.backgroundColor = color;
+
+    const hiddenInput = document.getElementById(`setting-${type}`);
+    if (hiddenInput && hiddenInput.value !== color) {
+        hiddenInput.value = color;
     }
 }
 
-function updateColorValueDisplay(colorInput) {
-    const wrapper = colorInput.closest('.color-input-wrapper');
-    const valueSpan = wrapper?.querySelector('.color-value');
-    if (valueSpan) {
-        valueSpan.textContent = colorInput.value;
-    }
+/**
+ * Setup a beautiful color selection tool
+ * @param {string} type - 'text-color', 'paper-color', or 'divider-color'
+ * @param {string} category - 'text', 'paper', or 'dividers'
+ * @param {string} key - 'textColor', 'backgroundColor', or 'color'
+ */
+function setupColorSelection(type, category, key) {
+    const container = document.querySelector(`.color-selection-container[data-setting="${type}"]`);
+    if (!container) return;
+
+    // Swatch clicks
+    container.addEventListener('click', (e) => {
+        const swatch = e.target.closest('.color-swatch');
+        if (swatch) {
+            const color = swatch.getAttribute('data-color');
+            updateSetting(category, key, color);
+            updateColorUI(type, color);
+        }
+    });
+
+    // Custom trigger
+    const trigger = document.getElementById(`custom-${type}-trigger`);
+    const hiddenInput = document.getElementById(`setting-${type}`);
+
+    trigger?.addEventListener('click', () => {
+        hiddenInput?.click();
+    });
+
+    hiddenInput?.addEventListener('input', (e) => {
+        const color = e.target.value;
+        updateSetting(category, key, color);
+        updateColorUI(type, color);
+    });
 }
 
 function setupTextControls() {
     const fontSelect = document.getElementById('setting-font-family');
     const fontSizeSlider = document.getElementById('setting-font-size');
     const fontSizeValue = document.getElementById('font-size-value');
-    const textColorInput = document.getElementById('setting-text-color');
 
     fontSelect?.addEventListener('change', (e) => {
         updateSetting('text', 'fontFamily', e.target.value);
@@ -268,24 +318,17 @@ function setupTextControls() {
         updateSetting('text', 'fontSize', value);
     });
 
-    textColorInput?.addEventListener('input', (e) => {
-        updateSetting('text', 'textColor', e.target.value);
-        updateColorValueDisplay(e.target);
-    });
+    setupColorSelection('text-color', 'text', 'textColor');
 }
 
 function setupPaperControls() {
-    const bgColorInput = document.getElementById('setting-paper-color');
     const coverImageInput = document.getElementById('setting-cover-image');
     const coverOpacitySlider = document.getElementById('setting-cover-opacity');
     const coverOpacityValue = document.getElementById('cover-opacity-value');
     const pageNumbersToggle = document.getElementById('setting-page-numbers');
     const removeCoverBtn = document.getElementById('remove-cover-image');
 
-    bgColorInput?.addEventListener('input', (e) => {
-        updateSetting('paper', 'backgroundColor', e.target.value);
-        updateColorValueDisplay(e.target);
-    });
+    setupColorSelection('paper-color', 'paper', 'backgroundColor');
 
     coverImageInput?.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -302,7 +345,6 @@ function setupPaperControls() {
     removeCoverBtn?.addEventListener('click', () => {
         updateSetting('paper', 'coverImage', null);
         syncFormWithSettings();
-        // Reset file input
         if (coverImageInput) coverImageInput.value = '';
     });
 
@@ -320,7 +362,6 @@ function setupPaperControls() {
 function setupDividerControls() {
     const dividerWidthSlider = document.getElementById('setting-divider-width');
     const dividerWidthValue = document.getElementById('divider-width-value');
-    const dividerColorInput = document.getElementById('setting-divider-color');
 
     dividerWidthSlider?.addEventListener('input', (e) => {
         const value = parseInt(e.target.value, 10);
@@ -328,8 +369,5 @@ function setupDividerControls() {
         updateSetting('dividers', 'width', value);
     });
 
-    dividerColorInput?.addEventListener('input', (e) => {
-        updateSetting('dividers', 'color', e.target.value);
-        updateColorValueDisplay(e.target);
-    });
+    setupColorSelection('divider-color', 'dividers', 'color');
 }
