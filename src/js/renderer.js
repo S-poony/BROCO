@@ -8,6 +8,7 @@ import { handleSplitClick, startDrag, startEdgeDrag, createTextInRect, toggleTex
 import { saveState } from './history.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { getSettings } from './settings.js';
 
 // Configure marked for GFM and better line breaks
 marked.use({
@@ -23,6 +24,7 @@ export function renderLayout(container, node) {
         container.appendChild(rootElement);
         renderNodeRecursive(rootElement, node);
         addEdgeHandles(container);
+        renderPageNumber(container);
         return;
     }
     renderNodeRecursive(container, node);
@@ -399,4 +401,16 @@ function addEdgeHandles(container) {
         handle.addEventListener('touchstart', (e) => startEdgeDrag(e, edge), { passive: false });
         container.appendChild(handle);
     });
+}
+
+function renderPageNumber(container) {
+    const settings = getSettings();
+    if (!settings.paper.showPageNumbers) return;
+
+    const pageNumber = document.createElement('div');
+    pageNumber.className = 'page-number';
+    pageNumber.textContent = `${state.currentPageIndex + 1}`;
+
+    // Position it at the bottom center or bottom right
+    container.appendChild(pageNumber);
 }

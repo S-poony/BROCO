@@ -1,4 +1,6 @@
-import { DIVIDER_SIZE } from './constants.js';
+import { DIVIDER_SIZE, A4_PAPER_ID } from './constants.js';
+import { getCurrentPage } from './state.js';
+import { renderLayout } from './renderer.js';
 
 /**
  * Default settings configuration
@@ -44,6 +46,15 @@ export function updateSetting(category, key, value) {
     if (settings[category] && key in settings[category]) {
         settings[category][key] = value;
         applySettings();
+
+        // If we toggled page numbers, we need a full render because it's a DOM change
+        if (category === 'paper' && key === 'showPageNumbers') {
+            const paper = document.getElementById(A4_PAPER_ID);
+            if (paper) {
+                renderLayout(paper, getCurrentPage());
+            }
+        }
+
         document.dispatchEvent(new CustomEvent('settingsUpdated'));
     }
 }
@@ -66,6 +77,8 @@ export function applySettings() {
     // Cover image
     const paper = document.getElementById('a4-paper');
     if (paper) {
+        paper.style.backgroundColor = settings.paper.backgroundColor;
+
         if (settings.paper.coverImage) {
             paper.style.setProperty('--cover-image', `url(${settings.paper.coverImage})`);
             paper.classList.add('has-cover-image');
@@ -170,6 +183,11 @@ export function setupSettingsHandlers() {
     setupTextControls();
     setupPaperControls();
     setupDividerControls();
+
+    // Re-apply settings on layout updates
+    document.addEventListener('layoutUpdated', () => {
+        applySettings();
+    });
 
     // Apply settings on load
     applySettings();
