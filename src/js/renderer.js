@@ -4,7 +4,7 @@ import { A4_PAPER_ID } from './constants.js';
 import { assetManager } from './AssetManager.js';
 import { dragDropService } from './DragDropService.js';
 import { attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd } from './assets.js';
-import { handleSplitClick, startDrag, startEdgeDrag, createTextInRect, toggleTextAlignment } from './layout.js';
+import { handleSplitClick, startDrag, startEdgeDrag, createTextInRect, toggleTextAlignment, renderAndRestoreFocus } from './layout.js';
 import { saveState } from './history.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';

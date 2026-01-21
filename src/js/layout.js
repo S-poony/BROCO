@@ -4,7 +4,7 @@ import { saveState } from './history.js';
 import { renderLayout } from './renderer.js';
 
 // Helper to restore focus after render
-function renderAndRestoreFocus(page, explicitFocusId = null) {
+export function renderAndRestoreFocus(page, explicitFocusId = null) {
     // If explicit ID provided, use it. Otherwise try to preserve current active element.
     const focusedId = explicitFocusId || (document.activeElement ? document.activeElement.id : null);
 
