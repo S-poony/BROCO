@@ -13,6 +13,8 @@ import { setupGlobalErrorHandler } from './js/errorHandler.js';
 import { setupPageHandlers } from './js/pages.js';
 import { setupFileIOHandlers } from './js/fileIO.js';
 import { setupKeyboardNavigation, updateFocusableRects } from './js/keyboard.js';
+import { shortcutsOverlay } from './js/ShortcutsOverlay.js';
+import { findNodeById } from './js/layout.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -154,10 +156,24 @@ function initialize() {
                 rect.focus({ preventScroll: true });
                 lastHoveredRectId = rect.id;
             }
+
+            // Update shortcut hints
+            const node = findNodeById(getCurrentPage(), rect.id);
+            shortcutsOverlay.update(node);
+
         } catch (err) {
             // Silently ignore errors
         }
     });
+
+    // Hide overlay when mouse leaves the paper
+    const paperContainer = document.querySelector('.workspace-wrapper');
+    if (paperContainer) {
+        paperContainer.addEventListener('mouseleave', () => {
+            shortcutsOverlay.hide();
+            lastHoveredRectId = null;
+        });
+    }
 
     // Sync lastHoveredRectId when focus changes via keyboard or other means
     document.addEventListener('focusin', (e) => {

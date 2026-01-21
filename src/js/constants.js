@@ -18,3 +18,91 @@ export const MAX_FILE_SIZE_MB = 20;
 
 /** Width/Height of dividers and hit areas (px) */
 export const DIVIDER_SIZE = 5;
+
+/** 
+ * Centralized Shortcut Registry 
+ * used to generate UI hints and (optionally) validate actions 
+ */
+export const SHORTCUTS = [
+    // --- Global / Navigation ---
+    {
+        keys: ['Arrows'],
+        label: 'Navigate',
+        group: 'Navigation',
+        condition: () => true
+    },
+
+    // --- Empty Rectangle ---
+    {
+        keys: ['Click'],
+        label: 'Write',
+        group: 'Content',
+        condition: (node) => !node.image && (node.text === null || node.text === undefined)
+    },
+    {
+        keys: ['Space'],
+        label: 'Split',
+        group: 'Structure',
+        condition: (node) => !node.image && (node.text === null || node.text === undefined)
+    },
+
+    // --- Content Presence (Image or Text) ---
+    {
+        keys: ['Cmd/Ctrl', 'Click'],
+        label: 'Delete Content',
+        group: 'Content',
+        condition: (node) => node.image || (node.text !== null && node.text !== undefined)
+    },
+    {
+        keys: ['Shift', 'Click'],
+        label: 'Split (Top/Left)',
+        group: 'Structure',
+        condition: (node) => node.image || (node.text !== null && node.text !== undefined)
+    },
+    {
+        keys: ['Ctrl', 'Shift', 'Click'],
+        label: 'Split (Btm/Right)',
+        group: 'Structure',
+        condition: (node) => node.image || (node.text !== null && node.text !== undefined)
+    },
+
+    // --- Universal Split ---
+    {
+        keys: ['Alt', 'Click'],
+        label: 'Long Split',
+        group: 'Structure',
+        // Always available for splittable rects
+        condition: () => true
+    },
+
+    // --- Complex / Specific ---
+    {
+        keys: ['Ctrl', 'Shift', 'Alt', 'Click'],
+        label: 'Long Split (Btm/Right)',
+        group: 'Structure',
+        // Only makes sense if there is content to move to 'B'
+        condition: (node) => node.image || (node.text !== null && node.text !== undefined)
+    },
+
+    // --- Image Specific ---
+    {
+        keys: ['Click'],
+        label: 'Toggle Fit',
+        group: 'Content',
+        condition: (node) => !!node.image
+    },
+
+    // --- Text Specific ---
+    {
+        keys: ['Click'],
+        label: 'Edit',
+        group: 'Content',
+        condition: (node) => node.text !== null && node.text !== undefined
+    },
+    {
+        keys: ['Ctrl', 'K'],
+        label: 'Link',
+        group: 'Content',
+        condition: (node) => node.text !== null && node.text !== undefined
+    }
+];
