@@ -24,14 +24,6 @@ export const DIVIDER_SIZE = 5;
  * used to generate UI hints and (optionally) validate actions 
  */
 export const SHORTCUTS = [
-    // --- Complex / Specific ---
-    {
-        keys: ['Ctrl', 'Shift', 'Alt', 'Click'],
-        label: 'Long Split (Btm/Right)',
-        group: 'Structure',
-        // Only makes sense if there is content to move to 'B'
-        condition: (node) => node.image || (node.text !== null && node.text !== undefined)
-    },
 
     // --- Image Specific ---
     {
@@ -43,14 +35,8 @@ export const SHORTCUTS = [
 
     // --- Text Specific ---
     {
-        keys: ['Click'],
+        keys: ['Enter'],
         label: 'Edit',
-        group: 'Content',
-        condition: (node) => node.text !== null && node.text !== undefined
-    },
-    {
-        keys: ['Ctrl', 'K'],
-        label: 'Link',
         group: 'Content',
         condition: (node) => node.text !== null && node.text !== undefined
     },
