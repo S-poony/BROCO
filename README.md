@@ -1,4 +1,4 @@
-# Interactive Layout Splitter
+# BROCO: Beautiful Rows and Columns
 
 A visual tool for designing multi-page document layouts with drag-and-drop image placement. Perfect for creating photo albums, portfolios, and print-ready designs.
 
@@ -6,12 +6,15 @@ A visual tool for designing multi-page document layouts with drag-and-drop image
 
 ## Features
 
--   **Recursive Splitting**: Click any rectangle to split it vertically or horizontally.
--   **Edge Dragging**: Drag dividers to resize sections, or drag from the paper's edge to create new sections.
--   **Image Management**: Import images and drag them into any slot. Click an image to toggle between `cover` and `contain` fit.
+-   **Recursive Layout**: Click any rectangle to split it vertically or horizontally, drag edges of the canvas to create new sections.
+-   **Image Management**: Import images and drag them into any slot. Click an image to toggle between `cover` and `contain` fit. Images are instances of imported assets.
 -   **Multi-Page Support**: Add, switch, and delete pages via the left sidebar.
 -   **Undo/Redo**: Full history support with `Ctrl+Z` / `Ctrl+Y`.
--   **Export**: Download your layouts as a multi-page PDF or a ZIP of images.
+-   **Keyboard Shortcuts**: Use keyboard shortcuts to navigate and edit your layout fast.
+-   **Markdown**: Add markdown content to your layout.
+-   **Customization**: Customize the layout by changing font, background color, and more.
+- **File system**: Save your layouts as json files to edit them later.
+-   **Export**: Download your layouts in different formats or publish them online as flipbooks.
 
 ## Getting Started
 
@@ -28,14 +31,7 @@ npm run build
 
 ## Keyboard Shortcuts
 
-| Action         | Shortcut           |
-| :------------- | :----------------- |
-| Split          | `Click`            |
-| Alt Split      | `Alt + Click`      |
-| Delete Section | `Ctrl + Click`     |
-| Toggle Fit     | `Click` (on image) |
-| Undo           | `Ctrl + Z`         |
-| Redo           | `Ctrl + Y`         |
+see [shortcuts.md](shortcuts.md)
 
 ## Tech Stack
 
@@ -45,22 +41,6 @@ npm run build
 -   **JSZip** - ZIP archive creation
 -   **marked** - Markdown parsing
 
-## Project Structure
-
-```
-src/
-├── main.js           # App initialization
-├── style.css         # CSS imports
-├── js/
-│   ├── state.js      # App state & page management
-│   ├── layout.js     # Split, delete, resize logic
-│   ├── renderer.js   # DOM rendering from state
-│   ├── assets.js     # Image import & drag/drop
-│   ├── pages.js      # Page list & thumbnails
-│   ├── export.js     # PDF & image export
-│   └── history.js    # Undo/redo stack
-└── css/              # Modular stylesheets
-```
 
 ## License
 
