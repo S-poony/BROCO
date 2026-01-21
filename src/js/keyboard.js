@@ -8,7 +8,8 @@ import { showConfirm } from './utils.js';
  * Setup keyboard navigation handlers
  */
 export function setupKeyboardNavigation() {
-    document.addEventListener('keydown', handleKeyDown);
+    // Use capture phase to ensure we intercept shortcuts before browser/default behaviors
+    document.addEventListener('keydown', handleKeyDown, true);
 }
 
 /**
@@ -18,57 +19,56 @@ export function setupKeyboardNavigation() {
 function handleKeyDown(e) {
     // Ignore if typing in an input or textarea
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        // Allow default behavior for inputs (typing, moving cursor)
         return;
     }
 
     const focused = document.activeElement;
-    const isRect = focused.classList.contains('splittable-rect');
+    const isRect = focused && focused.classList.contains('splittable-rect');
+
+    if (!isRect) return;
 
     switch (e.key) {
         case 'ArrowUp':
         case 'ArrowDown':
         case 'ArrowLeft':
         case 'ArrowRight':
-            if (isRect) {
-                e.preventDefault();
-                navigateRects(focused, e.key);
-            }
+            e.preventDefault();
+            e.stopPropagation();
+            navigateRects(focused, e.key);
             break;
 
         case 'Enter':
-            if (isRect) {
-                e.preventDefault();
-                // Pass null to keep existing text, or init empty if new
-                createTextInRect(focused.id, null);
-            }
+            e.preventDefault();
+            e.stopPropagation();
+            // Pass null to keep existing text, or init empty if new
+            createTextInRect(focused.id, null);
             break;
 
         case ' ': // Spacebar
-            if (isRect) {
-                e.preventDefault();
+            e.preventDefault();
+            e.stopPropagation();
 
-                // Mimic click behaviors based on modifiers
-                // Shift + Space: Split logic (handled by creating a synthetic click event)
-                // We'll dispatch a click with the same modifiers
+            // Mimic click behaviors based on modifiers
+            // Shift + Space: Split logic (handled by creating a synthetic click event)
+            // We'll dispatch a click with the same modifiers
 
-                const clickEvent = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    shiftKey: e.shiftKey,
-                    ctrlKey: e.ctrlKey,
-                    altKey: e.altKey,
-                    metaKey: e.metaKey
-                });
-                focused.dispatchEvent(clickEvent);
-            }
+            const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                shiftKey: e.shiftKey,
+                ctrlKey: e.ctrlKey,
+                altKey: e.altKey,
+                metaKey: e.metaKey
+            });
+            focused.dispatchEvent(clickEvent);
             break;
 
         case 'Delete':
         case 'Backspace':
-            if (isRect) {
-                e.preventDefault();
-                deleteFocusedRect(focused);
-            }
+            e.preventDefault();
+            e.stopPropagation();
+            deleteFocusedRect(focused);
             break;
 
         default:
