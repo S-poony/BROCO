@@ -29,6 +29,11 @@ export function saveState() {
     redoStack = [];
 }
 
+export function clearHistory() {
+    undoStack = [];
+    redoStack = [];
+}
+
 export function undo(rebindCallback) {
     if (undoStack.length === 0) return;
 

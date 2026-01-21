@@ -16,24 +16,25 @@
 </head>
 
 <body>
+    <a href="#a4-paper" class="skip-link">Skip to main content</a>
 
     <div id="app">
         <div class="main-layout">
             <!-- File Actions (Save/Open/Settings) -->
             <div class="file-actions">
                 <div class="file-actions-left">
-                    <button id="save-layout-btn" class="btn-file" title="Save Layout">
-                        <span class="icon icon-save"></span>
+                    <button id="save-layout-btn" class="btn-file" title="Save Layout" aria-label="Save Layout">
+                        <span class="icon icon-save" aria-hidden="true"></span>
                         <span>Save</span>
                     </button>
-                    <button id="open-layout-btn" class="btn-file" title="Open Layout">
-                        <span class="icon icon-open"></span>
+                    <button id="open-layout-btn" class="btn-file" title="Open Layout" aria-label="Open Layout">
+                        <span class="icon icon-open" aria-hidden="true"></span>
                         <span>Open</span>
                     </button>
                 </div>
                 <div class="file-actions-right">
-                    <button id="settings-btn" class="btn-file" title="Settings">
-                        <span class="icon icon-settings"></span>
+                    <button id="settings-btn" class="btn-file" title="Settings" aria-label="Settings">
+                        <span class="icon icon-settings" aria-hidden="true"></span>
                         <span>Settings</span>
                     </button>
                 </div>
@@ -42,8 +43,9 @@
 
 
             <!-- Pages Sidebar -->
-            <aside id="pages-sidebar">
-                <button id="add-page-btn" class="btn-primary w-full"><span class="icon icon-add"></span></button>
+            <aside id="pages-sidebar" aria-label="Pages Navigation">
+                <button id="add-page-btn" class="btn-primary w-full" aria-label="Add new page"><span
+                        class="icon icon-add" aria-hidden="true"></span></button>
                 <div id="pages-list">
                     <!-- Thumbnails start here -->
                 </div>
@@ -51,11 +53,12 @@
 
             <!-- Workspace Wrapper (Title + Paper) -->
             <div class="workspace-wrapper">
-                <div id="a4-paper" class="a4-paper">
+                <div id="a4-paper" class="a4-paper" role="main" aria-label="Layout Canvas" tabindex="0">
                     <!-- Initial Rectangle -->
                     <div id="rect-1"
                         class="splittable-rect rectangle-initial flex items-center justify-center w-full h-full"
-                        data-split-state="unsplit">
+                        data-split-state="unsplit" tabindex="0" role="button"
+                        aria-label="Initial Page Region. Click to split.">
                         Click to Split (Initial A4 Page)
                     </div>
                 </div>

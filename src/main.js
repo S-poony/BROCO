@@ -12,6 +12,7 @@ import { setupGlobalErrorHandler } from './js/errorHandler.js';
 
 import { setupPageHandlers } from './js/pages.js';
 import { setupFileIOHandlers } from './js/fileIO.js';
+import { setupKeyboardNavigation, updateFocusableRects } from './js/keyboard.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -101,10 +102,15 @@ function initialize() {
     setupSettingsHandlers();
     loadShortcuts();
     setupPageHandlers();
-    setupFileIOHandlers();
+    setupKeyboardNavigation();
+
+    // Listen for layout updates to manage focus
+    document.addEventListener('layoutUpdated', updateFocusableRects);
+    document.addEventListener('stateRestored', updateFocusableRects);
 
     // Initial render from state
     renderLayout(document.getElementById('a4-paper'), getCurrentPage());
+    updateFocusableRects();
 }
 
 async function loadShortcuts() {
