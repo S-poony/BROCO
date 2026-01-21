@@ -7,15 +7,44 @@ import { renderLayout } from './renderer.js';
 function renderAndRestoreFocus(page, explicitFocusId = null) {
     // If explicit ID provided, use it. Otherwise try to preserve current active element.
     const focusedId = explicitFocusId || (document.activeElement ? document.activeElement.id : null);
+
+    // Capture mouse position if we can (we need to track it globally if we want this perfect, 
+    // but we can try to rely on the last known interaction if available, or just check :hover if supported)
+    // Actually, asking the browser 'what is under the mouse' requires coordinates.
+    // We'll rely on our state if we have it, or just let 'explicitFocusId' win if provided.
+
     renderLayout(document.getElementById(A4_PAPER_ID), page);
 
-    // Try to restore focus
-    if (focusedId) {
+    let focusRestored = false;
+
+    // 1. Try explicit ID (e.g. key button)
+    if (explicitFocusId) {
+        const el = document.getElementById(explicitFocusId);
+        if (el) {
+            el.focus({ preventScroll: true });
+            focusRestored = true;
+        } else {
+            // Fallback: if button is gone (e.g. text removed), try the rect itself
+            // ID format: align-btn-rect-X -> rect-X
+            if (explicitFocusId.startsWith('align-btn-') || explicitFocusId.startsWith('remove-text-btn-')) {
+                const rectId = explicitFocusId.replace('align-btn-', '').replace('remove-text-btn-', '');
+                const rect = document.getElementById(rectId);
+                if (rect) {
+                    rect.focus({ preventScroll: true });
+                    focusRestored = true;
+                }
+            }
+        }
+    }
+
+    // 2. If no explicit focus restored (or not provided), try previously focused ID
+    if (!focusRestored && focusedId) {
         const el = document.getElementById(focusedId);
         if (el) {
             el.focus({ preventScroll: true });
         }
     }
+
     document.dispatchEvent(new CustomEvent('layoutUpdated'));
 }
 
@@ -191,8 +220,7 @@ export function toggleTextAlignment(rectId) {
     saveState();
     node.textAlign = node.textAlign === 'center' ? 'left' : 'center';
 
-    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
-    document.dispatchEvent(new CustomEvent('layoutUpdated'));
+    renderAndRestoreFocus(getCurrentPage(), `align-btn-${rectId}`);
 }
 
 export function startDrag(event, dividerElement = null) {

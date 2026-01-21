@@ -15,7 +15,8 @@
     outline-offset: 2px;
 }
 
-.splittable-rect:focus-visible {
+.splittable-rect:focus-visible,
+.splittable-rect:focus {
     /* Inner focus ring for content areas */
     outline: 3px solid #4f46e5;
     outline-offset: -3px;

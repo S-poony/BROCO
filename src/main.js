@@ -85,6 +85,7 @@ function setupGlobalHandlers() {
 }
 
 function initialize() {
+    // Setup global error handling
     setupGlobalErrorHandler();
     setupAssetHandlers();
     setupDropHandlers();
@@ -98,6 +99,36 @@ function initialize() {
     // Listen for layout updates to manage focus
     document.addEventListener('layoutUpdated', updateFocusableRects);
     document.addEventListener('stateRestored', updateFocusableRects);
+
+    // Global hover-to-select: when mouse moves over a leaf rect in the paper, focus it
+    let lastHoveredRectId = null;
+    document.addEventListener('mousemove', (e) => {
+        try {
+            const elUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+            if (!elUnderCursor) return;
+
+            const paper = document.getElementById('a4-paper');
+            if (!paper || !paper.contains(elUnderCursor)) return;
+
+            const rect = elUnderCursor.closest('.splittable-rect[data-split-state="unsplit"]');
+            if (!rect) return;
+
+            // Only focus if rect changed (efficiency)
+            if (rect.id !== lastHoveredRectId) {
+                rect.focus({ preventScroll: true });
+                lastHoveredRectId = rect.id;
+            }
+        } catch (err) {
+            // Silently ignore errors
+        }
+    });
+
+    // Sync lastHoveredRectId when focus changes via keyboard or other means
+    document.addEventListener('focusin', (e) => {
+        if (e.target.classList.contains('splittable-rect')) {
+            lastHoveredRectId = e.target.id;
+        }
+    });
 
     // Initial render from state
     renderLayout(document.getElementById('a4-paper'), getCurrentPage());

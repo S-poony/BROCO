@@ -20,6 +20,7 @@ export function renderLayout(container, node) {
     // Top-level paper handling: ensure we don't accidentally turn the paper into rect-1
     if (container.id === A4_PAPER_ID) {
         container.innerHTML = '';
+
         const rootElement = createDOMRect(node, null);
         container.appendChild(rootElement);
         renderNodeRecursive(rootElement, node);
@@ -65,15 +66,6 @@ function renderLeafNode(container, node) {
     // Make leaf key-accessible
     container.setAttribute('tabindex', '0');
     container.setAttribute('role', 'button'); // It acts like a button (split action)
-
-    // Hover-to-select behavior (Request: whatever leaf node is hovered be selected)
-    container.addEventListener('mouseenter', (e) => {
-        // Only auto-focus if we are not currently dragging something
-        // and if it's not the already focused element to avoid event spam
-        if (!document.querySelector('.divider.dragging') && document.activeElement !== container) {
-            container.focus({ preventScroll: true });
-        }
-    });
 
     if (node.image) {
         const asset = assetManager.getAsset(node.image.assetId);
@@ -338,6 +330,7 @@ function renderTextContent(container, node, startInEditMode = false) {
 
     // Alignment toggle button
     const alignBtn = document.createElement('button');
+    alignBtn.id = `align-btn-${node.id}`;
     alignBtn.className = 'align-text-btn';
     alignBtn.title = isCentered ? 'Align Left' : 'Align Center';
 
@@ -353,6 +346,7 @@ function renderTextContent(container, node, startInEditMode = false) {
 
     // Remove button
     const removeBtn = document.createElement('button');
+    removeBtn.id = `remove-text-btn-${node.id}`;
     removeBtn.className = 'remove-text-btn';
     removeBtn.title = 'Remove text';
     removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
@@ -361,8 +355,9 @@ function renderTextContent(container, node, startInEditMode = false) {
         e.stopPropagation();
         saveState();
         node.text = null;
-        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
-        document.dispatchEvent(new CustomEvent('layoutUpdated'));
+        node.textAlign = null;
+        // Explicitly focus the rectangle container since the button is gone
+        renderAndRestoreFocus(getCurrentPage(), node.id);
     });
 
     editorContainer.appendChild(preview);
@@ -376,15 +371,6 @@ function createDOMRect(node, parentOrientation) {
     const div = document.createElement('div');
     div.id = node.id;
     div.className = 'splittable-rect rectangle-base flex items-center justify-center';
-
-    div.addEventListener('mouseenter', () => {
-        state.hoveredRectId = node.id;
-    });
-    div.addEventListener('mouseleave', () => {
-        if (state.hoveredRectId === node.id) {
-            state.hoveredRectId = null;
-        }
-    });
 
     if (node.size) {
         div.style.flexGrow = node.size.replace('%', '');
