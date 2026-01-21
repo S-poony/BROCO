@@ -110,6 +110,8 @@
     cursor: text;
     word-break: break-word;
     overflow-wrap: break-word;
+    white-space: pre-wrap;
+    /* Preserve whitespace and line breaks while allowing wrapping */
 
     /* Fix html2canvas overlapping lines */
     font-variant-ligatures: none;

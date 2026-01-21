@@ -281,6 +281,28 @@ function renderTextContent(container, node, startInEditMode = false) {
                     editor.selectionStart = editor.selectionEnd = start + prefix.length;
                 }
                 editor.dispatchEvent(new Event('input'));
+            } else {
+                // Preserve indentation for non-list lines
+                const indentMatch = line.match(/^(\s*)$/);
+                if (indentMatch && indentMatch[1].length > 0) {
+                    // Line is only whitespace - dedent (similar to list exit behavior)
+                    e.preventDefault();
+                    const lineStart = start - line.length;
+                    editor.value = value.substring(0, lineStart) + '\n' + value.substring(end);
+                    editor.selectionStart = editor.selectionEnd = lineStart + 1;
+                    editor.dispatchEvent(new Event('input'));
+                } else {
+                    // Line has content - preserve indentation
+                    const contentIndentMatch = line.match(/^(\s+)/);
+                    if (contentIndentMatch) {
+                        e.preventDefault();
+                        const indent = contentIndentMatch[1];
+                        const prefix = '\n' + indent;
+                        editor.value = value.substring(0, start) + prefix + value.substring(end);
+                        editor.selectionStart = editor.selectionEnd = start + prefix.length;
+                        editor.dispatchEvent(new Event('input'));
+                    }
+                }
             }
         }
 
