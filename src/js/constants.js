@@ -41,6 +41,13 @@ export const SHORTCUTS = [
         condition: (node) => node.text !== null && node.text !== undefined
     },
 
+    {
+        keys: ['esc'],
+        label: 'Exit Edit',
+        group: 'Content',
+        condition: (node) => node.text !== null && node.text !== undefined
+    },
+
     // --- Content Presence (Image or Text) ---
     {
         keys: ['Cmd/Ctrl', 'Click'],
@@ -78,7 +85,7 @@ export const SHORTCUTS = [
         condition: (node) => !node.image && (node.text === null || node.text === undefined)
     },
     {
-        keys: ['Click'], // Implicitly split via bubble up
+        keys: ['Click/Space'], // Implicitly split via bubble up
         label: 'Split',
         group: 'Structure',
         condition: (node) => !node.image && (node.text === null || node.text === undefined)
