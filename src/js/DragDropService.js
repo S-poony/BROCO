@@ -25,6 +25,12 @@ export class DragDropService {
         this.draggedTextAlign = undefined;
         /** @type {HTMLElement|null} */
         this.touchGhost = null;
+        /** @type {number|null} Timer for touch hold delay */
+        this.touchHoldTimer = null;
+        /** @type {DragData|null} Pending drag data waiting for hold completion */
+        this.pendingTouchData = null;
+        /** @type {Touch|null} Pending touch waiting for hold completion */
+        this.pendingTouch = null;
 
         // Cleanup on page visibility change to prevent ghost leaks
         document.addEventListener('visibilitychange', () => {
@@ -55,9 +61,37 @@ export class DragDropService {
      * @param {DragData} data 
      */
     startTouchDrag(e, data) {
-        this.startDrag(data);
-        if (e.touches && e.touches.length > 0) {
-            this.createGhost(e.touches[0], data);
+        // Cancel any pending drag
+        if (this.touchHoldTimer) {
+            clearTimeout(this.touchHoldTimer);
+            this.touchHoldTimer = null;
+        }
+
+        // Store the pending drag data
+        this.pendingTouchData = data;
+        this.pendingTouch = e.touches && e.touches.length > 0 ? e.touches[0] : null;
+
+        // Require holding for 200ms before starting drag
+        this.touchHoldTimer = setTimeout(() => {
+            if (this.pendingTouchData && this.pendingTouch) {
+                this.startDrag(this.pendingTouchData);
+                this.createGhost(this.pendingTouch, this.pendingTouchData);
+            }
+            this.touchHoldTimer = null;
+            this.pendingTouchData = null;
+            this.pendingTouch = null;
+        }, 200);
+    }
+
+    /**
+     * Cancel pending touch drag if touch ends before hold completes
+     */
+    cancelPendingTouch() {
+        if (this.touchHoldTimer) {
+            clearTimeout(this.touchHoldTimer);
+            this.touchHoldTimer = null;
+            this.pendingTouchData = null;
+            this.pendingTouch = null;
         }
     }
 
@@ -111,6 +145,12 @@ export class DragDropService {
      * @param {TouchEvent} e 
      */
     handleTouchMove(e) {
+        // If we're still waiting for hold, cancel the pending drag  
+        if (this.touchHoldTimer) {
+            this.cancelPendingTouch();
+            return;
+        }
+
         if (!this.isDragging() || !this.touchGhost) return;
         if (e.cancelable) e.preventDefault();
 
@@ -127,6 +167,9 @@ export class DragDropService {
     }
 
     endDrag() {
+        // Cancel any pending touch drag
+        this.cancelPendingTouch();
+
         if (this.sourceRect) {
             this.sourceRect.classList.remove('moving-image', 'moving-text');
         }
