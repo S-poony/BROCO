@@ -1,6 +1,6 @@
 import { DIVIDER_SIZE, A4_PAPER_ID } from './constants.js';
 import { getCurrentPage } from './state.js';
-import { renderLayout } from './renderer.js';
+import { renderLayout, renderCoverImage } from './renderer.js';
 
 /**
  * Default settings configuration
@@ -79,15 +79,8 @@ export function applySettings() {
     if (paper) {
         paper.style.backgroundColor = settings.paper.backgroundColor;
 
-        if (settings.paper.coverImage) {
-            paper.style.setProperty('--cover-image', `url(${settings.paper.coverImage})`);
-            paper.classList.add('has-cover-image');
-        } else {
-            paper.style.removeProperty('--cover-image');
-            paper.classList.remove('has-cover-image');
-        }
+        renderCoverImage(paper);
     }
-
     // Divider settings
     root.style.setProperty('--divider-size', `${settings.dividers.width}px`);
     root.style.setProperty('--divider-color', settings.dividers.color);

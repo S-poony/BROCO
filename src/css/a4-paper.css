@@ -14,29 +14,13 @@
     flex-shrink: 0;
 }
 
-/* Cover image overlay */
-.a4-paper.has-cover-image::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: var(--cover-image);
-    background-size: cover;
-    background-position: center;
-    opacity: var(--cover-image-opacity, 0.2);
+/* Cover image scaling container */
+.paper-cover-image {
+    background-repeat: no-repeat;
     pointer-events: none;
     user-select: none;
-    -webkit-user-drag: none;
-    z-index: 1;
-    /* Above base background, below rectangles */
 }
 
-.a4-paper.has-cover-image>.splittable-rect {
-    position: relative;
-    z-index: 2;
-}
 
 @media (max-width: 768px) {
     .a4-paper {

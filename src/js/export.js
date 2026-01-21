@@ -142,19 +142,12 @@ async function performExport(format, qualityMultiplier) {
             paperWrapper.style.zoom = '1';
             tempContainer.appendChild(paperWrapper);
 
-            const exportRoot = document.createElement('div');
-            exportRoot.id = pageLayout.id;
-            exportRoot.className = 'splittable-rect rectangle-base flex items-center justify-center w-full h-full';
-            exportRoot.style.width = '100%';
-            exportRoot.style.height = '100%';
-            paperWrapper.appendChild(exportRoot);
-
-            renderLayout(exportRoot, pageLayout);
+            renderLayout(paperWrapper, pageLayout);
 
             await swapImagesForHighRes(paperWrapper);
             await document.fonts.ready;
 
-            paperWrapper.querySelectorAll('.remove-image-btn, .remove-text-btn, .text-prompt, .align-text-btn, .text-editor').forEach(el => el.remove());
+            paperWrapper.querySelectorAll('.remove-image-btn, .remove-text-btn, .text-prompt, .align-text-btn, .text-editor, .edge-handle').forEach(el => el.remove());
 
             const canvas = await html2canvas(tempContainer, {
                 scale: qualityMultiplier,
@@ -263,17 +256,12 @@ async function performPublishFlipbook(qualityMultiplier) {
             paperWrapper.style.margin = '0';
             tempContainer.appendChild(paperWrapper);
 
-            const exportRoot = document.createElement('div');
-            exportRoot.style.width = '100%';
-            exportRoot.style.height = '100%';
-            paperWrapper.appendChild(exportRoot);
-
-            renderLayout(exportRoot, pageLayout);
+            renderLayout(paperWrapper, pageLayout);
             await swapImagesForHighRes(paperWrapper);
             await document.fonts.ready;
 
             // Remove UI elements
-            paperWrapper.querySelectorAll('.remove-image-btn, .remove-text-btn, .text-prompt, .align-text-btn, .text-editor').forEach(el => el.remove());
+            paperWrapper.querySelectorAll('.remove-image-btn, .remove-text-btn, .text-prompt, .align-text-btn, .text-editor, .edge-handle').forEach(el => el.remove());
 
             const canvas = await html2canvas(tempContainer, {
                 scale: qualityMultiplier,
@@ -437,6 +425,23 @@ async function swapImagesForHighRes(container) {
         }
         return Promise.resolve();
     });
+
+    // Also await the cover image background if it exists
+    const coverImage = container.querySelector('.paper-cover-image');
+    if (coverImage) {
+        const bgImage = getComputedStyle(coverImage).backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            const url = bgImage.match(/url\(['"]?(.*?)['"]?\)/)?.[1];
+            if (url) {
+                swapPromises.push(new Promise((resolve) => {
+                    const tempImg = new Image();
+                    tempImg.onload = resolve;
+                    tempImg.onerror = resolve;
+                    tempImg.src = url;
+                }));
+            }
+        }
+    }
 
     await Promise.all(swapPromises);
 }

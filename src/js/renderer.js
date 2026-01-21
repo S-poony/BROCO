@@ -18,13 +18,16 @@ marked.use({
 
 export function renderLayout(container, node) {
     // Top-level paper handling: ensure we don't accidentally turn the paper into rect-1
-    if (container.id === A4_PAPER_ID) {
+    if (container.id === A4_PAPER_ID || container.classList.contains('a4-paper')) {
+        const settings = getSettings();
         container.innerHTML = '';
+        container.style.backgroundColor = settings.paper.backgroundColor;
 
         const rootElement = createDOMRect(node, null);
         container.appendChild(rootElement);
         renderNodeRecursive(rootElement, node);
         addEdgeHandles(container);
+        renderCoverImage(container);
         renderPageNumber(container);
         return;
     }
@@ -427,4 +430,31 @@ function renderPageNumber(container) {
 
     // Position it at the bottom center or bottom right
     container.appendChild(pageNumber);
+}
+
+export function renderCoverImage(container) {
+    const settings = getSettings();
+
+    // Always remove existing cover image element first
+    const existing = container.querySelector('.paper-cover-image');
+    if (existing) existing.remove();
+
+    if (!settings.paper.coverImage) return;
+
+    const cover = document.createElement('div');
+    cover.className = 'paper-cover-image';
+    cover.style.position = 'absolute';
+    cover.style.top = '0';
+    cover.style.left = '0';
+    cover.style.width = '100%';
+    cover.style.height = '100%';
+    cover.style.backgroundImage = `url(${settings.paper.coverImage})`;
+    cover.style.backgroundSize = 'cover';
+    cover.style.backgroundPosition = 'center';
+    cover.style.opacity = settings.paper.coverImageOpacity;
+    cover.style.pointerEvents = 'none';
+    cover.style.zIndex = '1'; // Below rects (z-index 2) but above paper background
+
+    // Insert at the beginning so it's behind everything else
+    container.insertBefore(cover, container.firstChild);
 }
