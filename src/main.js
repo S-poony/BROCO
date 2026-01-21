@@ -109,6 +109,18 @@ function initialize() {
     setupPageHandlers();
     setupKeyboardNavigation();
 
+    // Sync shortcut overlay with menu state
+    const shortcutsDropdown = document.getElementById('shortcuts-dropdown');
+    if (shortcutsDropdown) {
+        // Initial state
+        shortcutsOverlay.setEnabled(shortcutsDropdown.open);
+
+        // Listen for changes
+        shortcutsDropdown.addEventListener('toggle', () => {
+            shortcutsOverlay.setEnabled(shortcutsDropdown.open);
+        });
+    }
+
     // Listen for layout updates to manage focus
     // Listen for layout updates to manage focus and reset selection state
     document.addEventListener('layoutUpdated', () => {

@@ -6,6 +6,7 @@ export class ShortcutsOverlay {
         document.body.appendChild(this.element);
         this.visible = false;
         this.currentHints = '';
+        this.isEnabled = false; // Hidden unless menu is unrolled
     }
 
     createOverlayElement() {
@@ -15,7 +16,7 @@ export class ShortcutsOverlay {
     }
 
     update(node) {
-        if (!node) {
+        if (!node || !this.isEnabled) {
             this.hide();
             return;
         }
@@ -58,9 +59,16 @@ export class ShortcutsOverlay {
     }
 
     show() {
-        if (!this.visible) {
+        if (!this.visible && this.isEnabled) {
             this.element.classList.add('visible');
             this.visible = true;
+        }
+    }
+
+    setEnabled(enabled) {
+        this.isEnabled = enabled;
+        if (!enabled) {
+            this.hide();
         }
     }
 
