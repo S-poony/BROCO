@@ -28,6 +28,27 @@ function handleKeyDown(e) {
 
     if (!isRect) return;
 
+    // Check code for Space to avoid layout issues/modifiers changing key
+    if (e.code === 'Space') {
+        // Removed Alt+Space shortcuts due to Windows conflicts
+        if (e.altKey) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            shiftKey: e.shiftKey,
+            ctrlKey: e.ctrlKey, // Keep Ctrl if used
+            altKey: false,     // Explicitly false since we abort on Alt
+            metaKey: e.metaKey,
+            view: window
+        });
+        focused.dispatchEvent(clickEvent);
+        return;
+    }
+
     switch (e.key) {
         case 'ArrowUp':
         case 'ArrowDown':
@@ -43,25 +64,6 @@ function handleKeyDown(e) {
             e.stopPropagation();
             // Pass null to keep existing text, or init empty if new
             createTextInRect(focused.id, null);
-            break;
-
-        case ' ': // Spacebar
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Mimic click behaviors based on modifiers
-            // Shift + Space: Split logic (handled by creating a synthetic click event)
-            // We'll dispatch a click with the same modifiers
-
-            const clickEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                shiftKey: e.shiftKey,
-                ctrlKey: e.ctrlKey,
-                altKey: e.altKey,
-                metaKey: e.metaKey
-            });
-            focused.dispatchEvent(clickEvent);
             break;
 
         case 'Delete':
