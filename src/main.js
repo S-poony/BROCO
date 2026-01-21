@@ -62,16 +62,7 @@ function setupGlobalHandlers() {
             }
         }
 
-        // Create Text: Tab (if hovering over an empty rectangle)
-        if (e.key === 'Tab') {
-            const target = e.target;
-            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-            if (!isInput && state.hoveredRectId) {
-                e.preventDefault();
-                createTextInRect(state.hoveredRectId);
-            }
-        }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -111,6 +102,12 @@ function initialize() {
     // Initial render from state
     renderLayout(document.getElementById('a4-paper'), getCurrentPage());
     updateFocusableRects();
+
+    // Auto-focus the first rectangle so keyboard shortcuts work immediately
+    const firstRect = document.getElementById('rect-1');
+    if (firstRect) {
+        firstRect.focus();
+    }
 }
 
 async function loadShortcuts() {

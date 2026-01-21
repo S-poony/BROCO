@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { handleSplitClick } from './layout.js';
+import { handleSplitClick, createTextInRect } from './layout.js';
 import { undo, redo } from './history.js';
 import { rebindEvents } from './layout.js';
 import { showConfirm } from './utils.js';
@@ -48,6 +48,23 @@ function handleKeyDown(e) {
             if (isRect) {
                 e.preventDefault();
                 deleteFocusedRect(focused);
+            }
+            break;
+
+        default:
+            // Type to edit: if a single printable character (length 1) is pressed while focused on a rect
+            if (isRect && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                // Don't prevent default, we want to capture the key potentially
+                // But createTextInRect needs to handle checking if it's empty
+                // We'll call it, and if successful, the renderer should focus the textarea
+                // Depending on implementation, we might want to manually insert the char,
+                // but let's see if we can just trigger the mode first.
+                // Actually, to make it feel natural, passing the key to init would be good,
+                // but existing createTextInRect just initializes empty.
+                // Let's rely on the user typing the first char again or implementing "start with char" later if needed.
+                // For now, just trigger edit mode.
+                e.preventDefault();
+                createTextInRect(focused.id, e.key);
             }
             break;
     }

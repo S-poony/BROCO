@@ -110,12 +110,12 @@ export function handleSplitClick(event) {
     document.dispatchEvent(new CustomEvent('layoutUpdated'));
 }
 
-export function createTextInRect(rectId) {
+export function createTextInRect(rectId, initialText = '') {
     const node = findNodeById(getCurrentPage(), rectId);
     if (!node || node.splitState === 'split' || node.image || node.text !== null) return;
 
     saveState();
-    node.text = '';
+    node.text = initialText;
     // Mark that we want edit mode
     node._startInEditMode = true;
     renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
