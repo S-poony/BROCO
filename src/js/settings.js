@@ -9,7 +9,8 @@ const defaultSettings = {
     text: {
         fontFamily: 'sans-serif',
         fontSize: 20, // px
-        textColor: '#374151'
+        textColor: '#374151',
+        colorAffectsHeaders: false
     },
     paper: {
         backgroundColor: '#ffffff',
@@ -69,6 +70,13 @@ export function applySettings() {
     root.style.setProperty('--text-font-family', settings.text.fontFamily);
     root.style.setProperty('--text-font-size', `${settings.text.fontSize}px`);
     root.style.setProperty('--text-color', settings.text.textColor);
+
+    // Header color logic
+    if (settings.text.colorAffectsHeaders) {
+        root.style.setProperty('--header-color', settings.text.textColor);
+    } else {
+        root.style.removeProperty('--header-color');
+    }
 
     // Paper settings
     root.style.setProperty('--paper-bg-color', settings.paper.backgroundColor);
@@ -204,6 +212,10 @@ function syncFormWithSettings() {
     }
     if (fontSizeSlider) fontSizeSlider.value = settings.text.fontSize;
     if (fontSizeValue) fontSizeValue.textContent = `${settings.text.fontSize}px`;
+
+    const colorHeadersToggle = document.getElementById('setting-color-headers');
+    if (colorHeadersToggle) colorHeadersToggle.checked = settings.text.colorAffectsHeaders;
+
     updateColorUI('text-color', settings.text.textColor);
 
     // Paper
@@ -320,6 +332,11 @@ function setupTextControls() {
         const value = parseInt(e.target.value, 10);
         if (fontSizeValue) fontSizeValue.textContent = `${value}px`;
         updateSetting('text', 'fontSize', value);
+    });
+
+    const colorHeadersToggle = document.getElementById('setting-color-headers');
+    colorHeadersToggle?.addEventListener('change', (e) => {
+        updateSetting('text', 'colorAffectsHeaders', e.target.checked);
     });
 
     setupColorSelection('text-color', 'text', 'textColor');
