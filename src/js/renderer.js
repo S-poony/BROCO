@@ -247,11 +247,47 @@ function renderTextContent(container, node, startInEditMode = false) {
         // Tab for indentation
         if (e.key === 'Tab') {
             e.preventDefault();
-            const before = value.substring(0, start);
-            const after = value.substring(end);
-            editor.value = before + '  ' + after;
-            editor.selectionStart = editor.selectionEnd = start + 2;
-            editor.dispatchEvent(new Event('input'));
+
+            // Get the current line
+            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+            const lineEnd = value.indexOf('\n', start);
+            const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
+
+            // Check if this is a list item
+            const listMatch = line.match(/^(\s*)([-*+]|\d+\.)(\s+.*)?$/);
+
+            if (listMatch && !e.shiftKey) {
+                // Add indentation before the list marker
+                const currentIndent = listMatch[1];
+                const marker = listMatch[2];
+                const rest = listMatch[3] || '';
+                const newIndent = currentIndent + '  ';
+                const newLine = newIndent + marker + rest;
+
+                editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                editor.selectionStart = editor.selectionEnd = start + 2;
+                editor.dispatchEvent(new Event('input'));
+            } else if (e.shiftKey && listMatch) {
+                // Shift+Tab: Remove indentation
+                const currentIndent = listMatch[1];
+                if (currentIndent.length >= 2) {
+                    const marker = listMatch[2];
+                    const rest = listMatch[3] || '';
+                    const newIndent = currentIndent.substring(2);
+                    const newLine = newIndent + marker + rest;
+
+                    editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                    editor.selectionStart = editor.selectionEnd = Math.max(lineStart, start - 2);
+                    editor.dispatchEvent(new Event('input'));
+                }
+            } else {
+                // Regular Tab behavior for non-list lines
+                const before = value.substring(0, start);
+                const after = value.substring(end);
+                editor.value = before + '  ' + after;
+                editor.selectionStart = editor.selectionEnd = start + 2;
+                editor.dispatchEvent(new Event('input'));
+            }
             return;
         }
 
