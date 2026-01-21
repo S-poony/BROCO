@@ -163,13 +163,13 @@ function initialize() {
             const rect = elUnderCursor.closest('.splittable-rect[data-split-state="unsplit"]');
             if (!rect) return;
 
-            // Focus if rect changed OR if the rect lost focus but we're still hovering over it
+            // Restore focus follows mouse: hover focuses the rectangle
             if (rect.id !== lastHoveredRectId || document.activeElement !== rect) {
                 rect.focus({ preventScroll: true });
                 lastHoveredRectId = rect.id;
             }
 
-            // Update shortcut hints
+            // Always update overlay based on hovered rectangle (which is now focused)
             const node = findNodeById(getCurrentPage(), rect.id);
             shortcutsOverlay.update(node);
 
@@ -191,7 +191,28 @@ function initialize() {
     document.addEventListener('focusin', (e) => {
         if (e.target.classList.contains('splittable-rect')) {
             lastHoveredRectId = e.target.id;
+
+            // Update shortcut hints when focus changes (keyboard or direct click)
+            const node = findNodeById(getCurrentPage(), e.target.id);
+            shortcutsOverlay.update(node);
         }
+    });
+
+    document.addEventListener('focusout', (e) => {
+        // If we focus out and the next element is not a rect, we might want to hide
+        setTimeout(() => {
+            const nextFocus = document.activeElement;
+            if (!nextFocus || !nextFocus.classList.contains('splittable-rect')) {
+                // Check if the mouse is still over a paper container
+                // If not, we can hide the overlay
+                const paper = document.getElementById('a4-paper');
+                const mouseOverPaper = paper && paper.matches(':hover');
+                if (!mouseOverPaper) {
+                    shortcutsOverlay.hide();
+                    lastHoveredRectId = null;
+                }
+            }
+        }, 10);
     });
 
     // Initial render from state
