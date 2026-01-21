@@ -102,6 +102,12 @@ function initialize() {
 
     // Global hover-to-select: when mouse moves over a leaf rect in the paper, focus it
     let lastHoveredRectId = null;
+
+    // Reset hover state after layout updates (DOM was re-rendered, elements are new)
+    document.addEventListener('layoutUpdated', () => {
+        lastHoveredRectId = null;
+    });
+
     document.addEventListener('mousemove', (e) => {
         try {
             const elUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
