@@ -15,6 +15,7 @@ import { setupFileIOHandlers } from './js/fileIO.js';
 import { setupKeyboardNavigation, updateFocusableRects } from './js/keyboard.js';
 import { shortcutsOverlay } from './js/ShortcutsOverlay.js';
 import { findNodeById } from './js/layout.js';
+import { setupPlatformAdapters } from './js/platform.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -100,6 +101,7 @@ function initialize() {
 
     // Setup global error handling
     setupGlobalErrorHandler();
+    setupPlatformAdapters();
     setupAssetHandlers();
     setupDropHandlers();
     setupExportHandlers();

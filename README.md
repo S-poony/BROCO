@@ -27,8 +27,11 @@ npm install
 # Run development server
 npm run dev
 
-# Build for production
+# Build for production (Web)
 npm run build
+
+# Build for Desktop (Windows .exe)
+npm run electron:build
 ```
 
 ## Tech Stack
