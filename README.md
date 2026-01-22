@@ -4,7 +4,7 @@ A visual tool for designing multi-page document layouts with drag-and-drop image
 
 Fast like excel, beautiful like canva, and powerful like obsidian.
 
-**[Live Demo](https://s-poony.github.io/DesignRAW/)**
+**[Live Demo](https://s-poony.github.io/BROCO/)**
 
 ## Features
 
