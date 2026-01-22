@@ -4,7 +4,9 @@
  */
 
 export function setupPlatformAdapters() {
-    const isElectron = window.electronAPI && window.electronAPI.isElectron;
+    // Check both the injected API (preferred) and User Agent (fallback)
+    const isElectron = (window.electronAPI && window.electronAPI.isElectron) ||
+        /Electron/i.test(navigator.userAgent);
     const body = document.body;
 
     if (isElectron) {
