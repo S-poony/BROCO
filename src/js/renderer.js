@@ -16,6 +16,9 @@ marked.use({
     breaks: true
 });
 
+// Map to track ResizeObservers for paper containers
+const paperObservers = new Map();
+
 export function renderLayout(container, node, options = {}) {
     // Top-level paper handling: ensure we don't accidentally turn the paper into redt-1
     if (container.id === A4_PAPER_ID || container.classList.contains('a4-paper')) {
@@ -23,6 +26,20 @@ export function renderLayout(container, node, options = {}) {
         container.innerHTML = '';
         // Use CSS variable for background color to allow real-time updates
         container.style.backgroundColor = 'var(--paper-bg-color, #ffffff)';
+
+        // Ensure we track the rendered width for proportional dividers
+        if (!paperObservers.has(container)) {
+            const observer = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    const width = entry.contentRect.width;
+                    entry.target.style.setProperty('--paper-current-width', `${width}px`);
+                }
+            });
+            observer.observe(container);
+            paperObservers.set(container, observer);
+        }
+        // Set initial width immediately
+        container.style.setProperty('--paper-current-width', `${container.offsetWidth}px`);
 
         const rootElement = createDOMRect(node, null);
         container.appendChild(rootElement);

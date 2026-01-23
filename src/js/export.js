@@ -147,6 +147,8 @@ async function performExport(format, qualityMultiplier) {
             paperWrapper.style.boxShadow = 'none';
             paperWrapper.style.margin = '0';
             paperWrapper.style.zoom = '1';
+            // PROPORTIONAL EXPORT: Set the fixed base width so calculations are stable
+            paperWrapper.style.setProperty('--paper-current-width', `${layoutWidth}px`);
             tempContainer.appendChild(paperWrapper);
 
             renderLayout(paperWrapper, pageLayout, {
@@ -280,6 +282,8 @@ async function performPublishFlipbook(qualityMultiplier) {
             paperWrapper.style.margin = '0';
             // CRITICAL: Layout consistency
             paperWrapper.style.zoom = '1';
+            // PROPORTIONAL EXPORT: Set the fixed base width so calculations are stable
+            paperWrapper.style.setProperty('--paper-current-width', `${layoutWidth}px`);
             tempContainer.appendChild(paperWrapper);
 
             renderLayout(paperWrapper, pageLayout, {

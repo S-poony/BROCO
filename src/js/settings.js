@@ -127,12 +127,12 @@ export function applySettings() {
     // Background color is handled by CSS variable updates above.
     // Cover image creation is handled by re-rendering via 'settingsUpdated' event using CSS var for opacity.
     // Divider settings
-    root.style.setProperty('--divider-size', `${settings.dividers.width}px`);
+    root.style.setProperty('--divider-ratio', (settings.dividers.width / 1000).toString());
     root.style.setProperty('--divider-color', settings.dividers.color);
 
     // Layout border settings
     if (settings.dividers.showBorders) {
-        root.style.setProperty('--layout-border-width', `${settings.dividers.width}px`);
+        root.style.setProperty('--layout-border-width', 'var(--divider-thickness)');
     } else {
         root.style.setProperty('--layout-border-width', '1px');
     }
@@ -295,7 +295,7 @@ function syncFormWithSettings() {
     const dividerWidthValue = document.getElementById('divider-width-value');
 
     if (dividerWidthSlider) dividerWidthSlider.value = settings.dividers.width;
-    if (dividerWidthValue) dividerWidthValue.textContent = `${settings.dividers.width}px`;
+    if (dividerWidthValue) dividerWidthValue.textContent = settings.dividers.width; // Removed 'px'
     updateColorUI('divider-color', settings.dividers.color);
 
     const showBordersToggle = document.getElementById('setting-show-borders');
@@ -448,7 +448,7 @@ function setupDividerControls() {
 
     dividerWidthSlider?.addEventListener('input', (e) => {
         const value = parseInt(e.target.value, 10);
-        if (dividerWidthValue) dividerWidthValue.textContent = `${value}px`;
+        if (dividerWidthValue) dividerWidthValue.textContent = value;
         updateSetting('dividers', 'width', value);
     });
 
