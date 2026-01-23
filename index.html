@@ -110,204 +110,280 @@
                         </div>
 
                         <div class="settings-sections">
+                            <!-- Layout Settings (New) -->
+                            <details class="settings-section">
+                                <summary class="settings-section-title">
+                                    <span class="icon icon-layout" aria-hidden="true"></span>
+                                    Layout
+                                    <span class="icon-chevron" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div class="settings-content-body">
+                                    <div class="settings-group">
+                                        <label for="setting-layout-ratio">Aspect Ratio</label>
+                                        <select id="setting-layout-ratio" class="settings-select">
+                                            <option value="1.414">A4 / A-series (1:1.414)</option>
+                                            <option value="1.618">Golden Ratio (1:1.618)</option>
+                                            <option value="1.333">4:3 Standard</option>
+                                            <option value="1.5">3:2 Photo</option>
+                                            <option value="1.777">16:9 Widescreen</option>
+                                            <option value="1">1:1 Square</option>
+                                            <option value="2.35">2.35:1 Cinematic</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-group settings-toggle-group">
+                                        <label for="setting-layout-landscape">Landscape Orientation</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-layout-landscape">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </details>
+
                             <!-- Text Settings -->
-                            <div class="settings-section">
-                                <h3 class="settings-section-title">
+                            <details class="settings-section">
+                                <summary class="settings-section-title">
                                     <span class="icon icon-text" aria-hidden="true"></span>
                                     Text
-                                </h3>
-                                <div class="settings-group">
-                                    <label for="setting-font-family">Font Family</label>
-                                    <select id="setting-font-family" class="settings-select">
-                                        <option value="sans-serif">Sans Serif (Default)</option>
-                                        <option value="'Inter', sans-serif">Inter</option>
-                                        <option value="'Roboto', sans-serif">Roboto</option>
-                                        <option value="'Open Sans', sans-serif">Open Sans</option>
-                                        <option value="'Lato', sans-serif">Lato</option>
-                                        <option value="'Montserrat', sans-serif">Montserrat</option>
-                                        <option value="'Playfair Display', serif">Playfair Display</option>
-                                        <option value="'Merriweather', serif">Merriweather</option>
-                                        <option value="'Georgia', serif">Georgia</option>
-                                        <option value="serif">Serif</option>
-                                        <option value="'Courier New', monospace">Courier New</option>
-                                        <option value="monospace">Monospace</option>
-                                    </select>
-                                </div>
-                                <div class="settings-group">
-                                    <div class="settings-label-row">
-                                        <label for="setting-font-size">Font Size</label>
-                                        <span id="font-size-value" class="settings-value">14px</span>
+                                    <span class="icon-chevron" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div class="settings-content-body">
+                                    <div class="settings-group">
+                                        <label for="setting-font-family">Font Family</label>
+                                        <select id="setting-font-family" class="settings-select">
+                                            <option value="sans-serif">Sans Serif (Default)</option>
+                                            <option value="'Inter', sans-serif">Inter</option>
+                                            <option value="'Roboto', sans-serif">Roboto</option>
+                                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                                            <option value="'Lato', sans-serif">Lato</option>
+                                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                                            <option value="'Playfair Display', serif">Playfair Display</option>
+                                            <option value="'Merriweather', serif">Merriweather</option>
+                                            <option value="'Georgia', serif">Georgia</option>
+                                            <option value="serif">Serif</option>
+                                            <option value="'Courier New', monospace">Courier New</option>
+                                            <option value="monospace">Monospace</option>
+                                        </select>
                                     </div>
-                                    <input type="range" id="setting-font-size" min="10" max="100" value="14"
-                                        class="settings-slider">
-                                </div>
-                                <div class="settings-group">
-                                    <label>Text Color</label>
-                                    <div class="color-selection-container" data-setting="text-color">
-                                        <div class="color-swatch-grid" id="text-color-presets">
-                                            <!-- Presets populated by JS -->
-                                            <button class="color-swatch" style="background-color: #374151"
-                                                data-color="#374151" title="Charcoal"
-                                                aria-label="Select Charcoal color"></button>
-                                            <button class="color-swatch" style="background-color: #4f46e5"
-                                                data-color="#4f46e5" title="Indigo"
-                                                aria-label="Select Indigo color"></button>
-                                            <button class="color-swatch" style="background-color: #0ea5e9"
-                                                data-color="#0ea5e9" title="Sky" aria-label="Select Sky color"></button>
-                                            <button class="color-swatch" style="background-color: #10b981"
-                                                data-color="#10b981" title="Emerald"
-                                                aria-label="Select Emerald color"></button>
-                                            <button class="color-swatch" style="background-color: #f59e0b"
-                                                data-color="#f59e0b" title="Amber"
-                                                aria-label="Select Amber color"></button>
-                                            <button class="color-swatch" style="background-color: #ef4444"
-                                                data-color="#ef4444" title="Rose"
-                                                aria-label="Select Rose color"></button>
-                                            <button class="color-swatch" style="background-color: #000000"
-                                                data-color="#000000" title="Black"
-                                                aria-label="Select Black color"></button>
+                                    <div class="settings-group">
+                                        <div class="settings-label-row">
+                                            <label for="setting-font-size">Font Size</label>
+                                            <span id="font-size-value" class="settings-value">14px</span>
                                         </div>
-                                        <div class="custom-color-row">
-                                            <button class="custom-color-trigger" id="custom-text-color-trigger">
-                                                <div class="custom-color-preview" id="custom-text-color-preview"></div>
-                                                <span>Custom...</span>
-                                            </button>
-                                            <span class="color-value-text" id="text-color-hex">#374151</span>
-                                            <input type="color" id="setting-text-color" value="#374151"
-                                                class="settings-color-input-hidden">
-                                        </div>
+                                        <input type="range" id="setting-font-size" min="10" max="100" value="14"
+                                            class="settings-slider">
                                     </div>
-                                </div>
-                                <div class="settings-group settings-toggle-group">
-                                    <label for="setting-color-headers">Apply color to headers</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="setting-color-headers">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Paper Settings -->
-                            <div class="settings-section">
-                                <h3 class="settings-section-title">
-                                    <span class="icon icon-page" aria-hidden="true"></span>
-                                    Paper
-                                </h3>
-                                <div class="settings-group">
-                                    <label>Background Color</label>
-                                    <div class="color-selection-container" data-setting="paper-color">
-                                        <div class="color-swatch-grid" id="paper-color-presets">
-                                            <button class="color-swatch light-color" style="background-color: #ffffff"
-                                                data-color="#ffffff" title="White"
-                                                aria-label="Select White background"></button>
-                                            <button class="color-swatch light-color" style="background-color: #fdfbf7"
-                                                data-color="#fdfbf7" title="Cream"
-                                                aria-label="Select Cream background"></button>
-                                            <button class="color-swatch light-color" style="background-color: #f8fafc"
-                                                data-color="#f8fafc" title="Slate"
-                                                aria-label="Select Slate background"></button>
-                                            <button class="color-swatch light-color" style="background-color: #f0fdf4"
-                                                data-color="#f0fdf4" title="Mint"
-                                                aria-label="Select Mint background"></button>
-                                            <button class="color-swatch light-color" style="background-color: #f0f9ff"
-                                                data-color="#f0f9ff" title="Sky"
-                                                aria-label="Select Sky background"></button>
-                                            <button class="color-swatch light-color" style="background-color: #fff1f2"
-                                                data-color="#fff1f2" title="Rose"
-                                                aria-label="Select Rose background"></button>
-                                        </div>
-                                        <div class="custom-color-row">
-                                            <button class="custom-color-trigger" id="custom-paper-color-trigger">
-                                                <div class="custom-color-preview" id="custom-paper-color-preview"></div>
-                                                <span>Custom...</span>
-                                            </button>
-                                            <span class="color-value-text" id="paper-color-hex">#ffffff</span>
-                                            <input type="color" id="setting-paper-color" value="#ffffff"
-                                                class="settings-color-input-hidden">
+                                    <div class="settings-group">
+                                        <label>Text Color</label>
+                                        <div class="color-selection-container" data-setting="text-color">
+                                            <div class="color-swatch-grid" id="text-color-presets">
+                                                <!-- Presets populated by JS -->
+                                                <button class="color-swatch" style="background-color: #374151"
+                                                    data-color="#374151" title="Charcoal"
+                                                    aria-label="Select Charcoal color"></button>
+                                                <button class="color-swatch" style="background-color: #4f46e5"
+                                                    data-color="#4f46e5" title="Indigo"
+                                                    aria-label="Select Indigo color"></button>
+                                                <button class="color-swatch" style="background-color: #0ea5e9"
+                                                    data-color="#0ea5e9" title="Sky"
+                                                    aria-label="Select Sky color"></button>
+                                                <button class="color-swatch" style="background-color: #10b981"
+                                                    data-color="#10b981" title="Emerald"
+                                                    aria-label="Select Emerald color"></button>
+                                                <button class="color-swatch" style="background-color: #f59e0b"
+                                                    data-color="#f59e0b" title="Amber"
+                                                    aria-label="Select Amber color"></button>
+                                                <button class="color-swatch" style="background-color: #ef4444"
+                                                    data-color="#ef4444" title="Rose"
+                                                    aria-label="Select Rose color"></button>
+                                                <button class="color-swatch" style="background-color: #000000"
+                                                    data-color="#000000" title="Black"
+                                                    aria-label="Select Black color"></button>
+                                            </div>
+                                            <div class="custom-color-row">
+                                                <button class="custom-color-trigger" id="custom-text-color-trigger">
+                                                    <div class="custom-color-preview" id="custom-text-color-preview">
+                                                    </div>
+                                                    <span>Custom...</span>
+                                                </button>
+                                                <span class="color-value-text" id="text-color-hex">#374151</span>
+                                                <input type="color" id="setting-text-color" value="#374151"
+                                                    class="settings-color-input-hidden">
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="settings-group">
-                                    <label>Cover Image</label>
-                                    <div class="cover-image-controls">
-                                        <div id="cover-image-preview" class="cover-preview">
-                                            <span>No image selected</span>
-                                        </div>
-                                        <div class="cover-actions">
-                                            <label for="setting-cover-image" class="btn-secondary btn-small">
-                                                Choose Image
-                                            </label>
-                                            <input type="file" id="setting-cover-image" accept="image/*" hidden>
-                                            <button id="remove-cover-image" class="btn-text btn-small">Remove</button>
-                                        </div>
+                                    <div class="settings-group settings-toggle-group">
+                                        <label for="setting-color-headers">Apply color to headers</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-color-headers">
+                                            <span class="toggle-slider"></span>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="settings-group">
-                                    <div class="settings-label-row">
-                                        <label for="setting-cover-opacity">Cover Opacity</label>
-                                        <span id="cover-opacity-value" class="settings-value">20%</span>
-                                    </div>
-                                    <input type="range" id="setting-cover-opacity" min="5" max="100" value="20"
-                                        class="settings-slider">
-                                </div>
-                                <div class="settings-group settings-toggle-group">
-                                    <label for="setting-page-numbers">Show Page Numbers</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="setting-page-numbers">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
+                            </details>
 
                             <!-- Divider Settings -->
-                            <div class="settings-section">
-                                <h3 class="settings-section-title">
+                            <details class="settings-section">
+                                <summary class="settings-section-title">
                                     <span class="icon icon-divider" aria-hidden="true"></span>
                                     Dividers
-                                </h3>
-                                <div class="settings-group">
-                                    <div class="settings-label-row">
-                                        <label for="setting-divider-width">Divider Width</label>
-                                        <span id="divider-width-value" class="settings-value">5px</span>
-                                    </div>
-                                    <input type="range" id="setting-divider-width" min="0" max="20" value="5"
-                                        class="settings-slider">
-                                </div>
-                                <div class="settings-group">
-                                    <label>Divider Color</label>
-                                    <div class="color-selection-container" data-setting="divider-color">
-                                        <div class="color-swatch-grid" id="divider-color-presets">
-                                            <button class="color-swatch light-color" style="background-color: #d1d5db"
-                                                data-color="#d1d5db" title="Light Gray"></button>
-                                            <button class="color-swatch" style="background-color: #f9f3ff"
-                                                data-color="#f9f3ff" title="Indigo"></button>
-                                            <button class="color-swatch" style="background-color: #6d809e"
-                                                data-color="#6d809e" title="Charcoal"></button>
-                                            <button class="color-swatch" style="background-color: #000000"
-                                                data-color="#000000" title="Black"></button>
-                                            <button class="color-swatch" style="background-color: #10b981"
-                                                data-color="#10b981" title="Emerald"></button>
+                                    <span class="icon-chevron" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div class="settings-content-body">
+                                    <div class="settings-group">
+                                        <div class="settings-label-row">
+                                            <label for="setting-divider-width">Divider Width</label>
+                                            <span id="divider-width-value" class="settings-value">5px</span>
                                         </div>
-                                        <div class="custom-color-row">
-                                            <button class="custom-color-trigger" id="custom-divider-color-trigger">
-                                                <div class="custom-color-preview" id="custom-divider-color-preview">
-                                                </div>
-                                                <span>Custom...</span>
-                                            </button>
-                                            <span class="color-value-text" id="divider-color-hex">#d1d5db</span>
-                                            <input type="color" id="setting-divider-color" value="#d1d5db"
-                                                class="settings-color-input-hidden">
+                                        <input type="range" id="setting-divider-width" min="0" max="20" value="5"
+                                            class="settings-slider">
+                                    </div>
+                                    <div class="settings-group">
+                                        <label>Divider Color</label>
+                                        <div class="color-selection-container" data-setting="divider-color">
+                                            <div class="color-swatch-grid" id="divider-color-presets">
+                                                <!-- Updated to match Text colors -->
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #d1d5db" data-color="#d1d5db"
+                                                    title="Light Gray"></button>
+                                                <button class="color-swatch" style="background-color: #374151"
+                                                    data-color="#374151" title="Charcoal"></button>
+                                                <button class="color-swatch" style="background-color: #4f46e5"
+                                                    data-color="#4f46e5" title="Indigo"></button>
+                                                <button class="color-swatch" style="background-color: #000000"
+                                                    data-color="#000000" title="Black"></button>
+                                                <button class="color-swatch" style="background-color: #10b981"
+                                                    data-color="#10b981" title="Emerald"></button>
+                                                <!-- Added missing matches from text -->
+                                                <button class="color-swatch" style="background-color: #0ea5e9"
+                                                    data-color="#0ea5e9" title="Sky"></button>
+                                                <button class="color-swatch" style="background-color: #f59e0b"
+                                                    data-color="#f59e0b" title="Amber"></button>
+                                                <button class="color-swatch" style="background-color: #ef4444"
+                                                    data-color="#ef4444" title="Rose"></button>
+                                            </div>
+                                            <div class="custom-color-row">
+                                                <button class="custom-color-trigger" id="custom-divider-color-trigger">
+                                                    <div class="custom-color-preview" id="custom-divider-color-preview">
+                                                    </div>
+                                                    <span>Custom...</span>
+                                                </button>
+                                                <span class="color-value-text" id="divider-color-hex">#d1d5db</span>
+                                                <input type="color" id="setting-divider-color" value="#d1d5db"
+                                                    class="settings-color-input-hidden">
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="settings-group settings-toggle-group">
+                                        <label for="setting-show-borders">Borders</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-show-borders" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="settings-group settings-toggle-group">
-                                    <label for="setting-show-borders">Borders</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="setting-show-borders" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
+                            </details>
+
+                            <!-- Paper Settings -->
+                            <details class="settings-section">
+                                <summary class="settings-section-title">
+                                    <span class="icon icon-page" aria-hidden="true"></span>
+                                    Paper
+                                    <span class="icon-chevron" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div class="settings-content-body">
+                                    <div class="settings-group">
+                                        <label>Background Color</label>
+                                        <div class="color-selection-container" data-setting="paper-color">
+                                            <div class="color-swatch-grid" id="paper-color-presets">
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #ffffff" data-color="#ffffff" title="White"
+                                                    aria-label="Select White background"></button>
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #fdfbf7" data-color="#fdfbf7" title="Cream"
+                                                    aria-label="Select Cream background"></button>
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #f8fafc" data-color="#f8fafc" title="Slate"
+                                                    aria-label="Select Slate background"></button>
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #f0fdf4" data-color="#f0fdf4" title="Mint"
+                                                    aria-label="Select Mint background"></button>
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #f0f9ff" data-color="#f0f9ff" title="Sky"
+                                                    aria-label="Select Sky background"></button>
+                                                <button class="color-swatch light-color"
+                                                    style="background-color: #fff1f2" data-color="#fff1f2" title="Rose"
+                                                    aria-label="Select Rose background"></button>
+                                            </div>
+                                            <div class="custom-color-row">
+                                                <button class="custom-color-trigger" id="custom-paper-color-trigger">
+                                                    <div class="custom-color-preview" id="custom-paper-color-preview">
+                                                    </div>
+                                                    <span>Custom...</span>
+                                                </button>
+                                                <span class="color-value-text" id="paper-color-hex">#ffffff</span>
+                                                <input type="color" id="setting-paper-color" value="#ffffff"
+                                                    class="settings-color-input-hidden">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-group">
+                                        <label>Cover Image</label>
+                                        <div class="cover-image-controls">
+                                            <div id="cover-image-preview" class="cover-preview">
+                                                <span>No image selected</span>
+                                            </div>
+                                            <div class="cover-actions">
+                                                <label for="setting-cover-image" class="btn-secondary btn-small">
+                                                    Choose Image
+                                                </label>
+                                                <input type="file" id="setting-cover-image" accept="image/*" hidden>
+                                                <button id="remove-cover-image"
+                                                    class="btn-text btn-small">Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-group">
+                                        <div class="settings-label-row">
+                                            <label for="setting-cover-opacity">Cover Opacity</label>
+                                            <span id="cover-opacity-value" class="settings-value">20%</span>
+                                        </div>
+                                        <input type="range" id="setting-cover-opacity" min="5" max="100" value="20"
+                                            class="settings-slider">
+                                    </div>
+                                    <div class="settings-group settings-toggle-group">
+                                        <label for="setting-page-numbers">Show Page Numbers</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-page-numbers">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
+                            </details>
 
                             <div class="modal-footer settings-footer">
                                 <button id="settings-reset" class="btn-text">Reset to Defaults</button>

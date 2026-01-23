@@ -6,6 +6,10 @@ import { getCurrentPage } from './state.js';
  * Default settings configuration
  */
 const defaultSettings = {
+    layout: {
+        ratio: 1.414, // A4 default (approx)
+        isLandscape: false
+    },
     text: {
         fontFamily: 'sans-serif',
         fontSize: 20, // px
@@ -40,7 +44,7 @@ export function getSettings() {
 
 /**
  * Update a specific setting
- * @param {string} category - 'text', 'paper', or 'dividers'
+ * @param {string} category - 'layout', 'text', 'paper', or 'dividers'
  * @param {string} key - Setting key within category
  * @param {any} value - New value
  */
@@ -57,11 +61,45 @@ export function updateSetting(category, key, value) {
     }
 }
 
+function calculatePaperDimensions() {
+    // Rule: width + height = 2000px
+    // Ratio = width / height (if landscape) or height / width (if portrait)?
+    // Actually typically ratio is long / short.
+    // Let's assume ratio input describes the shape (e.g., 1.618).
+
+    // We treat ratio as LongSide / ShortSide
+    const r = Math.max(settings.layout.ratio, 1);
+
+    // h + w = 2000
+    // w = r * h (if w is long side)
+    // h * r + h = 2000 => h(r+1) = 2000 => h = 2000 / (r+1)
+
+    const shortSide = 2000 / (r + 1);
+    const longSide = shortSide * r;
+
+    let width, height;
+
+    if (settings.layout.isLandscape) {
+        width = longSide;
+        height = shortSide;
+    } else {
+        width = shortSide;
+        height = longSide;
+    }
+
+    return { width, height };
+}
+
 /**
  * Apply all settings to CSS custom properties
  */
 export function applySettings() {
     const root = document.documentElement;
+
+    // Layout
+    const { width, height } = calculatePaperDimensions();
+    root.style.setProperty('--paper-width', `${width}px`);
+    root.style.setProperty('--paper-height', `${height}px`);
 
     // Text settings
     root.style.setProperty('--text-font-family', settings.text.fontFamily);
@@ -112,6 +150,7 @@ export function loadSettings(savedSettings) {
     if (savedSettings) {
         // Deep merge with defaults to handle missing keys
         settings = {
+            layout: { ...defaultSettings.layout, ...savedSettings.layout },
             text: { ...defaultSettings.text, ...savedSettings.text },
             paper: { ...defaultSettings.paper, ...savedSettings.paper },
             dividers: { ...defaultSettings.dividers, ...savedSettings.dividers }
@@ -188,6 +227,7 @@ export function setupSettingsHandlers() {
     });
 
     // Setup individual controls
+    setupLayoutControls();
     setupTextControls();
     setupPaperControls();
     setupDividerControls();
@@ -202,6 +242,13 @@ export function setupSettingsHandlers() {
 }
 
 function syncFormWithSettings() {
+    // Layout
+    const ratioSelect = document.getElementById('setting-layout-ratio');
+    const landscapeToggle = document.getElementById('setting-layout-landscape');
+
+    if (ratioSelect) ratioSelect.value = settings.layout.ratio;
+    if (landscapeToggle) landscapeToggle.checked = settings.layout.isLandscape;
+
     // Text
     const fontSelect = document.getElementById('setting-font-family');
     const fontSizeSlider = document.getElementById('setting-font-size');
@@ -406,4 +453,22 @@ function setupDividerControls() {
     showBordersToggle?.addEventListener('change', (e) => {
         updateSetting('dividers', 'showBorders', e.target.checked);
     });
+}
+
+function setupLayoutControls() {
+    const ratioSelect = document.getElementById('setting-layout-ratio');
+    if (ratioSelect) {
+        ratioSelect.value = settings.layout.ratio;
+        ratioSelect.addEventListener('change', (e) => {
+            updateSetting('layout', 'ratio', parseFloat(e.target.value));
+        });
+    }
+
+    const landscapeToggle = document.getElementById('setting-layout-landscape');
+    if (landscapeToggle) {
+        landscapeToggle.checked = settings.layout.isLandscape;
+        landscapeToggle.addEventListener('change', (e) => {
+            updateSetting('layout', 'isLandscape', e.target.checked);
+        });
+    }
 }

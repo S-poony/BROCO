@@ -135,17 +135,63 @@
     margin-bottom: 0;
 }
 
-.settings-section-title {
+details.settings-section {
+    background: #f9fafb;
+    border-radius: 1rem;
+    padding: 0;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+details.settings-section[open] {
+    border-color: #e5e7eb;
+}
+
+summary.settings-section-title {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
-    margin: 0 0 1rem 0;
+    padding: 1.25rem;
+    margin: 0;
     font-size: 1rem;
     font-weight: 600;
     color: #374151;
+    cursor: pointer;
+    list-style: none;
+    /* Remove default triangle */
 }
 
-.settings-section-title .icon {
+summary.settings-section-title::-webkit-details-marker {
+    display: none;
+    /* Remove default triangle in WebKit */
+}
+
+.settings-content-body {
+    padding: 0 1.25rem 1.25rem 1.25rem;
+    border-top: 1px solid transparent;
+}
+
+details[open] .settings-content-body {
+    border-top-color: #f3f4f6;
+    padding-top: 1.25rem;
+}
+
+.icon-chevron {
+    color: #9ca3af;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+details[open] .icon-chevron {
+    transform: rotate(180deg);
+}
+
+/* Icon styling */
+summary.settings-section-title .icon {
     width: 20px;
     height: 20px;
     background-color: #4f46e5;

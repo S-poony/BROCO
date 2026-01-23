@@ -61,6 +61,11 @@ body {
     /* gap: 1rem; Removed to let title float */
     align-items: flex-start;
     position: relative;
+
+    /* Fix for layout too wide: allow internal scrolling */
+    min-width: 0;
+    overflow-x: auto;
+    width: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -76,10 +81,6 @@ body {
         flex-direction: column;
         width: 100%;
         align-items: center;
-    }
-
-    #app {
-        padding: 0.5rem;
     }
 
     #app {

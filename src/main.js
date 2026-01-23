@@ -96,6 +96,48 @@ function setupGlobalHandlers() {
     document.documentElement.style.setProperty('--divider-size', `${DIVIDER_SIZE}px`);
 }
 
+/**
+ * Updates the paper scale to fit within the workspace
+ */
+function updatePaperScale() {
+    const paper = document.getElementById('a4-paper');
+    const container = document.querySelector('.workspace-wrapper');
+    if (!paper || !container) return;
+
+    // Get the actual layout width from CSS variable or fallback
+    const rootStyle = getComputedStyle(document.documentElement);
+    let paperWidth = parseFloat(rootStyle.getPropertyValue('--paper-width'));
+
+    // Fallback using offsetWidth if variable not set
+    if (!paperWidth || isNaN(paperWidth)) {
+        // We need to temporarily remove scaling to get true width if it was already applied?
+        // Actually offsetWidth usually reports the layout width (untransformed).
+        paperWidth = paper.offsetWidth;
+    }
+
+    if (!paperWidth) return;
+
+    // Add some padding
+    const padding = 40;
+    const availableWidth = container.clientWidth - padding;
+
+    // Calculate scale
+    let scale = availableWidth / paperWidth;
+
+    // Limit max scale to avoid excessive zooming on huge screens
+    // But allow it to go slightly above 1 if screen is really wide and paper is small
+    scale = Math.min(scale, 1.0);
+
+    // Apply transform
+    paper.style.transform = `scale(${scale})`;
+    paper.style.transformOrigin = 'top center';
+
+    // Adjust margin to prevent empty whitespace below
+    // Transform does not affect layout flow size, so we need to compensate
+    const paperHeight = paper.offsetHeight;
+    paper.style.marginBottom = `${paperHeight * (scale - 1)}px`;
+}
+
 function initialize() {
     let lastHoveredRectId = null;
 
@@ -240,6 +282,25 @@ function initialize() {
     if (firstRect) {
         firstRect.focus();
     }
+
+    // Initial scale calculation
+    // Timeout to ensure CSS variables and layout are settled
+    setTimeout(updatePaperScale, 100);
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        requestAnimationFrame(updatePaperScale);
+    });
+
+    // Listen for settings and layout updates to re-scale
+    document.addEventListener('settingsUpdated', () => {
+        setTimeout(updatePaperScale, 50);
+    });
+    document.addEventListener('layoutUpdated', () => {
+        // Layout update might change content height but usually not width? 
+        // But if orientation changes it triggers this.
+        setTimeout(updatePaperScale, 50);
+    });
 }
 
 async function loadShortcuts() {
