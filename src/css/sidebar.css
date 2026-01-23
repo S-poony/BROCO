@@ -10,7 +10,7 @@
     gap: 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     z-index: 10;
-    max-height: calc(100vh - 4rem);
+    height: 100%;
     overflow-y: auto;
     flex-shrink: 0;
 }
@@ -19,7 +19,12 @@
     .sidebar {
         width: 100%;
         max-height: none;
+        height: auto;
         overflow-y: visible;
+        flex: 1;
+        /* Take remaining space */
+        min-height: 0;
+        overflow-y: auto;
     }
 }
 

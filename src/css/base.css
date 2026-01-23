@@ -5,95 +5,107 @@
 body {
     margin: 0;
     padding: 0;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    /* Better for scrollable pages */
+    height: 100vh;
+    overflow: hidden;
     background-color: #f6f3f3;
-    /* gray-100 */
     font-family: sans-serif;
 }
 
 #app {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
+    height: 100%;
+    overflow: hidden;
 }
 
 .main-layout {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 1fr;
+    /* Header row, Content row */
     width: 100%;
-    max-width: 1700px;
-    align-items: start;
-    justify-items: center;
+    height: 100%;
+    gap: 0;
+    /* Managed by padding inside cells */
+    margin: 0;
+    overflow: hidden;
+    max-width: 100%;
+    /* Remove 1700px limit, or keep it? App should probably fill screen */
+}
+
+/* File Actions - Toolbar Row */
+.file-actions {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    /* Span full width */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: #f6f3f3;
+    z-index: 20;
+    height: 60px;
+    /* Fixed header height */
+    box-sizing: border-box;
+    position: static;
+    /* No longer fixed */
+    width: 100%;
+}
+
+.file-actions button {
+    pointer-events: auto;
+}
+
+.file-actions-left,
+.file-actions-right {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Sidebars and Workspace - Content Row */
+#pages-sidebar {
+    grid-row: 2;
+    grid-column: 1;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1rem 0.5rem 1rem 1rem;
+    box-sizing: border-box;
+}
+
+.workspace-wrapper {
+    grid-row: 2;
+    grid-column: 2;
+    width: 100%;
+    height: 100%;
     position: relative;
+    overflow: hidden;
+    /* No global scroll */
+    display: grid;
+    /* Centers the paper */
+    place-items: center;
     padding: 1rem;
-    padding-top: 4rem;
-    /* Space for the floating title */
-    gap: 2rem;
-    margin: 0 auto;
+
+    /* Container Query Context for Paper Scaling */
+    container-type: size;
+    min-width: 0;
 }
 
 #right-sidebars-container {
+    grid-row: 2;
+    grid-column: 3;
+    height: 100%;
+    /* Horizontal layout, Settings to the left of Assets */
+    flex-direction: row-reverse;
+    align-items: stretch;
+    /* Full height */
+    overflow: visible;
+    /* Allow sidebars to expand */
+    padding: 1rem 1rem 1rem 0.5rem;
+    box-sizing: border-box;
     display: flex;
     gap: 1rem;
-    grid-column: 3;
-    justify-self: start;
-    align-items: start;
 }
 
-.workspace-wrapper {
-    grid-column: 2;
-}
-
-#pages-sidebar {
-    grid-column: 1;
-    justify-self: end;
-}
-
-.workspace-wrapper {
-    display: flex;
-    flex-direction: column;
-    /* gap: 1rem; Removed to let title float */
-    align-items: flex-start;
-    position: relative;
-
-    /* Fix for layout too wide: allow internal scrolling */
-    min-width: 0;
-    overflow-x: auto;
-    width: 100%;
-}
-
-@media (max-width: 1024px) {
-    .main-layout {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 0.5rem;
-        gap: 1rem;
-    }
-
-    #right-sidebars-container {
-        flex-direction: column;
-        width: 100%;
-        align-items: center;
-    }
-
-    #app {
-        padding: 0.5rem;
-    }
-
-    .workspace-wrapper {
-        gap: 1rem;
-        /* Restore gap on mobile */
-    }
-}
-
-
+/* Button & UI Styles from original file */
 .btn-primary {
     background-color: #4f46e5;
     color: white;
@@ -137,30 +149,6 @@ body {
     color: #374151;
 }
 
-hr {
-    border: 0;
-    border-top: 1px solid #e5e7eb;
-    margin: 1rem 0;
-}
-
-/* File Actions (Save/Open/Settings) */
-.file-actions {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 100;
-}
-
-.file-actions-left,
-.file-actions-right {
-    display: flex;
-    gap: 0.5rem;
-}
-
 .btn-file {
     background-color: #4f46e5;
     color: white;
@@ -188,16 +176,46 @@ hr {
     width: 18px;
     height: 18px;
     background-color: white;
-    /* Make icon white on primary background */
+    mask-size: cover;
+    -webkit-mask-size: cover;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+    margin: 1rem 0;
 }
 
 @media (max-width: 1024px) {
+    .main-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.5rem;
+        gap: 1rem;
+        overflow-y: auto;
+        /* Allow scroll on mobile */
+    }
+
     .file-actions {
         position: static;
         order: -3;
-        /* Above the title on mobile */
+        width: 100%;
         justify-content: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0;
+    }
+
+    #pages-sidebar,
+    #right-sidebars-container,
+    .workspace-wrapper {
+        width: 100%;
+        height: auto;
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .workspace-wrapper {
+        overflow: visible;
+        aspect-ratio: auto;
+        /* Let it grow */
     }
 }

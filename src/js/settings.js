@@ -101,6 +101,11 @@ export function applySettings() {
     root.style.setProperty('--paper-width', `${width}px`);
     root.style.setProperty('--paper-height', `${height}px`);
 
+    // Set ratio for CSS aspect-ratio support
+    // Ensure we use a valid division to avoid infinity, though width/height should be safe
+    const ratioVal = width / height;
+    root.style.setProperty('--ratio', `${ratioVal}`);
+
     // Text settings
     root.style.setProperty('--text-font-family', settings.text.fontFamily);
     root.style.setProperty('--text-font-size', `${settings.text.fontSize}px`);
