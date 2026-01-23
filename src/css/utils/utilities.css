@@ -57,56 +57,56 @@
 }
 
 .icon-add {
-    mask-image: url('../assets/icons/add-circle.svg');
-    -webkit-mask-image: url('../assets/icons/add-circle.svg');
+    mask-image: url('../../assets/icons/add-circle.svg');
+    -webkit-mask-image: url('../../assets/icons/add-circle.svg');
 }
 
 .icon-delete {
-    mask-image: url('../assets/icons/delete.svg');
-    -webkit-mask-image: url('../assets/icons/delete.svg');
+    mask-image: url('../../assets/icons/delete.svg');
+    -webkit-mask-image: url('../../assets/icons/delete.svg');
 }
 
 .icon-replace {
-    mask-image: url('../assets/icons/replace.svg');
-    -webkit-mask-image: url('../assets/icons/replace.svg');
+    mask-image: url('../../assets/icons/replace.svg');
+    -webkit-mask-image: url('../../assets/icons/replace.svg');
 }
 
 .icon-duplicate {
-    mask-image: url('../assets/icons/duplicate.svg');
-    -webkit-mask-image: url('../assets/icons/duplicate.svg');
+    mask-image: url('../../assets/icons/duplicate.svg');
+    -webkit-mask-image: url('../../assets/icons/duplicate.svg');
 }
 
 .icon-save {
-    mask-image: url('../assets/icons/save.svg');
-    -webkit-mask-image: url('../assets/icons/save.svg');
+    mask-image: url('../../assets/icons/save.svg');
+    -webkit-mask-image: url('../../assets/icons/save.svg');
 }
 
 .icon-open {
-    mask-image: url('../assets/icons/open.svg');
-    -webkit-mask-image: url('../assets/icons/open.svg');
+    mask-image: url('../../assets/icons/open.svg');
+    -webkit-mask-image: url('../../assets/icons/open.svg');
 }
 
 .icon-settings {
-    mask-image: url('../assets/icons/settings.svg');
-    -webkit-mask-image: url('../assets/icons/settings.svg');
+    mask-image: url('../../assets/icons/settings.svg');
+    -webkit-mask-image: url('../../assets/icons/settings.svg');
 }
 
 .icon-text {
-    mask-image: url('../assets/icons/text.svg');
-    -webkit-mask-image: url('../assets/icons/text.svg');
+    mask-image: url('../../assets/icons/text.svg');
+    -webkit-mask-image: url('../../assets/icons/text.svg');
 }
 
 .icon-page {
-    mask-image: url('../assets/icons/page.svg');
-    -webkit-mask-image: url('../assets/icons/page.svg');
+    mask-image: url('../../assets/icons/page.svg');
+    -webkit-mask-image: url('../../assets/icons/page.svg');
 }
 
 .icon-divider {
-    mask-image: url('../assets/icons/divider.svg');
-    -webkit-mask-image: url('../assets/icons/divider.svg');
+    mask-image: url('../../assets/icons/divider.svg');
+    -webkit-mask-image: url('../../assets/icons/divider.svg');
 }
 
 .icon-keyboard {
-    mask-image: url('../assets/icons/keyboard.svg');
-    -webkit-mask-image: url('../assets/icons/keyboard.svg');
+    mask-image: url('../../assets/icons/keyboard.svg');
+    -webkit-mask-image: url('../../assets/icons/keyboard.svg');
 }
