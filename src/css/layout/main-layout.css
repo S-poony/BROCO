@@ -159,3 +159,27 @@
         overflow-y: auto;
     }
 }
+
+/* Narrow Screens - Icon only top buttons and consistent spacing */
+@media (max-width: 600px) {
+    .file-actions {
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .file-actions-left,
+    .file-actions-right {
+        gap: 0.5rem;
+    }
+
+    .btn-file span:not(.icon) {
+        display: none;
+    }
+
+    /* Ensure icons are centered and buttons have a good size */
+    .btn-file {
+        padding: 0.5rem;
+        min-width: 40px;
+        justify-content: center;
+    }
+}
