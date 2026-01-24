@@ -5,6 +5,9 @@
 `ctrl + z` = undo
 `ctrl + y` = redo
 `ctrl + shift + z` = redo
+`tab / shift + tab` = navigation
+`arrows` = navigation (*layout*)
+`enter` = select
 
 ### Empty rectangle
 
