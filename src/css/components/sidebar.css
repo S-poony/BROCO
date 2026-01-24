@@ -73,12 +73,13 @@
         width: 100%;
         max-height: none;
         height: auto;
-        flex-direction: row;
-        flex-wrap: wrap;
-        /* Allow wrapping for buttons */
-        align-items: center;
-        justify-content: space-around;
-        padding: 0.25rem;
+        flex-direction: column;
+        /* Stack items vertically */
+        flex-wrap: nowrap;
+        align-items: stretch;
+        /* Full width items */
+        justify-content: flex-start;
+        padding: 0.5rem;
         gap: 0.5rem;
         border: none;
         box-shadow: none;
@@ -95,13 +96,12 @@
         /* Hide redundant legacy class */
     }
 
+    /* Buttons take full width in column mode */
     #import-assets-btn,
     #export-layout-btn,
     .shortcuts-dropdown {
-        flex: 1;
-        /* Share width */
-        white-space: nowrap;
-        min-width: fit-content;
+        width: 100%;
+        flex: none;
     }
 }
 

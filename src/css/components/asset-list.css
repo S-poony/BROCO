@@ -24,7 +24,6 @@
         overflow-x: auto;
         padding-bottom: 0.5rem;
         width: 100%;
-        order: 10;
         /* Ensure it moves to bottom on mobile */
     }
 
