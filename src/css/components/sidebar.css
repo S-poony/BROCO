@@ -233,3 +233,7 @@
     color: var(--color-text-muted, #4b5563);
     margin-bottom: 0.25rem;
 }
+
+#export-layout-btn {
+    flex-shrink: 0;
+}

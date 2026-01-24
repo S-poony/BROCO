@@ -10,6 +10,10 @@
     transition: opacity 0.2s;
     border: 2px solid transparent;
     padding: 2px;
+    padding-bottom: 100px;
+    /* Massive buffer for hundreds of assets */
+    align-content: start;
+    grid-auto-rows: min-content;
     border-radius: 0.5rem;
 }
 
