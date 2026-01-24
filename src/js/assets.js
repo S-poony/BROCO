@@ -13,6 +13,8 @@ export const importedAssets = assetManager.assets;
 // State for view mode
 let currentViewMode = 'grid'; // 'grid' | 'list'
 let collapsedFolders = new Set(); // Stores paths of collapsed folders
+let listIsDirty = false;
+let lazyObserver = null;
 
 export function setupAssetHandlers() {
     const importBtn = document.getElementById('import-assets-btn');
@@ -45,67 +47,138 @@ export function setupAssetHandlers() {
 
     // Unified File Processor
     const processItems = async (items) => {
-        // Handle Electron raw data results
+        if (!items || items.length === 0) return;
+
+        const importStatus = document.getElementById('import-status');
+        const progressBar = importStatus?.querySelector('.progress-bar');
+        const statusText = importStatus?.querySelector('.status-text');
+
+        if (importStatus) {
+            importStatus.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            statusText.textContent = `Processing...`;
+        }
+
+        let processedCount = 0;
+        let totalCount = items.length;
+
+        const syncUpdate = () => {
+            if (!importStatus) return;
+            const pct = Math.min(100, (processedCount / totalCount) * 100);
+            progressBar.style.width = `${pct}%`;
+            statusText.textContent = `${processedCount} / ${totalCount}`;
+        };
+
+        // Handle Electron raw data results (FAST path)
         if (Array.isArray(items) && items.length > 0 && items[0].data) {
-            items.forEach(item => {
-                const asset = {
-                    id: crypto.randomUUID(),
-                    name: item.name,
-                    lowResData: item.type === 'image' ? item.data : null,
-                    fullResData: item.data,
-                    path: item.path,
-                    type: item.type
-                };
-                assetManager.addAsset(asset);
-            });
+            // Process in small micro-batches to let UI re-render "Importing..."
+            const batchSize = 25;
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                batch.forEach(item => {
+                    const asset = {
+                        id: crypto.randomUUID(),
+                        name: item.name,
+                        lowResData: item.type === 'image' ? item.data : null,
+                        fullResData: item.data,
+                        path: item.path,
+                        type: item.type
+                    };
+                    assetManager.addAsset(asset);
+                    processedCount++;
+                });
+                syncUpdate();
+                // Yield very briefly to update UI without slowing down much
+                if (i + batchSize < items.length) await new Promise(r => setTimeout(r, 1));
+            }
+
+            finishImport();
             return;
         }
 
-        // Handle Web inputs
-        for (const item of items) {
-            try {
-                // If it's a webkit entry (from drop)
-                if (item.webkitGetAsEntry) {
-                    const entry = item.webkitGetAsEntry();
-                    if (entry) {
-                        await traverseEntry(entry);
-                        continue;
-                    }
-                }
+        // Web/Drop Path (Slower, requires processing)
+        totalCount = items.length; // Baseline, increases with folders
 
-                // If it's a File object (from input)
-                const file = item instanceof File ? item : item.getAsFile ? item.getAsFile() : null;
-                if (file) {
-                    const path = file.webkitRelativePath || file.name;
-                    const asset = await assetManager.processFile(file, path);
-                    assetManager.addAsset(asset);
+        const finalizeAsset = (asset, tempId) => {
+            const skeleton = document.querySelector(`.asset-item.skeleton[data-temp-id="${tempId}"]`);
+            if (skeleton) skeleton.remove();
+            assetManager.addAsset(asset);
+            processedCount++;
+            syncUpdate();
+        };
+
+        const addSkeleton = () => {
+            const tempId = crypto.randomUUID();
+            const container = document.getElementById('asset-grid-view');
+            if (container && currentViewMode === 'grid') {
+                const skel = document.createElement('div');
+                skel.className = 'asset-item skeleton';
+                skel.dataset.tempId = tempId;
+                container.appendChild(skel);
+            }
+            return tempId;
+        };
+
+        const traverseAndProcess = async (entry, path = '') => {
+            if (entry.isFile) {
+                return new Promise(resolve => {
+                    entry.file(async (file) => {
+                        const tempId = addSkeleton();
+                        try {
+                            const asset = await assetManager.processFile(file, path ? `${path}/${file.name}` : file.name);
+                            finalizeAsset(asset, tempId);
+                        } catch (e) {
+                            document.querySelector(`[data-temp-id="${tempId}"]`)?.remove();
+                        }
+                        resolve();
+                    });
+                });
+            } else if (entry.isDirectory) {
+                const reader = entry.createReader();
+                const entries = await new Promise(resolve => reader.readEntries(resolve));
+                totalCount += entries.length;
+                syncUpdate();
+                for (const sub of entries) {
+                    await traverseAndProcess(sub, path ? `${path}/${entry.name}` : entry.name);
                 }
-            } catch (err) {
-                console.error('Import error:', err);
+            }
+        };
+
+        const promises = [];
+        for (const item of items) {
+            if (item.webkitGetAsEntry) {
+                const entry = item.webkitGetAsEntry();
+                if (entry) {
+                    promises.push(traverseAndProcess(entry));
+                    continue;
+                }
+            }
+            const file = item instanceof File ? item : item.getAsFile ? item.getAsFile() : null;
+            if (file) {
+                const tempId = addSkeleton();
+                promises.push((async () => {
+                    try {
+                        const asset = await assetManager.processFile(file, file.webkitRelativePath || file.name);
+                        finalizeAsset(asset, tempId);
+                    } catch (e) {
+                        document.querySelector(`[data-temp-id="${tempId}"]`)?.remove();
+                    }
+                })());
+            }
+        }
+        await Promise.all(promises);
+        finishImport();
+
+        function finishImport() {
+            if (importStatus) {
+                progressBar.style.width = '100%';
+                setTimeout(() => importStatus.classList.add('hidden'), 500);
             }
         }
     };
 
-    // Recursive traversal for folders
-    async function traverseEntry(entry, path = '') {
-        if (entry.isFile) {
-            return new Promise((resolve) => {
-                entry.file(async (file) => {
-                    try {
-                        const asset = await assetManager.processFile(file, path ? `${path}/${file.name}` : file.name);
-                        assetManager.addAsset(asset);
-                    } catch (e) { }
-                    resolve();
-                });
-            });
-        } else if (entry.isDirectory) {
-            const reader = entry.createReader();
-            const entries = await new Promise(resolve => reader.readEntries(resolve));
-            for (const subEntry of entries) {
-                await traverseEntry(subEntry, path ? `${path}/${entry.name}` : entry.name);
-            }
-        }
-    }
+
+
 
     fileInput.addEventListener('change', (e) => processItems(e.target.files));
 
@@ -114,150 +187,145 @@ export function setupAssetHandlers() {
     viewListBtn?.addEventListener('click', () => setViewMode('list'));
 
     function setViewMode(mode) {
+        if (currentViewMode === mode) return;
         currentViewMode = mode;
+
+        const gridContainer = document.getElementById('asset-grid-view');
+        const listContainer = document.getElementById('asset-list-view');
+
+        if (mode === 'grid') {
+            gridContainer.classList.remove('hidden');
+            listContainer.classList.add('hidden');
+        } else {
+            gridContainer.classList.add('hidden');
+            listContainer.classList.remove('hidden');
+            if (listIsDirty) {
+                renderListView();
+            }
+        }
+
         viewGridBtn.classList.toggle('active', mode === 'grid');
         viewListBtn.classList.toggle('active', mode === 'list');
-        renderAssetList();
     }
 
-    // assetManager listeners...
-    assetManager.addEventListener('assets:changed', () => {
-        requestAnimationFrame(renderAssetList);
+    // Asset change listeners
+    assetManager.addEventListener('assets:changed', (e) => {
+        const { type, asset } = e.detail;
+        if (type === 'added') {
+            appendAssetToGrid(asset);
+            listIsDirty = true;
+            throttleListUpdate();
+        } else {
+            refreshAllViews();
+        }
     });
 
     setupDropHandlersForList(processItems);
+
+    lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                hydrateAssetItem(entry.target);
+                lazyObserver.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '300px' });
+
+    refreshAllViews();
 }
 
-function setupDropHandlersForList(importHandler) {
-    const assetList = document.getElementById('asset-list');
-
-    assetList.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        if (dragDropService.sourceRect) {
-            e.dataTransfer.dropEffect = 'move';
-        } else {
-            e.dataTransfer.dropEffect = 'copy';
+let listThrottleTimer = null;
+function throttleListUpdate() {
+    if (listThrottleTimer) return;
+    listThrottleTimer = setTimeout(() => {
+        if (currentViewMode === 'list' && listIsDirty) {
+            renderListView();
         }
-        assetList.classList.add('drag-over');
-    });
-
-    assetList.addEventListener('dragleave', () => {
-        assetList.classList.remove('drag-over');
-    });
-
-    assetList.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        assetList.classList.remove('drag-over');
-
-        // internal drag (moving from paper back to sidebar)
-        if (dragDropService.sourceRect) {
-            const { asset, text, sourceRect } = dragDropService.endDrag();
-
-            saveState();
-            const sourceNode = findNodeById(getCurrentPage(), sourceRect.id);
-            if (sourceNode) {
-                if (asset) sourceNode.image = null;
-                if (text !== undefined) sourceNode.text = null;
-            }
-
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
-            document.dispatchEvent(new CustomEvent('layoutUpdated'));
-        } else if (e.dataTransfer.items) {
-            // External drag (files/folders from OS)
-            await importHandler(e.dataTransfer.items);
-        }
-    });
-
-    // Remove/Replace delegation...
-
-    // Remove/Replace delegation
-    assetList.addEventListener('click', (e) => {
-        const removeBtn = e.target.closest('.remove');
-        if (removeBtn) {
-            const assetId = removeBtn.dataset.id;
-            removeAsset(assetId);
-            return;
-        }
-        // Folder toggle
-        const folderHeader = e.target.closest('.list-item.is-folder');
-        if (folderHeader) {
-            const path = folderHeader.dataset.path;
-            if (collapsedFolders.has(path)) {
-                collapsedFolders.delete(path);
-            } else {
-                collapsedFolders.add(path);
-            }
-            renderAssetList();
-        }
-    });
+        listThrottleTimer = null;
+    }, 500);
 }
 
-function renderAssetList() {
-    const assetList = document.getElementById('asset-list');
-    if (!assetList) return;
+function refreshAllViews() {
+    const gridContainer = document.getElementById('asset-grid-view');
+    if (gridContainer) {
+        gridContainer.innerHTML = '';
+        assetManager.getAssets().forEach(appendAssetToGrid);
+    }
+    renderListView();
+}
 
-    assetList.innerHTML = '';
-    assetList.className = `asset-list ${currentViewMode === 'list' ? 'view-list' : ''}`;
+function hydrateAssetItem(element) {
+    const assetId = element.dataset.id;
+    const asset = assetManager.getAsset(assetId);
+    if (!asset || !element.classList.contains('lazy')) return;
 
-    const assets = assetManager.getAssets();
+    element.classList.remove('lazy', 'skeleton');
+    element.innerHTML = '';
 
-    if (currentViewMode === 'grid') {
-        renderGridView(assetList, assets);
+    if (asset.type === 'text') {
+        const txtBox = document.createElement('div');
+        txtBox.className = 'text-icon-placeholder';
+        txtBox.textContent = 'TXT';
+        element.appendChild(txtBox);
     } else {
-        renderListView(assetList, assets);
+        const img = document.createElement('img');
+        img.src = asset.lowResData;
+        img.alt = asset.name;
+        img.loading = 'lazy';
+        element.appendChild(img);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'asset-actions';
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'asset-action-btn remove';
+    removeBtn.title = 'Remove asset';
+    removeBtn.dataset.id = asset.id;
+    removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
+    actions.appendChild(removeBtn);
+    element.appendChild(actions);
+}
+
+function appendAssetToGrid(asset) {
+    const container = document.getElementById('asset-grid-view');
+    if (!container) return;
+
+    const item = document.createElement('div');
+    item.className = 'asset-item lazy skeleton';
+    item.dataset.id = asset.id;
+    item.title = asset.name;
+
+    item.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.remove')) return;
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        dragDropService.startDrag({
+            asset: asset.type === 'image' ? asset : undefined,
+            text: asset.type === 'text' ? asset.fullResData : undefined
+        }, e);
+    });
+
+    container.appendChild(item);
+    if (lazyObserver) {
+        lazyObserver.observe(item);
+    } else {
+        // Fallback if observer not ready
+        hydrateAssetItem(item);
     }
 }
 
-function renderGridView(container, assets) {
-    const fragment = document.createDocumentFragment();
+function renderListView() {
+    const container = document.getElementById('asset-list-view');
+    if (!container) return;
 
-    assets.forEach(asset => {
-        const item = document.createElement('div');
-        item.className = 'asset-item';
-        item.draggable = false;
-        item.dataset.id = asset.id;
-        item.title = asset.name; // Basic tooltip
+    container.innerHTML = '';
+    listIsDirty = false;
 
-        if (asset.type === 'text') {
-            item.innerHTML = '<div class="text-icon-placeholder">TXT</div>';
-        } else {
-            const img = document.createElement('img');
-            img.src = asset.lowResData;
-            img.alt = asset.name;
-            item.appendChild(img);
-        }
-
-        // Actions overlay
-        const actions = document.createElement('div');
-        actions.className = 'asset-actions';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'asset-action-btn remove';
-        removeBtn.title = 'Remove asset';
-        removeBtn.dataset.id = asset.id; // Store ID on button for delegation
-        removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
-        actions.appendChild(removeBtn);
-        item.appendChild(actions);
-
-        // Drag handler
-        item.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0 && e.pointerType === 'mouse') return;
-            dragDropService.startDrag({ asset: asset.type === 'image' ? asset : undefined, text: asset.type === 'text' ? asset.fullResData : undefined }, e);
-        });
-
-        fragment.appendChild(item);
-    });
-    container.appendChild(fragment);
-}
-
-function renderListView(container, assets) {
-    // Build Tree
-    const tree = { __files: [], __folders: {} }; // Initialize root with files and folders
+    const assets = assetManager.getAssets();
+    const tree = { __files: [], __folders: {} };
 
     assets.forEach(asset => {
         const parts = (asset.path || asset.name).split('/');
         let current = tree;
-
         for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i];
             if (!current.__folders[part]) current.__folders[part] = { __files: [], __folders: {} };
@@ -267,20 +335,15 @@ function renderListView(container, assets) {
         current.__files.push({ name: fileName, asset });
     });
 
-    // Flatten for rendering (Virtual List approach could go here for huge lists)
     const fragment = document.createDocumentFragment();
-
     function traverse(node, currentPath = '', level = 0) {
-        // Render Folders
         Object.keys(node.__folders).sort().forEach(folderName => {
             const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
             const isCollapsed = collapsedFolders.has(fullPath);
-
             const folderEl = document.createElement('div');
             folderEl.className = 'list-item is-folder';
             folderEl.style.setProperty('--level', level);
             folderEl.dataset.path = fullPath;
-
             folderEl.innerHTML = `
                 <span class="list-icon">
                     <svg class="folder-caret ${isCollapsed ? '' : 'expanded'}" viewBox="0 0 10 10" fill="currentColor">
@@ -291,20 +354,14 @@ function renderListView(container, assets) {
                 <span class="list-text" title="${fullPath}">${folderName}</span>
             `;
             fragment.appendChild(folderEl);
-
-            if (!isCollapsed) {
-                traverse(node.__folders[folderName], fullPath, level + 1);
-            }
+            if (!isCollapsed) traverse(node.__folders[folderName], fullPath, level + 1);
         });
 
-        // Render Files
         node.__files.sort((a, b) => a.name.localeCompare(b.name)).forEach(({ name, asset }) => {
             const fileEl = document.createElement('div');
             fileEl.className = 'list-item is-file';
             fileEl.style.setProperty('--level', level);
-
             const icon = asset.type === 'text' ? '📄' : '🖼️';
-
             fileEl.innerHTML = `
                 <span class="list-icon">${icon}</span>
                 <span class="list-text" title="${name}">${name}</span>
@@ -312,34 +369,94 @@ function renderListView(container, assets) {
                     <span class="icon icon-delete"></span>
                 </button>
              `;
-
-            // Drag handler for list item
             fileEl.addEventListener('pointerdown', (e) => {
-                if (e.target.closest('.remove')) return; // Ignore delete button
+                if (e.target.closest('.remove')) return;
                 if (e.button !== 0 && e.pointerType === 'mouse') return;
-                dragDropService.startDrag({ asset: asset.type === 'image' ? asset : undefined, text: asset.type === 'text' ? asset.fullResData : undefined }, e);
+                dragDropService.startDrag({
+                    asset: asset.type === 'image' ? asset : undefined,
+                    text: asset.type === 'text' ? asset.fullResData : undefined
+                }, e);
             });
-
             fragment.appendChild(fileEl);
         });
     }
-
-    // Handle root files if any (structure slightly varies based on split logic above)
-    // Root logic: 'tree' itself behaves like a folder node.
     traverse(tree);
     container.appendChild(fragment);
 }
 
+function setupDropHandlersForList(importHandler) {
+    const containers = [
+        document.getElementById('asset-grid-view'),
+        document.getElementById('asset-list-view')
+    ];
+
+    containers.forEach(container => {
+        if (!container) return;
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (dragDropService.sourceRect) {
+                e.dataTransfer.dropEffect = 'move';
+            } else {
+                e.dataTransfer.dropEffect = 'copy';
+            }
+            container.classList.add('drag-over');
+        });
+
+        container.addEventListener('dragleave', () => {
+            container.classList.remove('drag-over');
+        });
+
+        container.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            container.classList.remove('drag-over');
+
+            if (dragDropService.sourceRect) {
+                const { asset, text, sourceRect } = dragDropService.endDrag();
+                saveState();
+                const sourceNode = findNodeById(getCurrentPage(), sourceRect.id);
+                if (sourceNode) {
+                    if (asset) sourceNode.image = null;
+                    if (text !== undefined) sourceNode.text = null;
+                }
+                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            } else if (e.dataTransfer.items) {
+                await importHandler(e.dataTransfer.items);
+            }
+        });
+
+        container.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove');
+            if (removeBtn) {
+                const assetId = removeBtn.dataset.id;
+                removeAsset(assetId);
+                return;
+            }
+            const folderHeader = e.target.closest('.list-item.is-folder');
+            if (folderHeader) {
+                const path = folderHeader.dataset.path;
+                if (collapsedFolders.has(path)) {
+                    collapsedFolders.delete(path);
+                } else {
+                    collapsedFolders.add(path);
+                }
+                renderListView();
+            }
+        });
+    });
+}
+
 function updateDragFeedback(target) {
-    // Remove highlight from all rects and sidebar
     document.querySelectorAll('.splittable-rect').forEach(el => el.classList.remove('touch-drag-over'));
-    document.getElementById('asset-list')?.classList.remove('touch-drag-over');
+    document.getElementById('asset-grid-view')?.classList.remove('touch-drag-over');
+    document.getElementById('asset-list-view')?.classList.remove('touch-drag-over');
 
     const targetElement = target?.closest('.splittable-rect');
-    const targetAssetList = target?.closest('#asset-list');
+    const targetAssetView = target?.closest('#asset-grid-view') || target?.closest('#asset-list-view');
 
-    if (targetAssetList && dragDropService.sourceRect) {
-        targetAssetList.classList.add('touch-drag-over');
+    if (targetAssetView && dragDropService.sourceRect) {
+        targetAssetView.classList.add('touch-drag-over');
     } else if (targetElement) {
         const node = findNodeById(getCurrentPage(), targetElement.id);
         if (node && node.splitState === 'unsplit') {
@@ -350,7 +467,7 @@ function updateDragFeedback(target) {
 
 function handleDropLogic(target) {
     const targetElement = target?.closest('.splittable-rect');
-    const targetAssetList = target?.closest('#asset-list');
+    const targetAssetView = target?.closest('#asset-grid-view') || target?.closest('#asset-list-view');
 
     const dragData = {
         asset: dragDropService.draggedAsset,
@@ -359,7 +476,7 @@ function handleDropLogic(target) {
         sourceTextNode: dragDropService.sourceTextNode
     };
 
-    if (targetAssetList && dragData.sourceRect) {
+    if (targetAssetView && dragData.sourceRect) {
         saveState();
         const sourceNode = findNodeById(getCurrentPage(), dragData.sourceRect.id);
         if (sourceNode) {

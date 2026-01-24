@@ -84,8 +84,19 @@
                             </button>
                         </div>
                     </div>
-                    <div id="asset-list" class="asset-list">
-                        <!-- Assets will appear here -->
+
+                    <div id="import-status" class="import-status hidden">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar"></div>
+                        </div>
+                        <span class="status-text">Importing...</span>
+                    </div>
+
+                    <div id="asset-grid-view" class="asset-grid">
+                        <!-- Grid assets (thumbnails) will appear here -->
+                    </div>
+                    <div id="asset-list-view" class="asset-list-tree hidden">
+                        <!-- Hierarchical tree assets will appear here -->
                     </div>
                     <hr>
                     <button id="export-layout-btn" class="btn-secondary">Export Layout</button>
