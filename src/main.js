@@ -154,18 +154,6 @@ function initialize() {
     setupPageHandlers();
     setupKeyboardNavigation();
 
-    // Sync shortcut overlay with menu state
-    // const shortcutsDropdown = document.getElementById('shortcuts-dropdown');
-    // if (shortcutsDropdown) {
-    //     // Initial state
-    //     shortcutsOverlay.setEnabled(shortcutsDropdown.open);
-
-    //     // Listen for changes
-    //     shortcutsDropdown.addEventListener('toggle', () => {
-    //         shortcutsOverlay.setEnabled(shortcutsDropdown.open);
-    //     });
-    // }
-
     setupShortcutsHandlers();
 
     // Listen for layout updates to manage focus
@@ -338,13 +326,19 @@ function setupShortcutsHandlers() {
     const closeShortcuts = () => {
         shortcutsContainer.classList.remove('active');
         shortcutsBtn.classList.remove('active');
+        shortcutsOverlay.setEnabled(false);
     };
 
     const openShortcuts = () => {
         shortcutsContainer.classList.add('active');
         shortcutsBtn.classList.add('active');
         // Close settings if open
-        if (settingsContainer) settingsContainer.classList.remove('active');
+        if (settingsContainer) {
+            settingsContainer.classList.remove('active');
+            const settingsBtn = document.getElementById('settings-btn');
+            if (settingsBtn) settingsBtn.classList.remove('active'); // Ensure settings button state is synced
+        }
+        shortcutsOverlay.setEnabled(true);
     };
 
     const toggleShortcuts = () => {
