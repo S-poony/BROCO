@@ -120,6 +120,7 @@ export class DragDropService {
             document.dispatchEvent(new CustomEvent('custom-drag-move', {
                 detail: { target, x: e.clientX, y: e.clientY }
             }));
+            return { target };
         }
     }
 

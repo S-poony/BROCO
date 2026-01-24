@@ -6,15 +6,16 @@ import { A4_PAPER_ID } from './constants.js';
 import { showConfirm, showAlert } from './utils.js';
 import { assetManager } from './AssetManager.js';
 import { dragDropService } from './DragDropService.js';
+import { AssetGridView } from './AssetGridView.js';
+import { AssetListView } from './AssetListView.js';
 
 // Backward compatibility for importedAssets
 export const importedAssets = assetManager.assets;
 
 // State for view mode
 let currentViewMode = 'grid'; // 'grid' | 'list'
-let collapsedFolders = new Set(); // Stores paths of collapsed folders
-let listIsDirty = false;
-let lazyObserver = null;
+let gridView = null;
+let listView = null;
 
 export function setupAssetHandlers() {
     const importBtn = document.getElementById('import-assets-btn');
@@ -22,6 +23,19 @@ export function setupAssetHandlers() {
     const viewListBtn = document.getElementById('view-list-btn');
 
     if (!importBtn) return;
+
+    gridView = new AssetGridView('asset-grid-view');
+    listView = new AssetListView('asset-list-view');
+
+    // Wire up folder deletion to also clean paper layout
+    listView.onFolderDelete = (assetIds) => {
+        saveState();
+        assetIds.forEach(id => {
+            state.pages.forEach(p => clearAssetFromLayout(p, id));
+        });
+        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+        refreshAllViews();
+    };
 
     // File Input for Web fallback
     const fileInput = document.createElement('input');
@@ -189,200 +203,39 @@ export function setupAssetHandlers() {
     function setViewMode(mode) {
         if (currentViewMode === mode) return;
         currentViewMode = mode;
-
-        const gridContainer = document.getElementById('asset-grid-view');
-        const listContainer = document.getElementById('asset-list-view');
-
+        const gridCont = document.getElementById('asset-grid-view');
+        const listCont = document.getElementById('asset-list-view');
         if (mode === 'grid') {
-            gridContainer.classList.remove('hidden');
-            listContainer.classList.add('hidden');
+            gridCont.classList.remove('hidden');
+            listCont.classList.add('hidden');
         } else {
-            gridContainer.classList.add('hidden');
-            listContainer.classList.remove('hidden');
-            if (listIsDirty) {
-                renderListView();
-            }
+            gridCont.classList.add('hidden');
+            listCont.classList.remove('hidden');
         }
-
         viewGridBtn.classList.toggle('active', mode === 'grid');
         viewListBtn.classList.toggle('active', mode === 'list');
+        refreshAllViews();
     }
 
-    // Asset change listeners
     assetManager.addEventListener('assets:changed', (e) => {
         const { type, asset } = e.detail;
         if (type === 'added') {
-            appendAssetToGrid(asset);
-            listIsDirty = true;
-            throttleListUpdate();
+            gridView.appendAsset(asset);
+            listView.refresh();
         } else {
             refreshAllViews();
         }
     });
 
     setupDropHandlersForList(processItems);
-
-    lazyObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                hydrateAssetItem(entry.target);
-                lazyObserver.unobserve(entry.target);
-            }
-        });
-    }, { rootMargin: '300px' });
-
     refreshAllViews();
 }
 
-let listThrottleTimer = null;
-function throttleListUpdate() {
-    if (listThrottleTimer) return;
-    listThrottleTimer = setTimeout(() => {
-        if (currentViewMode === 'list' && listIsDirty) {
-            renderListView();
-        }
-        listThrottleTimer = null;
-    }, 500);
-}
-
 function refreshAllViews() {
-    const gridContainer = document.getElementById('asset-grid-view');
-    if (gridContainer) {
-        gridContainer.innerHTML = '';
-        assetManager.getAssets().forEach(appendAssetToGrid);
-    }
-    renderListView();
+    gridView?.refresh();
+    listView?.refresh();
 }
 
-function hydrateAssetItem(element) {
-    const assetId = element.dataset.id;
-    const asset = assetManager.getAsset(assetId);
-    if (!asset || !element.classList.contains('lazy')) return;
-
-    element.classList.remove('lazy', 'skeleton');
-    element.innerHTML = '';
-
-    if (asset.type === 'text') {
-        const txtBox = document.createElement('div');
-        txtBox.className = 'text-icon-placeholder';
-        txtBox.textContent = 'TXT';
-        element.appendChild(txtBox);
-    } else {
-        const img = document.createElement('img');
-        img.src = asset.lowResData;
-        img.alt = asset.name;
-        img.loading = 'lazy';
-        element.appendChild(img);
-    }
-
-    const actions = document.createElement('div');
-    actions.className = 'asset-actions';
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'asset-action-btn remove';
-    removeBtn.title = 'Remove asset';
-    removeBtn.dataset.id = asset.id;
-    removeBtn.innerHTML = '<span class="icon icon-delete"></span>';
-    actions.appendChild(removeBtn);
-    element.appendChild(actions);
-}
-
-function appendAssetToGrid(asset) {
-    const container = document.getElementById('asset-grid-view');
-    if (!container) return;
-
-    const item = document.createElement('div');
-    item.className = 'asset-item lazy skeleton';
-    item.dataset.id = asset.id;
-    item.title = asset.name;
-
-    item.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.remove')) return;
-        if (e.button !== 0 && e.pointerType === 'mouse') return;
-        dragDropService.startDrag({
-            asset: asset.type === 'image' ? asset : undefined,
-            text: asset.type === 'text' ? asset.fullResData : undefined
-        }, e);
-    });
-
-    container.appendChild(item);
-    if (lazyObserver) {
-        lazyObserver.observe(item);
-    } else {
-        // Fallback if observer not ready
-        hydrateAssetItem(item);
-    }
-}
-
-function renderListView() {
-    const container = document.getElementById('asset-list-view');
-    if (!container) return;
-
-    container.innerHTML = '';
-    listIsDirty = false;
-
-    const assets = assetManager.getAssets();
-    const tree = { __files: [], __folders: {} };
-
-    assets.forEach(asset => {
-        const parts = (asset.path || asset.name).split('/');
-        let current = tree;
-        for (let i = 0; i < parts.length - 1; i++) {
-            const part = parts[i];
-            if (!current.__folders[part]) current.__folders[part] = { __files: [], __folders: {} };
-            current = current.__folders[part];
-        }
-        const fileName = parts[parts.length - 1];
-        current.__files.push({ name: fileName, asset });
-    });
-
-    const fragment = document.createDocumentFragment();
-    function traverse(node, currentPath = '', level = 0) {
-        Object.keys(node.__folders).sort().forEach(folderName => {
-            const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-            const isCollapsed = collapsedFolders.has(fullPath);
-            const folderEl = document.createElement('div');
-            folderEl.className = 'list-item is-folder';
-            folderEl.style.setProperty('--level', level);
-            folderEl.dataset.path = fullPath;
-            folderEl.innerHTML = `
-                <span class="list-icon">
-                    <svg class="folder-caret ${isCollapsed ? '' : 'expanded'}" viewBox="0 0 10 10" fill="currentColor">
-                        <path d="M3 2L7 5L3 8V2Z" />
-                    </svg>
-                    📁
-                </span>
-                <span class="list-text" title="${fullPath}">${folderName}</span>
-            `;
-            fragment.appendChild(folderEl);
-            if (!isCollapsed) traverse(node.__folders[folderName], fullPath, level + 1);
-        });
-
-        node.__files.sort((a, b) => a.name.localeCompare(b.name)).forEach(({ name, asset }) => {
-            const fileEl = document.createElement('div');
-            fileEl.className = 'list-item is-file';
-            fileEl.style.setProperty('--level', level);
-            const icon = asset.type === 'text' ? '📄' : '🖼️';
-            fileEl.innerHTML = `
-                <span class="list-icon">${icon}</span>
-                <span class="list-text" title="${name}">${name}</span>
-                <button class="asset-action-btn remove small" data-id="${asset.id}" title="Remove" style="margin-left: auto;">
-                    <span class="icon icon-delete"></span>
-                </button>
-             `;
-            fileEl.addEventListener('pointerdown', (e) => {
-                if (e.target.closest('.remove')) return;
-                if (e.button !== 0 && e.pointerType === 'mouse') return;
-                dragDropService.startDrag({
-                    asset: asset.type === 'image' ? asset : undefined,
-                    text: asset.type === 'text' ? asset.fullResData : undefined
-                }, e);
-            });
-            fragment.appendChild(fileEl);
-        });
-    }
-    traverse(tree);
-    container.appendChild(fragment);
-}
 
 function setupDropHandlersForList(importHandler) {
     const containers = [
@@ -431,17 +284,6 @@ function setupDropHandlersForList(importHandler) {
             if (removeBtn) {
                 const assetId = removeBtn.dataset.id;
                 removeAsset(assetId);
-                return;
-            }
-            const folderHeader = e.target.closest('.list-item.is-folder');
-            if (folderHeader) {
-                const path = folderHeader.dataset.path;
-                if (collapsedFolders.has(path)) {
-                    collapsedFolders.delete(path);
-                } else {
-                    collapsedFolders.add(path);
-                }
-                renderListView();
             }
         });
     });

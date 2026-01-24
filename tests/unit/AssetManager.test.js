@@ -64,7 +64,14 @@ describe('AssetManager', () => {
     });
 
     it('should handle processFile errors (invalid type)', async () => {
-        const file = new File([''], 'test.txt', { type: 'text/plain' });
+        const file = new File(['binary data'], 'test.bin', { type: 'application/octet-stream' });
         await expect(assetManager.processFile(file)).rejects.toThrow('File is not an image');
+    });
+
+    it('should process text files', async () => {
+        const file = new File(['hello world'], 'test.txt', { type: 'text/plain' });
+        const asset = await assetManager.processFile(file);
+        expect(asset.type).toBe('text');
+        expect(asset.fullResData).toBe('hello world');
     });
 });

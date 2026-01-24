@@ -227,3 +227,47 @@
         transform: translateX(100%);
     }
 }
+
+/* Action Buttons in List */
+.list-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    margin-left: auto;
+}
+
+.list-item:hover .list-actions {
+    opacity: 1;
+}
+
+.asset-action-btn.folder-remove {
+    background: transparent;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: background 0.2s;
+}
+
+.asset-action-btn.folder-remove:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.asset-action-btn.folder-remove .icon-svg {
+    width: 14px;
+    height: 14px;
+    filter: invert(41%) sepia(85%) rotate(328deg) brightness(95%) contrast(105%);
+}
+
+.asset-action-btn.remove.small {
+    margin-left: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+}

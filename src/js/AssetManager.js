@@ -154,6 +154,21 @@ export class AssetManager extends EventTarget {
     }
 
     /**
+     * Removes all assets whose path starts with the given prefix.
+     * @param {string} prefix 
+     */
+    removeAssetsByPathPrefix(prefix) {
+        const toRemove = this.assets.filter(a => (a.path || a.name).startsWith(prefix));
+        const removedIds = toRemove.map(a => a.id);
+
+        this.assets = this.assets.filter(a => !removedIds.includes(a.id));
+
+        this.dispatchEvent(new CustomEvent('assets:changed', {
+            detail: { type: 'removed_batch', assetIds: removedIds }
+        }));
+    }
+
+    /**
      * Clears all assets from memory
      */
     dispose() {
