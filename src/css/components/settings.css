@@ -12,7 +12,7 @@
 }
 
 /* Sidebar Mode (Wide Screens) */
-@media (min-width: 1400px) {
+@media (min-width: 1024px) {
     #settings-container {
         position: relative;
         width: 320px;
@@ -51,7 +51,7 @@
 }
 
 /* Modal Mode (Standard/Mobile) */
-@media (max-width: 1399px) {
+@media (max-width: 1024px) {
     #settings-container.active {
         position: fixed;
         top: 0;
