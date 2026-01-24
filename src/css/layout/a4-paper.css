@@ -1,10 +1,11 @@
 .a4-paper {
     /* Proportional Sizing Variables */
-    --divider-thickness: calc(var(--paper-current-width, 1000px) * var(--divider-ratio, 0.005));
+    --paper-scale-ref: calc((var(--paper-current-width, 1000px) + var(--paper-current-height, 1000px)) * 0.5);
+    --divider-thickness: calc(var(--paper-scale-ref) * var(--divider-ratio, 0.005));
     /* Hit area remains clickable even if divider is 0px */
     --divider-hit-thickness: max(12px, var(--divider-thickness));
     --layout-border-actual: calc(var(--show-borders, 1) * var(--divider-thickness));
-    --text-font-size-proportional: calc(var(--paper-current-width, 1000px) * var(--text-ratio, 0.02));
+    --text-font-size-proportional: calc(var(--paper-scale-ref) * var(--text-ratio, 0.02));
 
     /* Responsive Scaling: Fit container with 20px margin on all sides */
     width: min(calc(100cqw - 40px), calc((100cqh - 40px) * var(--ratio, 0.707)));

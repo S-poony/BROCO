@@ -32,16 +32,19 @@ export function renderLayout(container, node, options = {}) {
             const observer = new ResizeObserver(entries => {
                 for (let entry of entries) {
                     const width = entry.contentRect.width;
+                    const height = entry.contentRect.height;
                     requestAnimationFrame(() => {
                         entry.target.style.setProperty('--paper-current-width', `${width}px`);
+                        entry.target.style.setProperty('--paper-current-height', `${height}px`);
                     });
                 }
             });
             observer.observe(container);
             paperObservers.set(container, observer);
         }
-        // Set initial width immediately
+        // Set initial dimensions immediately
         container.style.setProperty('--paper-current-width', `${container.offsetWidth}px`);
+        container.style.setProperty('--paper-current-height', `${container.offsetHeight}px`);
 
         const rootElement = createDOMRect(node, null);
         container.appendChild(rootElement);
