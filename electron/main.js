@@ -64,9 +64,14 @@ app.whenReady().then(() => {
     });
 
     // Handle Asset Picker
-    ipcMain.handle('dialog:openAssets', async () => {
+    ipcMain.handle('dialog:openAssets', async (event, options = {}) => {
+        const { directory = false } = options;
+        const properties = directory
+            ? ['openDirectory', 'multiSelections']
+            : ['openFile', 'multiSelections'];
+
         const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-            properties: ['openFile', 'openDirectory', 'multiSelections'],
+            properties,
             filters: [
                 { name: 'Assets', extensions: ['jpg', 'png', 'gif', 'webp', 'jpeg', 'txt', 'md'] }
             ]
