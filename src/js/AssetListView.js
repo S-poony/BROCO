@@ -53,7 +53,9 @@ export class AssetListView {
                 <span class="list-text" title="${fullPath}">${folderName}</span>
                 <div class="list-actions">
                      <button class="asset-action-btn folder-remove" data-path="${fullPath}" title="Delete Folder">
-                        <img src="assets/icons/delete.svg" class="icon-svg" />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 12H8M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"/>
+                        </svg>
                     </button>
                 </div>
             `;

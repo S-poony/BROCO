@@ -252,17 +252,19 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    color: var(--color-text-subtle);
 }
 
 .asset-action-btn.folder-remove:hover {
     background: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
 }
 
-.asset-action-btn.folder-remove .icon-svg {
-    width: 14px;
-    height: 14px;
-    filter: invert(41%) sepia(85%) rotate(328deg) brightness(95%) contrast(105%);
+.asset-action-btn.folder-remove svg {
+    width: 16px;
+    height: 16px;
+    display: block;
 }
 
 .asset-action-btn.remove.small {
