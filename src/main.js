@@ -209,10 +209,25 @@ function initialize() {
             if (!paper || !paper.contains(elUnderCursor)) return;
 
             const rect = elUnderCursor.closest('.splittable-rect[data-split-state="unsplit"]');
-            if (!rect) return;
+            if (!rect) {
+                // If we are not over a leaf rect, check if we are over a divider or edge handle
+                // If we ARE over a divider/handle, we DON'T remove the hover class from the last hovered rect
+                // to allow buttons to stay visible.
+                const isInteractionLayer = elUnderCursor.closest('.divider, .edge-handle');
+                if (!isInteractionLayer) {
+                    // We are over blank paper or something else, clear hover
+                    document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
+                    lastHoveredRectId = null;
+                }
+                return;
+            }
 
             // Restore focus follows mouse: hover focuses the rectangle
             if (rect.id !== lastHoveredRectId || document.activeElement !== rect) {
+                // Remove class from others
+                document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
+                rect.classList.add('is-hovered-active');
+
                 rect.focus({ preventScroll: true });
                 lastHoveredRectId = rect.id;
             }
@@ -231,6 +246,7 @@ function initialize() {
     if (paperContainer) {
         paperContainer.addEventListener('mouseleave', () => {
             shortcutsOverlay.hide();
+            document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
             lastHoveredRectId = null;
         });
     }

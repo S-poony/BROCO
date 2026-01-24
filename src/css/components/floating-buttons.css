@@ -22,7 +22,8 @@
     /* Hidden by default, shown on hover of parent */
     align-items: center;
     justify-content: center;
-    z-index: 60;
+    z-index: 210;
+    /* Above dividers (20) and edge handles (50) */
     transition: all 0.2s;
     padding: 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -55,7 +56,8 @@
     right: var(--btn-offset);
     display: none;
     gap: calc(var(--btn-offset) * 0.5);
-    z-index: 70;
+    z-index: 220;
+    /* Container priority */
     transition: opacity 0.2s;
 }
 
@@ -105,10 +107,10 @@
 
 /* Show buttons when the splittable-rect is hovered */
 /* Note: The HTML structure varies slightly between text and images, so we target generic classes or specific parents */
-.splittable-rect:hover .remove-text-btn,
-.splittable-rect:hover .align-text-btn,
-.splittable-rect:hover .image-controls,
-.splittable-rect:hover .empty-node-controls
+.splittable-rect[data-split-state="unsplit"].is-hovered-active .remove-text-btn,
+.splittable-rect[data-split-state="unsplit"].is-hovered-active .align-text-btn,
+.splittable-rect[data-split-state="unsplit"].is-hovered-active .image-controls,
+.splittable-rect[data-split-state="unsplit"].is-hovered-active .empty-node-controls
 
 /* Legacy support */
     {
