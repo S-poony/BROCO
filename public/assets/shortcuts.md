@@ -24,6 +24,12 @@
 
 ***
 
+### Electron App
+
+`ctrl + i` = import folder *(when not editing text)*
+
+***
+
 ### Image
 
 `click` = change image fit *(cover or contain)*

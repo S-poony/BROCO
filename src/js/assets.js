@@ -50,7 +50,7 @@ export function setupAssetHandlers() {
     importBtn.addEventListener('click', async () => {
         if (window.electronAPI?.openAssets) {
             // Electron Smart Picker: Returns array of { name, path, type, data }
-            const results = await window.electronAPI.openAssets();
+            const results = await window.electronAPI.openAssets({ directory: false });
             if (results && results.length > 0) {
                 processItems(results);
             }
@@ -58,6 +58,29 @@ export function setupAssetHandlers() {
             fileInput.click();
         }
     });
+
+    // Global Shortcut for Electron Folder Import (Ctrl+I)
+    if (window.electronAPI?.openAssets) {
+        document.addEventListener('keydown', async (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+                // GUARD: Allow default behavior (italics) if editing text
+                const active = document.activeElement;
+                const isEditing = active && (
+                    active.tagName === 'INPUT' ||
+                    active.tagName === 'TEXTAREA' ||
+                    active.isContentEditable
+                );
+
+                if (isEditing) return;
+
+                e.preventDefault();
+                const results = await window.electronAPI.openAssets({ directory: true });
+                if (results && results.length > 0) {
+                    processItems(results);
+                }
+            }
+        });
+    }
 
     // Unified File Processor
     const processItems = async (items) => {
