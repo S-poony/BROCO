@@ -2,18 +2,22 @@
    Settings Modal Styles
    ======================================== */
 
-#settings-container {
+#settings-container,
+#shortcuts-container {
     display: none;
     z-index: var(--z-modal, 100);
 }
 
-#settings-container.active {
+#settings-container.active,
+#shortcuts-container.active {
     display: flex;
 }
 
 /* Sidebar Mode (Wide Screens) */
 @media (min-width: 1024px) {
-    #settings-container {
+
+    #settings-container,
+    #shortcuts-container {
         position: relative;
         width: 320px;
         background: var(--color-bg-white, white);
@@ -27,7 +31,8 @@
         flex-shrink: 0;
     }
 
-    #settings-container .settings-content {
+    #settings-container .settings-content,
+    #shortcuts-container .shortcuts-panel-content {
         max-width: none;
         width: 100%;
         height: auto;
@@ -37,7 +42,8 @@
         background: transparent;
     }
 
-    #settings-container .settings-sections {
+    #settings-container .settings-sections,
+    #shortcuts-container .shortcuts-content {
         overflow-y: visible;
         /* Let the container handle scrolling if needed */
         margin-right: 0;
@@ -52,7 +58,9 @@
 
 /* Modal Mode (Standard/Mobile) */
 @media (max-width: 1024px) {
-    #settings-container.active {
+
+    #settings-container.active,
+    #shortcuts-container.active {
         position: fixed;
         top: 0;
         left: 0;
@@ -66,7 +74,8 @@
         backdrop-filter: blur(4px);
     }
 
-    #settings-container .settings-content {
+    #settings-container .settings-content,
+    #shortcuts-container .shortcuts-panel-content {
         background: var(--color-bg-white, white);
         padding: 2rem;
         border-radius: 1.5rem;
@@ -80,21 +89,24 @@
     }
 }
 
-.settings-header {
+.settings-header,
+.shortcuts-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
 }
 
-.settings-header h2 {
+.settings-header h2,
+.shortcuts-header h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--color-text-heading, #111827);
 }
 
-#settings-close-x {
+#settings-close-x,
+#shortcuts-close-x {
     background: none;
     border: none;
     padding: 0.25rem;
@@ -107,12 +119,14 @@
     justify-content: center;
 }
 
-#settings-close-x:hover {
+#settings-close-x:hover,
+#shortcuts-close-x:hover {
     background: var(--color-bg-light, #f3f4f6);
     color: var(--color-text-main, #374151);
 }
 
-.settings-content {
+.settings-content,
+.shortcuts-panel-content {
     display: flex;
     flex-direction: column;
 }

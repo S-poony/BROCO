@@ -155,16 +155,18 @@ function initialize() {
     setupKeyboardNavigation();
 
     // Sync shortcut overlay with menu state
-    const shortcutsDropdown = document.getElementById('shortcuts-dropdown');
-    if (shortcutsDropdown) {
-        // Initial state
-        shortcutsOverlay.setEnabled(shortcutsDropdown.open);
+    // const shortcutsDropdown = document.getElementById('shortcuts-dropdown');
+    // if (shortcutsDropdown) {
+    //     // Initial state
+    //     shortcutsOverlay.setEnabled(shortcutsDropdown.open);
 
-        // Listen for changes
-        shortcutsDropdown.addEventListener('toggle', () => {
-            shortcutsOverlay.setEnabled(shortcutsDropdown.open);
-        });
-    }
+    //     // Listen for changes
+    //     shortcutsDropdown.addEventListener('toggle', () => {
+    //         shortcutsOverlay.setEnabled(shortcutsDropdown.open);
+    //     });
+    // }
+
+    setupShortcutsHandlers();
 
     // Listen for layout updates to manage focus
     // Listen for layout updates to manage focus and reset selection state
@@ -304,7 +306,7 @@ function initialize() {
 }
 
 async function loadShortcuts() {
-    const container = document.getElementById('shortcuts-content');
+    const container = document.getElementById('shortcuts-content-list');
     if (!container) return;
 
     try {
@@ -321,8 +323,58 @@ async function loadShortcuts() {
         container.innerHTML = html;
     } catch (error) {
         console.error('Error loading shortcuts:', error);
-        container.innerHTML = '<p>Shortcuts list currently unavailable.</p>';
+        if (container) container.innerHTML = '<p>Shortcuts list currently unavailable.</p>';
     }
+}
+
+function setupShortcutsHandlers() {
+    const shortcutsBtn = document.getElementById('shortcuts-btn');
+    const shortcutsContainer = document.getElementById('shortcuts-container');
+    const shortcutsCloseBtn = document.getElementById('shortcuts-close-x');
+    const settingsContainer = document.getElementById('settings-container');
+
+    if (!shortcutsBtn || !shortcutsContainer) return;
+
+    const closeShortcuts = () => {
+        shortcutsContainer.classList.remove('active');
+        shortcutsBtn.classList.remove('active');
+    };
+
+    const openShortcuts = () => {
+        shortcutsContainer.classList.add('active');
+        shortcutsBtn.classList.add('active');
+        // Close settings if open
+        if (settingsContainer) settingsContainer.classList.remove('active');
+    };
+
+    const toggleShortcuts = () => {
+        if (shortcutsContainer.classList.contains('active')) {
+            closeShortcuts();
+        } else {
+            openShortcuts();
+        }
+    };
+
+    shortcutsBtn.addEventListener('click', toggleShortcuts);
+    shortcutsCloseBtn?.addEventListener('click', closeShortcuts);
+
+    // Close on click outside (for modal mode)
+    shortcutsContainer.addEventListener('click', (e) => {
+        if (e.target === shortcutsContainer) {
+            closeShortcuts();
+        }
+    });
+
+    // We also need to hook into Settings to close Shortcuts when Settings opens
+    const settingsBtn = document.getElementById('settings-btn');
+    settingsBtn?.addEventListener('click', () => {
+        // We assume settings.js handles opening settings. We just ensure shortcuts is closed.
+        // But settings.js toggles. If we just add a listener here, it runs alongside settings.js
+        // If settings is ABOUT to open (it was closed), we close shortcuts.
+        if (!settingsContainer.classList.contains('active')) {
+            closeShortcuts();
+        }
+    });
 }
 
 if (document.readyState === 'loading') {
