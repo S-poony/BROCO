@@ -3,6 +3,7 @@ import { join, dirname, relative, basename } from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import electronUpdater from 'electron-updater';
+import log from 'electron-log';
 const { autoUpdater } = electronUpdater;
 
 // Register custom protocol early
@@ -157,26 +158,35 @@ app.on('window-all-closed', () => {
 });
 
 // Auto-updater events (optional logging)
+import log from 'electron-log';
+
+// Configure logging
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
+
+// Auto-updater events
 autoUpdater.on('checking-for-update', () => {
-    // log.info('Checking for update...');
+    log.info('Checking for update...');
 });
 autoUpdater.on('update-available', (info) => {
-    // log.info('Update available.');
+    log.info('Update available.', info);
 });
 autoUpdater.on('update-not-available', (info) => {
-    // log.info('Update not available.');
+    log.info('Update not available.', info);
 });
 autoUpdater.on('error', (err) => {
-    // log.error('Error in auto-updater. ' + err);
+    log.error('Error in auto-updater.', err);
+    // Optional: Notify user of error only in development or if critical
+    // dialog.showErrorBox('Update Error', 'An error occurred while checking for updates: ' + err);
 });
 autoUpdater.on('download-progress', (progressObj) => {
-    // let log_message = "Download speed: " + progressObj.bytesPerSecond;
-    // log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-    // log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-    // log.info(log_message);
+    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+    log.info(log_message);
 });
 autoUpdater.on('update-downloaded', (info) => {
-    // log.info('Update downloaded');
+    log.info('Update downloaded');
     dialog.showMessageBox({
         type: 'info',
         title: 'Update Ready',
