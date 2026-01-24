@@ -63,7 +63,7 @@
 .text-editor {
     width: 100%;
     min-height: 100%;
-    padding: 0.75rem;
+    padding: 0.75em;
     border: none;
     outline: none;
     font-family: var(--text-font-family, inherit);
@@ -100,7 +100,7 @@
 .markdown-content {
     width: 100%;
     height: 100%;
-    padding: 0.75rem;
+    padding: 0.75em;
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
@@ -127,33 +127,33 @@
 .markdown-content h1 {
     font-size: calc(var(--text-font-size-proportional) * 2.5);
     font-weight: 800;
-    margin: 0.5rem 0 1rem 0;
+    margin: 0.5em 0 1em 0;
     color: var(--header-color, var(--color-text-heading, #111827));
     /* Nested variable fallback? Standard CSS allows it. logic: user setting > css var > fallback */
-    border-bottom: 2px solid var(--color-border-light, #e5e7eb);
-    padding-bottom: 0.25rem;
+    border-bottom: 0.06em solid var(--color-border-light, #e5e7eb);
+    padding-bottom: 0.25em;
 }
 
 .markdown-content h2 {
     font-size: calc(var(--text-font-size-proportional) * 2);
     font-weight: 700;
-    margin: 0.5rem 0 0.75rem 0;
+    margin: 0.5em 0 0.75em 0;
     color: var(--header-color, var(--color-text-heading, #1f2937));
-    border-bottom: 1px solid var(--color-bg-light, #f3f4f6);
-    padding-bottom: 0.125rem;
+    border-bottom: 0.03em solid var(--color-bg-light, #f3f4f6);
+    padding-bottom: 0.125em;
 }
 
 .markdown-content h3 {
     font-size: calc(var(--text-font-size-proportional) * 1.75);
     font-weight: 600;
-    margin: 0.5rem 0 0.5rem 0;
+    margin: 0.5em 0 0.5em 0;
     color: var(--header-color, var(--color-text-main, #374151));
 }
 
 .markdown-content h4 {
     font-size: calc(var(--text-font-size-proportional) * 1.5);
     font-weight: 600;
-    margin: 0.5rem 0 0.5rem 0;
+    margin: 0.5em 0 0.5em 0;
     color: var(--header-color, var(--color-text-muted, #4b5563));
 }
 
@@ -161,24 +161,24 @@
 .markdown-content h6 {
     font-size: calc(var(--text-font-size-proportional) * 1.25);
     font-weight: 600;
-    margin: 0.5rem 0 0.5rem 0;
+    margin: 0.5em 0 0.5em 0;
     color: var(--header-color, var(--color-text-muted, #6b7280));
 }
 
 .markdown-content p {
-    margin: 0.75rem 0;
+    margin: 0.75em 0;
 }
 
 .markdown-content ul,
 .markdown-content ol {
-    margin: 0.5rem 0;
-    padding-left: 1.5rem;
+    margin: 0.5em 0;
+    padding-left: 1.5em;
     white-space: normal;
     /* Override pre-wrap to prevent extra spacing */
 }
 
 .markdown-content li {
-    margin: 0.1rem 0;
+    margin: 0.1em 0;
     white-space: normal;
 }
 
@@ -207,16 +207,16 @@
 }
 
 .markdown-content blockquote {
-    border-left: 3px solid var(--color-border, #d1d5db);
-    margin: 0 0 0.5rem 0;
-    padding-left: 0.75rem;
+    border-left: 0.2em solid var(--color-border, #d1d5db);
+    margin: 0 0 0.5em 0;
+    padding-left: 0.75em;
     color: var(--color-text-muted, #6b7280);
 }
 
 .markdown-content hr {
     border: none;
-    border-top: 1px solid var(--color-border-light, #e5e7eb);
-    margin: 0.75rem 0;
+    border-top: 0.06em solid var(--color-border-light, #e5e7eb);
+    margin: 0.75em 0;
 }
 
 .markdown-content strong {
