@@ -50,14 +50,24 @@ function createWindow() {
     // This allows us to override the Windows system menu reliably
     mainWindow.on('focus', () => {
         globalShortcut.register('Alt+Space', () => {
-            if (mainWindow) {
-                mainWindow.webContents.send('shortcut:long-split');
-            }
+            if (mainWindow) mainWindow.webContents.send('shortcut:long-split');
+        });
+        globalShortcut.register('CommandOrControl+N', () => {
+            if (mainWindow) mainWindow.webContents.send('shortcut:new-page');
+        });
+        globalShortcut.register('CommandOrControl+Shift+N', () => {
+            if (mainWindow) mainWindow.webContents.send('shortcut:duplicate-page');
+        });
+        globalShortcut.register('CommandOrControl+S', () => {
+            if (mainWindow) mainWindow.webContents.send('shortcut:save-layout');
         });
     });
 
     mainWindow.on('blur', () => {
         globalShortcut.unregister('Alt+Space');
+        globalShortcut.unregister('CommandOrControl+N');
+        globalShortcut.unregister('CommandOrControl+Shift+N');
+        globalShortcut.unregister('CommandOrControl+S');
     });
 
     // Check for updates once window is ready

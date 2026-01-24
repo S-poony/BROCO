@@ -1,6 +1,10 @@
-import { state } from './state.js';
+import { state, addPage, duplicatePage, getCurrentPage } from './state.js';
 import { handleSplitClick, createTextInRect } from './layout.js';
-import { undo, redo } from './history.js';
+import { undo, redo, saveState } from './history.js';
+import { renderLayout } from './renderer.js';
+import { renderPageList } from './pages.js';
+import { saveLayout } from './fileIO.js';
+import { A4_PAPER_ID } from './constants.js';
 
 import { showConfirm } from './utils.js';
 
@@ -24,6 +28,24 @@ export function setupKeyboardNavigation() {
                 });
                 focused.dispatchEvent(clickEvent);
             }
+        });
+
+        window.electronAPI.onNewPage(() => {
+            saveState();
+            addPage();
+            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderPageList();
+        });
+
+        window.electronAPI.onDuplicatePage(() => {
+            saveState();
+            duplicatePage(state.currentPageIndex);
+            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderPageList();
+        });
+
+        window.electronAPI.onSaveLayout(() => {
+            saveLayout();
         });
     }
 }

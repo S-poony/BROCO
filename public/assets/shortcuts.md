@@ -31,6 +31,9 @@
 
 `ctrl + i` = import folder *(when not editing text)*
 `Alt + Space` = long split
+`ctrl + n` = new page
+`ctrl + shift + n` = duplicate page
+`ctrl + s` = save layout
 
 ***
 
