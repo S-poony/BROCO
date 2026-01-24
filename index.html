@@ -415,6 +415,33 @@
                                 </div>
                             </details>
 
+                            <!-- App (Electron Only) Settings -->
+                            <details class="settings-section electron-only">
+                                <summary class="settings-section-title">
+                                    <span class="icon icon-settings" aria-hidden="true"></span>
+                                    App (Electron Only)
+                                    <span class="icon-chevron" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div class="settings-content-body">
+                                    <div class="settings-group settings-toggle-group">
+                                        <label for="setting-electron-usereferences">Use File References</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-electron-usereferences">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <p class="settings-help">When enabled, images are linked by their local path instead
+                                        of being embedded in the project file. This keeps project files much smaller.
+                                    </p>
+                                </div>
+                            </details>
+
                             <div class="modal-footer settings-footer">
                                 <button id="settings-reset" class="btn-text">Reset to Defaults</button>
                                 <button id="settings-close" class="btn-primary">Done</button>

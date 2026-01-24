@@ -143,6 +143,13 @@ function initialize() {
 
     // Setup global error handling
     setupGlobalErrorHandler();
+
+    // Detect Electron and add class to body for styling
+    const isElectron = (window.electronAPI && window.electronAPI.isElectron) || /Electron/i.test(navigator.userAgent);
+    if (isElectron) {
+        document.body.classList.add('is-electron');
+    }
+
     setupPlatformAdapters();
     setupAssetHandlers();
     setupDropHandlers();

@@ -89,6 +89,11 @@
     }
 }
 
+/* Hide Electron-only settings by default (shown via JS if Electron is detected) */
+body:not(.is-electron) .electron-only {
+    display: none !important;
+}
+
 .settings-header,
 .shortcuts-header {
     display: flex;
@@ -358,7 +363,15 @@ summary.settings-section-title .icon {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.settings-help {
+    font-size: 0.75rem;
+    color: var(--color-text-subtle, #6b7280);
     margin-top: 0.5rem;
+    line-height: 1.4;
+    font-style: italic;
 }
 
 .color-swatch-grid {

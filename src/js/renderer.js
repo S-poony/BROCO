@@ -116,15 +116,24 @@ function renderLeafNode(container, node, options) {
             container.style.position = 'relative';
 
             // Check if we should use high-res logic (background-image mostly for html2canvas stability)
-            if (options.useHighResImages && asset.fullResData) {
-                // High-res export rendering using background-image technique
-                container.style.backgroundImage = `url(${asset.fullResData})`;
-                container.style.backgroundSize = node.image.fit || 'cover';
-                container.style.backgroundPosition = 'center';
-                container.style.backgroundRepeat = 'no-repeat';
+            if (options.useHighResImages) {
+                let imageUrl = asset.fullResData;
 
-                if (node.image.flip) {
-                    container.style.transform = 'scaleX(-1)';
+                // For Electron references, fetch from local disk using custom protocol
+                if (asset.isReference && asset.absolutePath) {
+                    imageUrl = `broco-local://${encodeURIComponent(asset.absolutePath)}`;
+                }
+
+                if (imageUrl) {
+                    // High-res export rendering using background-image technique
+                    container.style.backgroundImage = `url(${imageUrl})`;
+                    container.style.backgroundSize = node.image.fit || 'cover';
+                    container.style.backgroundPosition = 'center';
+                    container.style.backgroundRepeat = 'no-repeat';
+
+                    if (node.image.flip) {
+                        container.style.transform = 'scaleX(-1)';
+                    }
                 }
             } else {
                 // Standard editor rendering with <img> tag

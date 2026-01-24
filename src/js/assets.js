@@ -120,7 +120,8 @@ export function setupAssetHandlers() {
                             item.name,
                             item.data,
                             item.type,
-                            item.path
+                            item.path,
+                            item.absolutePath
                         );
                         assetManager.addAsset(asset);
                     } catch (err) {

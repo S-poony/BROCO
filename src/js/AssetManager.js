@@ -1,4 +1,5 @@
 import { MAX_ASSET_DIMENSION, ASSET_THUMBNAIL_QUALITY, MAX_FILE_SIZE_MB } from './constants.js';
+import { getSettings } from './settings.js';
 
 /**
  * @typedef {Object} Asset
@@ -68,7 +69,7 @@ export class AssetManager extends EventTarget {
      * @param {string} [path] 
      * @returns {Promise<Asset>}
      */
-    async processRawImage(name, fullResData, type, path) {
+    async processRawImage(name, fullResData, type, path, absolutePath) {
         if (type !== 'image') {
             return {
                 id: crypto.randomUUID(),
@@ -76,9 +77,13 @@ export class AssetManager extends EventTarget {
                 lowResData: null,
                 fullResData: fullResData,
                 path: path || name,
+                absolutePath: absolutePath, // Always store if available
                 type: type
             };
         }
+
+        const settings = getSettings();
+        const useReferences = settings.electron?.useFileReferences === true && !!absolutePath;
 
         const lowResData = await this._createThumbnail(fullResData);
 
@@ -86,8 +91,10 @@ export class AssetManager extends EventTarget {
             id: crypto.randomUUID(),
             name: name,
             lowResData: lowResData,
-            fullResData: fullResData,
+            fullResData: useReferences ? null : fullResData, // Strip full res if tracking by reference
             path: path || name,
+            absolutePath: absolutePath,
+            isReference: useReferences,
             type: 'image'
         };
     }

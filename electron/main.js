@@ -1,10 +1,14 @@
-import { app, BrowserWindow, shell, dialog, ipcMain, globalShortcut } from 'electron';
+import { app, BrowserWindow, shell, dialog, ipcMain, globalShortcut, protocol, net } from 'electron';
 import { join, dirname, relative, basename } from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import electronUpdater from 'electron-updater';
 const { autoUpdater } = electronUpdater;
 
+// Register custom protocol early
+protocol.registerSchemesAsPrivileged([
+    { scheme: 'broco-local', privileges: { bypassCSP: true, stream: true } }
+]);
 
 // Get __dirname equivalent in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -79,6 +83,12 @@ function createWindow() {
 
 // App lifecycle
 app.whenReady().then(() => {
+    // Register the local file protocol handler
+    protocol.handle('broco-local', (request) => {
+        const filePath = decodeURIComponent(request.url.slice('broco-local://'.length));
+        return net.fetch(pathToFileURL(filePath).toString());
+    });
+
     createWindow();
 
     app.on('activate', () => {
@@ -127,6 +137,7 @@ app.whenReady().then(() => {
                     results.push({
                         name,
                         path: relPath,
+                        absolutePath: fullPath, // Add absolute path for referencing
                         type: isImage ? 'image' : 'text',
                         data: isImage ? `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${content.toString('base64')}` : content.toString('utf-8')
                     });

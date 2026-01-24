@@ -26,6 +26,9 @@ const defaultSettings = {
         width: DIVIDER_SIZE,
         color: '#d1d5db',
         showBorders: true
+    },
+    electron: {
+        useFileReferences: false
     }
 };
 
@@ -156,7 +159,8 @@ export function loadSettings(savedSettings) {
             layout: { ...defaultSettings.layout, ...savedSettings.layout },
             text: { ...defaultSettings.text, ...savedSettings.text },
             paper: { ...defaultSettings.paper, ...savedSettings.paper },
-            dividers: { ...defaultSettings.dividers, ...savedSettings.dividers }
+            dividers: { ...defaultSettings.dividers, ...savedSettings.dividers },
+            electron: { ...defaultSettings.electron, ...savedSettings.electron }
         };
         applySettings();
     }
@@ -234,6 +238,7 @@ export function setupSettingsHandlers() {
     setupTextControls();
     setupPaperControls();
     setupDividerControls();
+    setupElectronControls();
 
     // Re-apply settings on layout updates
     document.addEventListener('layoutUpdated', () => {
@@ -298,6 +303,10 @@ function syncFormWithSettings() {
 
     const showBordersToggle = document.getElementById('setting-show-borders');
     if (showBordersToggle) showBordersToggle.checked = settings.dividers.showBorders;
+
+    // Electron
+    const useFileRefsToggle = document.getElementById('setting-electron-usereferences');
+    if (useFileRefsToggle) useFileRefsToggle.checked = settings.electron.useFileReferences;
 }
 
 /**
@@ -474,4 +483,11 @@ function setupLayoutControls() {
             updateSetting('layout', 'isLandscape', e.target.checked);
         });
     }
+}
+
+function setupElectronControls() {
+    const useFileRefsToggle = document.getElementById('setting-electron-usereferences');
+    useFileRefsToggle?.addEventListener('change', (e) => {
+        updateSetting('electron', 'useFileReferences', e.target.checked);
+    });
 }

@@ -16,7 +16,11 @@ export function saveLayout() {
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
         currentId: state.currentId,
-        assets: assetManager.getAssets(),
+        assets: assetManager.getAssets().map(asset => ({
+            ...asset,
+            // Ensure fullResData is stripped if it's a reference to save space
+            fullResData: asset.isReference ? null : asset.fullResData
+        })),
         settings: exportSettings()
     };
 
