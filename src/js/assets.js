@@ -129,31 +129,9 @@ function renderAssetList() {
         actions.appendChild(removeBtn);
         item.appendChild(actions);
 
-        item.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; // Only left click
-            e.preventDefault();
+        item.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
             dragDropService.startDrag({ asset }, e);
-        });
-
-        // Touch support using service
-        item.addEventListener('touchstart', (e) => {
-            dragDropService.startTouchDrag(e, { asset });
-        }, { passive: false });
-
-        item.addEventListener('touchmove', (e) => {
-            const result = dragDropService.handleTouchMove(e);
-            if (!result) return;
-
-            updateDragFeedback(result.target);
-        }, { passive: false });
-
-        item.addEventListener('touchend', (e) => {
-            const touch = e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null;
-            if (touch) {
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                handleDropLogic(target);
-            }
-            dragDropService.endDrag();
         });
 
         assetList.appendChild(item);
@@ -365,19 +343,10 @@ export async function importImageToNode(nodeId) {
 
 export function attachImageDragHandlers(img, asset, hostRectElement) {
     img.draggable = false;
-    img.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
-        e.preventDefault();
+    img.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
         dragDropService.startDrag({ asset, sourceRect: hostRectElement }, e);
     });
-
-    // Touch support
-    img.addEventListener('touchstart', (e) => {
-        dragDropService.startTouchDrag(e, { asset, sourceRect: hostRectElement });
-    }, { passive: false });
-
-    img.addEventListener('touchmove', handleTouchMove, { passive: false });
-    img.addEventListener('touchend', handleTouchEnd);
 }
 
 export function setupDropHandlers() {

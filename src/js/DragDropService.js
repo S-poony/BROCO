@@ -23,14 +23,20 @@ export class DragDropService {
         this.sourceTextNode = null;
         /** @type {string|undefined} */
         this.draggedTextAlign = undefined;
-        /** @type {Touch|null} Current active touch if any */
-        this.activeTouch = null;
-        /** @type {boolean} Whether we are currently in a drag operation */
+        /** @type {boolean} Whether we are currently in a drag operation (past threshold) */
         this.dragging = false;
+        /** @type {DragData|null} Data stored on pointerdown */
+        this.pendingData = null;
+        /** @type {number|null} Initial x on pointerdown */
+        this.startX = null;
+        /** @type {number|null} Initial y on pointerdown */
+        this.startY = null;
+        /** @type {number} The threshold in pixels to consider movement a drag */
+        this.dragThreshold = 5;
 
-        // Global mouse handlers for immediate drag
-        this.onMouseMove = this.onMouseMove.bind(this);
-        this.onMouseUp = this.onMouseUp.bind(this);
+        // Global pointer handlers
+        this.onPointerMove = this.onPointerMove.bind(this);
+        this.onPointerUp = this.onPointerUp.bind(this);
 
         // Cleanup on page visibility change to prevent ghost leaks
         document.addEventListener('visibilitychange', () => {
@@ -42,9 +48,10 @@ export class DragDropService {
 
     /**
      * @param {DragData} data 
-     * @param {MouseEvent|Touch} event
+     * @param {PointerEvent} event
      */
     startDrag(data, event) {
+        this.pendingData = data;
         this.draggedAsset = data.asset || null;
         this.draggedText = data.text !== undefined ? data.text : undefined;
         this.draggedPageIndex = data.pageIndex !== undefined ? data.pageIndex : undefined;
@@ -52,57 +59,84 @@ export class DragDropService {
         this.sourceTextNode = data.sourceTextNode || null;
         this.draggedTextAlign = data.textAlign || undefined;
 
-        this.dragging = true;
+        this.startX = event.clientX;
+        this.startY = event.clientY;
+        this.dragging = false; // Not dragging until threshold exceeded
 
-        if (this.sourceRect) {
-            this.sourceRect.classList.add(this.draggedAsset ? 'moving-image' : 'moving-text');
-        }
-
-        // Create ghost immediately
-        this.createGhost(event, data);
-
-        // Add document-level listeners for mouse if no touch
-        if (!(window.Touch && event instanceof Touch)) {
-            document.addEventListener('mousemove', this.onMouseMove);
-            document.addEventListener('mouseup', this.onMouseUp);
-        }
+        // Add document-level listeners for pointer movement
+        document.addEventListener('pointermove', this.onPointerMove);
+        document.addEventListener('pointerup', this.onPointerUp);
+        document.addEventListener('pointercancel', this.onPointerUp);
     }
 
     /**
+     * Legacy touch support - now redirected to unified Pointer Events logic via caller
      * @param {TouchEvent} e 
      * @param {DragData} data 
      */
     startTouchDrag(e, data) {
         if (e.touches && e.touches.length > 0) {
-            this.activeTouch = e.touches[0];
-            this.startDrag(data, this.activeTouch);
+            // We'll let the newer Pointer Event handlers take precedence if available,
+            // but for older mobile browsers we'd need this. 
+            // However, modern apps should use pointerdown.
+            // I will update the callers to use pointerdown instead.
         }
     }
 
-    onMouseMove(e) {
-        if (!this.dragging) return;
-        this.updateGhostPosition(e.clientX, e.clientY);
+    /**
+     * @param {PointerEvent} e
+     */
+    onPointerMove(e) {
+        if (!this.pendingData) return;
 
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        document.dispatchEvent(new CustomEvent('custom-drag-move', {
-            detail: { target, x: e.clientX, y: e.clientY }
-        }));
+        if (!this.dragging) {
+            const dx = e.clientX - this.startX;
+            const dy = e.clientY - this.startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Calculate threshold based on paper scale
+            const paper = document.getElementById('a4-paper');
+            let threshold = 5; // Default fallback
+            if (paper) {
+                const scale = parseFloat(getComputedStyle(paper).getPropertyValue('--paper-scale-ref')) || 1000;
+                threshold = Math.max(3, scale * 0.008); // Approx 8px at 1000px scale
+            }
+
+            if (distance > threshold) {
+                this.dragging = true;
+                if (this.sourceRect) {
+                    this.sourceRect.classList.add(this.draggedAsset ? 'moving-image' : 'moving-text');
+                }
+                this.createGhost(e, this.pendingData);
+            }
+        }
+
+        if (this.dragging) {
+            // Once dragging, we prevent default to stop scrolling/native behavior
+            if (e.cancelable) e.preventDefault();
+            this.updateGhostPosition(e.clientX, e.clientY);
+
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            document.dispatchEvent(new CustomEvent('custom-drag-move', {
+                detail: { target, x: e.clientX, y: e.clientY }
+            }));
+        }
     }
 
-    onMouseUp(e) {
-        if (!this.dragging) return;
+    /**
+     * @param {PointerEvent} e
+     */
+    onPointerUp(e) {
+        if (!this.pendingData) return;
 
-        // Find target element before ending drag
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-
-        // We'll need a way to trigger the drop logic. 
-        // Typically assets.js or main.js will call endDrag() and then handle the result.
-        // But for mouse up to work globally, we might need a custom event or a callback.
-        // For now, let's dispatch a custom drop event that other services can listen to.
-        const dropEvent = new CustomEvent('custom-drop', {
-            detail: { target, clientX: e.clientX, clientY: e.clientY }
-        });
-        document.dispatchEvent(dropEvent);
+        if (this.dragging) {
+            // Only finalize if we actually started a drag
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const dropEvent = new CustomEvent('custom-drop', {
+                detail: { target, clientX: e.clientX, clientY: e.clientY }
+            });
+            document.dispatchEvent(dropEvent);
+        }
 
         this.endDrag();
     }
@@ -160,35 +194,20 @@ export class DragDropService {
     }
 
     /**
-     * @param {TouchEvent} e 
+     * @param {PointerEvent} e 
      */
     handleTouchMove(e) {
-        if (!this.dragging || !this.touchGhost) return;
-
-        const touch = e.touches && e.touches.length > 0 ? e.touches[0] : null;
-        if (!touch) return;
-
-        if (e.cancelable) e.preventDefault();
-
-        this.updateGhostPosition(touch.clientX, touch.clientY);
-
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        document.dispatchEvent(new CustomEvent('custom-drag-move', {
-            detail: { target, x: touch.clientX, y: touch.clientY }
-        }));
-
-        return {
-            x: touch.clientX,
-            y: touch.clientY,
-            target: target
-        };
+        // Redirection for callers still using this
+        return this.onPointerMove(e);
     }
 
     endDrag() {
         this.dragging = false;
+        this.pendingData = null;
 
-        document.removeEventListener('mousemove', this.onMouseMove);
-        document.removeEventListener('mouseup', this.onMouseUp);
+        document.removeEventListener('pointermove', this.onPointerMove);
+        document.removeEventListener('pointerup', this.onPointerUp);
+        document.removeEventListener('pointercancel', this.onPointerUp);
 
         if (this.sourceRect) {
             this.sourceRect.classList.remove('moving-image', 'moving-text');
