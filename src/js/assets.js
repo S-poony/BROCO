@@ -16,13 +16,12 @@ let collapsedFolders = new Set(); // Stores paths of collapsed folders
 
 export function setupAssetHandlers() {
     const importBtn = document.getElementById('import-assets-btn');
-    const importFolderBtn = document.getElementById('import-folder-btn');
     const viewGridBtn = document.getElementById('view-grid-btn');
     const viewListBtn = document.getElementById('view-list-btn');
 
     if (!importBtn) return;
 
-    // File Input for Images
+    // File Input for Web fallback
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
@@ -30,44 +29,85 @@ export function setupAssetHandlers() {
     fileInput.style.display = 'none';
     document.body.appendChild(fileInput);
 
-    // Folder Input
-    const folderInput = document.createElement('input');
-    folderInput.type = 'file';
-    folderInput.webkitdirectory = true; // Enable directory selection
-    folderInput.directory = true;
-    folderInput.style.display = 'none';
-    document.body.appendChild(folderInput);
-
     // -- Event Listeners --
 
-    importBtn.addEventListener('click', () => fileInput.click());
-    importFolderBtn?.addEventListener('click', () => folderInput.click());
+    importBtn.addEventListener('click', async () => {
+        if (window.electronAPI?.openAssets) {
+            // Electron Smart Picker: Returns array of { name, path, type, data }
+            const results = await window.electronAPI.openAssets();
+            if (results && results.length > 0) {
+                processItems(results);
+            }
+        } else {
+            fileInput.click();
+        }
+    });
 
-    // Handle File Selection
-    const handleFiles = async (files) => {
-        const fileArray = Array.from(files);
-        // Show loading indicator if crucial...
-
-        // Process in chunks to avoid blocking UI if huge
-        for (const file of fileArray) {
-            try {
-                // Provide relative path if available (webkitRelativePath)
-                const path = file.webkitRelativePath || file.name;
-                const asset = await assetManager.processFile(file, path);
+    // Unified File Processor
+    const processItems = async (items) => {
+        // Handle Electron raw data results
+        if (Array.isArray(items) && items.length > 0 && items[0].data) {
+            items.forEach(item => {
+                const asset = {
+                    id: crypto.randomUUID(),
+                    name: item.name,
+                    lowResData: item.type === 'image' ? item.data : null,
+                    fullResData: item.data,
+                    path: item.path,
+                    type: item.type
+                };
                 assetManager.addAsset(asset);
-            } catch (err) {
-                // Ignore non-image/text errors silently for folders mixed content
-                if (err.message !== 'File is not an image') {
-                    console.error(`Failed to process ${file.name}:`, err);
+            });
+            return;
+        }
+
+        // Handle Web inputs
+        for (const item of items) {
+            try {
+                // If it's a webkit entry (from drop)
+                if (item.webkitGetAsEntry) {
+                    const entry = item.webkitGetAsEntry();
+                    if (entry) {
+                        await traverseEntry(entry);
+                        continue;
+                    }
                 }
+
+                // If it's a File object (from input)
+                const file = item instanceof File ? item : item.getAsFile ? item.getAsFile() : null;
+                if (file) {
+                    const path = file.webkitRelativePath || file.name;
+                    const asset = await assetManager.processFile(file, path);
+                    assetManager.addAsset(asset);
+                }
+            } catch (err) {
+                console.error('Import error:', err);
             }
         }
-        fileInput.value = '';
-        folderInput.value = '';
     };
 
-    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-    folderInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    // Recursive traversal for folders
+    async function traverseEntry(entry, path = '') {
+        if (entry.isFile) {
+            return new Promise((resolve) => {
+                entry.file(async (file) => {
+                    try {
+                        const asset = await assetManager.processFile(file, path ? `${path}/${file.name}` : file.name);
+                        assetManager.addAsset(asset);
+                    } catch (e) { }
+                    resolve();
+                });
+            });
+        } else if (entry.isDirectory) {
+            const reader = entry.createReader();
+            const entries = await new Promise(resolve => reader.readEntries(resolve));
+            for (const subEntry of entries) {
+                await traverseEntry(subEntry, path ? `${path}/${entry.name}` : entry.name);
+            }
+        }
+    }
+
+    fileInput.addEventListener('change', (e) => processItems(e.target.files));
 
     // View Toggles
     viewGridBtn?.addEventListener('click', () => setViewMode('grid'));
@@ -82,33 +122,35 @@ export function setupAssetHandlers() {
 
     // assetManager listeners...
     assetManager.addEventListener('assets:changed', () => {
-        // Debounce slightly if mass adding? For now direct render.
         requestAnimationFrame(renderAssetList);
     });
 
-    // ... Existing drop handlers ...
-    setupDropHandlersForList();
+    setupDropHandlersForList(processItems);
 }
 
-function setupDropHandlersForList() {
+function setupDropHandlersForList(importHandler) {
     const assetList = document.getElementById('asset-list');
-    // ... (existing dragover/drop handlers kept, ensuring they work on the container) ...
+
     assetList.addEventListener('dragover', (e) => {
+        e.preventDefault();
         if (dragDropService.sourceRect) {
-            e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-            assetList.classList.add('drag-over');
+        } else {
+            e.dataTransfer.dropEffect = 'copy';
         }
+        assetList.classList.add('drag-over');
     });
 
     assetList.addEventListener('dragleave', () => {
         assetList.classList.remove('drag-over');
     });
 
-    assetList.addEventListener('drop', (e) => {
+    assetList.addEventListener('drop', async (e) => {
+        e.preventDefault();
         assetList.classList.remove('drag-over');
+
+        // internal drag (moving from paper back to sidebar)
         if (dragDropService.sourceRect) {
-            e.preventDefault();
             const { asset, text, sourceRect } = dragDropService.endDrag();
 
             saveState();
@@ -120,8 +162,13 @@ function setupDropHandlersForList() {
 
             renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
             document.dispatchEvent(new CustomEvent('layoutUpdated'));
+        } else if (e.dataTransfer.items) {
+            // External drag (files/folders from OS)
+            await importHandler(e.dataTransfer.items);
         }
     });
+
+    // Remove/Replace delegation...
 
     // Remove/Replace delegation
     assetList.addEventListener('click', (e) => {

@@ -17,14 +17,6 @@
     gap: 0.5rem;
 }
 
-#import-folder-btn {
-    width: 36px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .view-mode-toggle {
     display: flex;
     background: var(--color-bg-light, #f3f4f6);

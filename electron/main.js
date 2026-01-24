@@ -1,5 +1,6 @@
-import { app, BrowserWindow, shell, dialog } from 'electron';
-import { join, dirname } from 'path';
+import { app, BrowserWindow, shell, dialog, ipcMain } from 'electron';
+import { join, dirname, relative, basename } from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import electronUpdater from 'electron-updater';
 const { autoUpdater } = electronUpdater;
@@ -60,6 +61,47 @@ app.whenReady().then(() => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
         }
+    });
+
+    // Handle Asset Picker
+    ipcMain.handle('dialog:openAssets', async () => {
+        const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile', 'openDirectory', 'multiSelections'],
+            filters: [
+                { name: 'Assets', extensions: ['jpg', 'png', 'gif', 'webp', 'jpeg', 'txt', 'md'] }
+            ]
+        });
+        if (canceled) return [];
+
+        const results = [];
+
+        const processPath = (fullPath, baseDir) => {
+            const stats = fs.statSync(fullPath);
+            const name = basename(fullPath);
+            const relPath = baseDir ? relative(baseDir, fullPath).replace(/\\/g, '/') : name;
+
+            if (stats.isDirectory()) {
+                const files = fs.readdirSync(fullPath);
+                files.forEach(file => processPath(join(fullPath, file), baseDir || dirname(fullPath)));
+            } else {
+                const ext = name.split('.').pop().toLowerCase();
+                const isImage = ['jpg', 'png', 'gif', 'webp', 'jpeg'].includes(ext);
+                const isText = ['txt', 'md'].includes(ext);
+
+                if (isImage || isText) {
+                    const content = fs.readFileSync(fullPath);
+                    results.push({
+                        name,
+                        path: relPath,
+                        type: isImage ? 'image' : 'text',
+                        data: isImage ? `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${content.toString('base64')}` : content.toString('utf-8')
+                    });
+                }
+            }
+        };
+
+        filePaths.forEach(p => processPath(p));
+        return results;
     });
 });
 
