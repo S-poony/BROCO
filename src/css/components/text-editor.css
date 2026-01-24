@@ -5,17 +5,16 @@
     top: 8px;
     left: 8px;
     right: 8px;
-    /* Allow wrapping */
-    transform: none;
+    max-width: calc(100% - 16px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     color: var(--color-text-subtle, #9ca3af);
-    font-size: 0.75rem;
-    /* Smaller text */
+    font-size: var(--text-font-size-proportional, 0.75rem);
     opacity: 0;
     transition: opacity 0.2s;
     user-select: none;
-    pointer-events: none;
-    /* Let clicks pass through to the container for splitting */
-    white-space: normal;
     pointer-events: none;
     line-height: 1.4;
 }
