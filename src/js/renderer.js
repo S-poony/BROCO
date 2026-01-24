@@ -143,25 +143,17 @@ function renderLeafNode(container, node, options) {
                 if (!options.hideControls) {
                     const buttonsContainer = document.createElement('div');
                     buttonsContainer.className = 'image-controls';
-                    buttonsContainer.style.position = 'absolute';
-                    buttonsContainer.style.top = '8px';
-                    buttonsContainer.style.right = '8px';
-                    buttonsContainer.style.display = 'flex';
-                    buttonsContainer.style.gap = '4px';
-
-                    buttonsContainer.style.opacity = '0';
-                    buttonsContainer.style.transition = 'opacity 0.2s';
 
                     container.addEventListener('mouseenter', () => {
-                        buttonsContainer.style.opacity = '1';
+                        // Handled by CSS
                     });
                     container.addEventListener('mouseleave', () => {
-                        buttonsContainer.style.opacity = '0';
+                        // Handled by CSS
                     });
 
                     const flipBtn = document.createElement('button');
                     flipBtn.id = `flip-btn-${node.id}`;
-                    flipBtn.className = 'flip-image-btn text-white bg-black/50 hover:bg-black/70 rounded p-1 transition-colors';
+                    flipBtn.className = 'flip-image-btn';
                     flipBtn.title = 'Flip Image';
                     flipBtn.innerHTML = `<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -177,7 +169,7 @@ function renderLeafNode(container, node, options) {
                     });
 
                     const removeBtn = document.createElement('button');
-                    removeBtn.className = 'remove-image-btn text-white bg-black/50 hover:bg-black/70 rounded p-1 transition-colors';
+                    removeBtn.className = 'remove-image-btn';
                     removeBtn.title = 'Remove image';
                     removeBtn.innerHTML = '<span class="icon icon-delete" aria-hidden="true"></span>';
                     removeBtn.setAttribute('aria-label', 'Remove image');

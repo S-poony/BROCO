@@ -4,7 +4,8 @@
 .floating-btn,
 .remove-image-btn,
 .remove-text-btn,
-.align-text-btn {
+.align-text-btn,
+.flip-image-btn {
     position: absolute;
     width: 32px;
     height: 32px;
@@ -34,9 +35,30 @@
 .floating-btn .icon,
 .remove-image-btn .icon,
 .remove-text-btn .icon,
-.align-text-btn svg {
+.align-text-btn svg,
+.flip-image-btn svg {
     width: 20px;
     height: 20px;
+}
+
+/* Image controls container buttons should not be absolute */
+.image-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: none;
+    gap: 4px;
+    z-index: 20;
+    transition: opacity 0.2s;
+}
+
+.image-controls .remove-image-btn,
+.image-controls .flip-image-btn {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: flex;
+    /* Override base display: none since parent handles visibility */
 }
 
 /* Specific button placements */
@@ -50,7 +72,8 @@
 
 /* Top-Right: Align/Edit Button (offset to the left of remove) */
 .btn-align,
-.align-text-btn {
+.align-text-btn,
+.flip-image-btn {
     top: 8px;
     right: 48px;
     /* Different hover color for non-destructive actions */
@@ -58,7 +81,8 @@
 }
 
 .btn-align:hover,
-.align-text-btn:hover {
+.align-text-btn:hover,
+.flip-image-btn:hover {
     background: var(--color-primary, #4f46e5);
     color: white;
     border-color: var(--color-primary-hover, #4338ca);
@@ -66,12 +90,9 @@
 
 /* Show buttons when the splittable-rect is hovered */
 /* Note: The HTML structure varies slightly between text and images, so we target generic classes or specific parents */
-.splittable-rect:hover .floating-btn,
-.splittable-rect:hover .remove-image-btn,
-/* Legacy support */
 .splittable-rect:hover .remove-text-btn,
-/* Legacy support */
-.splittable-rect:hover .align-text-btn
+.splittable-rect:hover .align-text-btn,
+.splittable-rect:hover .image-controls
 
 /* Legacy support */
     {
