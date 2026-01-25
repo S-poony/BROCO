@@ -35,7 +35,7 @@ function createWindow() {
             contextIsolation: true,
             nodeIntegration: false,
         },
-        icon: join(__dirname, '../public/icon.png')
+        icon: join(__dirname, '../src/assets/icons/AppIcon.png')
     });
 
     // Load the app
