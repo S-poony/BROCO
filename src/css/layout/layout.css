@@ -1,21 +1,35 @@
+:root {
+    --divider-ratio: 0.005;
+    --show-borders: 1;
+}
+
 .a4-paper {
-    /* Proportional Sizing Variables */
-    --paper-scale-ref: calc((var(--paper-current-width, 1000px) + var(--paper-current-height, 1000px)) * 0.5);
-    --divider-thickness: round(calc(var(--paper-scale-ref) * var(--divider-ratio, 0.005)), 1px);
+    container-type: size;
+    /* Proportional Sizing Variables - Now using native Container Query units */
+    --paper-scale-ref: calc((100cqw + 100cqh) * 0.5);
+    --divider-thickness: round(calc(var(--paper-scale-ref) * var(--divider-ratio)), 1px);
 
     /* Fallback for older browsers */
-    @supports not (height: round(1px, 1px)) {
-        --divider-thickness: calc(var(--paper-scale-ref) * var(--divider-ratio, 0.005));
+    @supports not (container-type: size) {
+        --paper-scale-ref: calc((var(--paper-current-width, 1000px) + var(--paper-current-height, 1000px)) * 0.5);
     }
 
-    /* Hit area remains clickable even if divider is 0px */
+    @supports not (height: round(1px, 1px)) {
+        --divider-thickness: calc(var(--paper-scale-ref) * var(--divider-ratio));
+    }
+
     --divider-hit-thickness: max(12px, var(--divider-thickness));
-    --layout-border-actual: calc(var(--show-borders, 1) * var(--divider-thickness));
+    --layout-border-actual: calc(var(--show-borders) * var(--divider-thickness));
     --text-font-size-proportional: calc(var(--paper-scale-ref) * var(--text-ratio, 0.02));
 
     /* Responsive Scaling: Fit container with 20px margin on all sides */
     width: min(calc(100cqw - 40px), calc((100cqh - 40px) * var(--ratio, 0.707)));
     height: auto;
+
+    /* If paper is inside a container that is NOT the workspace (e.g. export), 
+       ensure it doesn't try to use 100cqw of itself which would be 0 or circular.
+       But .a4-paper is our container, so 100cqw INSIDE paper is fine. 
+       The width of the paper itself must use the workspace-wrapper's container units. */
 
     aspect-ratio: var(--ratio, 1 / 1.414);
     margin: auto;
@@ -23,12 +37,29 @@
     /* Box Styles */
     box-shadow: var(--shadow-paper, 0 10px 25px rgba(0, 0, 0, 0.2));
     background-color: var(--paper-bg-color, white);
-    /* Border now scales: either the proportional width or 0px if hidden */
-    border: var(--layout-border-actual) solid var(--divider-color, #d1d5db);
+
+    /* Border removed from here, integrated into ::after to share container context with dividers */
+    border: none;
+
     overflow: hidden;
     position: relative;
     display: flex;
     flex-shrink: 0;
+}
+
+/* Perfect border sync using pseudo-element inside the container */
+.a4-paper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+
+    /* Shares the paper's container context with children like dividers */
+    border: var(--layout-border-actual) solid var(--divider-color, #d1d5db);
+
+    /* Ensure it stays perfectly contained */
+    box-sizing: border-box;
 }
 
 /* Cover image scaling container */

@@ -16,8 +16,7 @@ marked.use({
     breaks: true
 });
 
-// Map to track ResizeObservers for paper containers
-const paperObservers = new Map();
+// Resize observers removed in favor of CSS Container Queries
 
 export function renderLayout(container, node, options = {}) {
     // Top-level paper handling: ensure we don't accidentally turn the paper into redt-1
@@ -27,35 +26,8 @@ export function renderLayout(container, node, options = {}) {
         // Use CSS variable for background color to allow real-time updates
         container.style.backgroundColor = 'var(--paper-bg-color, #ffffff)';
 
-        // Ensure we track the rendered width for proportional dividers
-        if (!paperObservers.has(container)) {
-            const observer = new ResizeObserver(entries => {
-                for (let entry of entries) {
-                    const width = Math.round(entry.contentRect.width);
-                    const height = Math.round(entry.contentRect.height);
-
-                    requestAnimationFrame(() => {
-                        const style = entry.target.style;
-                        const currentWidth = parseInt(style.getPropertyValue('--paper-current-width'));
-                        const currentHeight = parseInt(style.getPropertyValue('--paper-current-height'));
-
-                        // Only update if the value has changed significantly to prevent vibration loops
-                        // A 2px threshold ensures stability during layout shifts or sidebar animations
-                        if (Math.abs(width - currentWidth) > 2) {
-                            style.setProperty('--paper-current-width', `${width}px`);
-                        }
-                        if (Math.abs(height - currentHeight) > 2) {
-                            style.setProperty('--paper-current-height', `${height}px`);
-                        }
-                    });
-                }
-            });
-            observer.observe(container);
-            paperObservers.set(container, observer);
-        }
-        // Set initial dimensions immediately
-        container.style.setProperty('--paper-current-width', `${container.offsetWidth}px`);
-        container.style.setProperty('--paper-current-height', `${container.offsetHeight}px`);
+        // Proportional scaling now handled by CSS Container Queries on the paper itself
+        container.classList.add('a4-paper');
 
         const rootElement = createDOMRect(node, null);
         container.appendChild(rootElement);
