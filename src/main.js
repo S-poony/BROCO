@@ -356,12 +356,6 @@ function setupShortcutsHandlers() {
     const openShortcuts = () => {
         shortcutsContainer.classList.add('active');
         shortcutsBtn.classList.add('active');
-        // Close settings if open
-        if (settingsContainer) {
-            settingsContainer.classList.remove('active');
-            const settingsBtn = document.getElementById('settings-btn');
-            if (settingsBtn) settingsBtn.classList.remove('active'); // Ensure settings button state is synced
-        }
         shortcutsOverlay.setEnabled(true);
     };
 
@@ -383,16 +377,6 @@ function setupShortcutsHandlers() {
         }
     });
 
-    // We also need to hook into Settings to close Shortcuts when Settings opens
-    const settingsBtn = document.getElementById('settings-btn');
-    settingsBtn?.addEventListener('click', () => {
-        // We assume settings.js handles opening settings. We just ensure shortcuts is closed.
-        // But settings.js toggles. If we just add a listener here, it runs alongside settings.js
-        // If settings is ABOUT to open (it was closed), we close shortcuts.
-        if (!settingsContainer.classList.contains('active')) {
-            closeShortcuts();
-        }
-    });
 }
 
 if (document.readyState === 'loading') {

@@ -206,8 +206,9 @@ export function setupSettingsHandlers() {
 
     // Open container (Modal or Sidebar)
     settingsBtn.addEventListener('click', () => {
-        settingsContainer.classList.toggle('active');
-        if (settingsContainer.classList.contains('active')) {
+        const isActive = settingsContainer.classList.toggle('active');
+        settingsBtn.classList.toggle('active', isActive);
+        if (isActive) {
             syncFormWithSettings();
         }
     });
@@ -215,6 +216,7 @@ export function setupSettingsHandlers() {
     // Close container
     const closeHandler = () => {
         settingsContainer.classList.remove('active');
+        settingsBtn.classList.remove('active');
     };
 
     closeBtn?.addEventListener('click', closeHandler);
