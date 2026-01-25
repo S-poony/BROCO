@@ -10,6 +10,9 @@ export const SNAP_THRESHOLD = 20;
 /** Maximum undo/redo history states */
 export const MAX_HISTORY = 50;
 
+/** Minimum size percentage before a rectangle is automatically deleted */
+export const MIN_AREA_PERCENT = 1;
+
 /** Max dimension (px) for thumbnail generation - balances quality vs memory */
 export const MAX_ASSET_DIMENSION = 800;
 

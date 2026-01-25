@@ -18,6 +18,20 @@ Fast like excel, beautiful like canva, and powerful like obsidian.
 - **File system**: Save your layouts as json files to edit them later.
 -   **Export**: Download your layouts in different formats or publish them online as flipbooks.
 
+## Advanced Keyboard Controls
+
+BROCO features a powerful, keyboard-first layout engine that allows for rapid reorganization without a mouse.
+
+### Content Movement (`Shift + Arrows`)
+Move or swap images and text between adjacent rectangles. If a destination is already occupied, the contents and their settings (alignment, flip state) are swapped. The selection focus follows the content, allowing for rapid repositioning across the page.
+
+### Recursive Divider Snapping (`Alt + Arrows`)
+Adjust structural dividers with mathematical precision:
+- **Recursive Subdivision**: Instead of fixed milestones, the system calculates snap points relative to the *remaining* space. If you're at 66%, the next snap will be a subdivision of the last 33%, allowing for infinite nesting of proportions.
+- **Global Alignment**: The engine scans every other divider in your layout. It will automatically "catch" and align perfectly with them, ensuring visual continuity even across different parent containers.
+- **Milestone Priority**: Standard ratios (1/3, 1/2, 2/3) are always prioritized as snap candidates.
+- **Snap Protection**: A minimum jump distance ensures that every keypress results in a significant structural change, preventing "micro-jumps."
+
 ## Getting Started
 
 ```bash

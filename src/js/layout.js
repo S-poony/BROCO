@@ -1,4 +1,4 @@
-import { A4_PAPER_ID, SNAP_POINTS, SNAP_THRESHOLD } from './constants.js';
+import { A4_PAPER_ID, SNAP_POINTS, SNAP_THRESHOLD, MIN_AREA_PERCENT } from './constants.js';
 import { state, getCurrentPage } from './state.js';
 import { saveState } from './history.js';
 import { renderLayout } from './renderer.js';
@@ -378,9 +378,22 @@ export function snapDivider(focusedRect, direction) {
 
     if (targetPct !== undefined && targetPct !== null) {
         saveState();
-        nodeA.size = `${targetPct}%`;
-        nodeB.size = `${100 - targetPct}%`;
-        renderAndRestoreFocus(page, focusedRect.id);
+
+        if (targetPct <= MIN_AREA_PERCENT) {
+            // Delete nodeA (the first sibling)
+            deleteRectangle(document.getElementById(nodeA.id));
+            // After deletion, the parent node ID survives and contains the merged sibling.
+            // Focus the parent to keep the selection visible.
+            renderAndRestoreFocus(page, targetParent.id);
+        } else if ((100 - targetPct) <= MIN_AREA_PERCENT) {
+            // Delete nodeB (the second sibling)
+            deleteRectangle(document.getElementById(nodeB.id));
+            renderAndRestoreFocus(page, targetParent.id);
+        } else {
+            nodeA.size = `${targetPct}%`;
+            nodeB.size = `${100 - targetPct}%`;
+            renderAndRestoreFocus(page, focusedRect.id);
+        }
     }
 }
 
@@ -600,7 +613,6 @@ function stopDrag() {
     state.activeDivider = null;
 
     // Delete rectangles that have very small or negative area
-    const MIN_AREA_PERCENT = 1;
     if (pA <= MIN_AREA_PERCENT) {
         deleteRectangle(rectA);
     } else if (pB <= MIN_AREA_PERCENT) {
