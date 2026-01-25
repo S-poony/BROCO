@@ -157,9 +157,6 @@ app.on('window-all-closed', () => {
     }
 });
 
-// Auto-updater events (optional logging)
-import log from 'electron-log';
-
 // Configure logging
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
