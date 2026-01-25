@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, dialog, ipcMain, globalShortcut, protocol, net } from 'electron';
+import { app, BrowserWindow, shell, dialog, ipcMain, globalShortcut, protocol, net, Menu } from 'electron';
 import { join, dirname, relative, basename } from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -11,6 +11,12 @@ protocol.registerSchemesAsPrivileged([
     { scheme: 'broco-local', privileges: { bypassCSP: true, stream: true } }
 ]);
 
+// High-DPI / Zoom Fixes for Windows
+if (process.platform === 'win32') {
+    app.commandLine.appendSwitch('high-dpi-support', '1');
+    app.commandLine.appendSwitch('force-device-scale-factor', '1');
+}
+
 // Get __dirname equivalent in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,15 +27,15 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
-        minWidth: 800,
-        minHeight: 600,
+        minWidth: 400, // Reduced from 800 to avoid conflicts with logical scaling
+        minHeight: 300,
         title: "BROCO",
         webPreferences: {
             preload: join(__dirname, 'preload.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
         },
-        icon: join(__dirname, '../public/icon.png') // Assuming icon exists later, or electron uses default
+        icon: join(__dirname, '../public/icon.png')
     });
 
     // Load the app
@@ -42,6 +48,11 @@ function createWindow() {
         // In production, load built file
         mainWindow.loadFile(join(__dirname, '../dist/index.html'));
     }
+
+    // Force Zoom level 1.0 (some systems default to 1.25 or 1.5)
+    mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.setZoomFactor(1.0);
+    });
 
     // Handle external links (open in browser)
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
