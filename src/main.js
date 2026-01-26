@@ -74,12 +74,12 @@ function setupGlobalHandlers() {
             }
         }
 
-        // Global Tab navigation
+        // Global Tab navigation (from body/top level to layout)
         if (e.key === 'Tab' && !e.shiftKey) {
             const target = e.target;
 
-            // If we are on the body or workspace-wrapper, go to the layout
-            if (target === document.body || target.classList.contains('workspace-wrapper')) {
+            // If we are on the body, html, or workspace-wrapper, go to the layout
+            if (target === document.body || target.tagName === 'HTML' || target.classList.contains('workspace-wrapper')) {
                 const firstRect = document.querySelector('.splittable-rect[data-split-state="unsplit"]');
                 if (firstRect) {
                     e.preventDefault();
@@ -205,10 +205,11 @@ function initialize() {
                     lastHoveredRectId = null;
                     shortcutsOverlay.hide();
 
-                    // Only blur if we currently have a rect focused
-                    if (document.activeElement && document.activeElement.classList.contains('splittable-rect')) {
-                        document.activeElement.blur();
-                    }
+                    // Only blur if we currently have a rect focused, AND we aren't about to focus a new one
+                    // Actually, let's NOT blur if we are moving mouse out, keep it focused for keyboard
+                    // if (document.activeElement && document.activeElement.classList.contains('splittable-rect')) {
+                    //     document.activeElement.blur();
+                    // }
                 }
                 return;
             }
@@ -221,9 +222,10 @@ function initialize() {
                     document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
                     lastHoveredRectId = null;
 
-                    if (document.activeElement && document.activeElement.classList.contains('splittable-rect')) {
-                        document.activeElement.blur();
-                    }
+                    // Don't blur when mouse is over a divider/background, keep keyboard focus
+                    // if (document.activeElement && document.activeElement.classList.contains('splittable-rect')) {
+                    //     document.activeElement.blur();
+                    // }
                 }
                 return;
             }
