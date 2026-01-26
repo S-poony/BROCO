@@ -329,8 +329,20 @@ export function snapDivider(focusedRect, direction) {
         }
     };
 
-    // 1. Universal Proportions (Highest priority)
-    SNAP_POINTS.forEach(addCandidate);
+    // 1. Dynamic Snap Points (Leaf Count)
+    const totalCount = countParallelLeaves(nodeA, targetDividerOrientation) + countParallelLeaves(nodeB, targetDividerOrientation);
+    if (totalCount > 1) {
+        // Base 50%
+        addCandidate(50);
+
+        // Dynamic fractions
+        for (let i = 1; i < totalCount; i++) {
+            addCandidate((i / totalCount) * 100);
+        }
+    } else {
+        // Fallback
+        addCandidate(50);
+    }
 
     // 2. Boundary Snaps (Allow full collapse/expansion)
     addCandidate(1);
