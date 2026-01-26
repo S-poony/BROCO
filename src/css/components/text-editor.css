@@ -128,10 +128,10 @@
 .markdown-content h1 {
     font-size: calc(var(--text-font-size-proportional) * 2.5);
     font-weight: 800;
-    margin: calc(var(--text-font-size-proportional) * 0.75) 0 calc(var(--text-font-size-proportional) * 0.25) 0;
+    margin: calc(var(--text-font-size-proportional) * 0.75) 0 calc(var(--text-font-size-proportional) * 2) 0;
     color: var(--header-color, var(--color-text-heading, #111827));
     /* Fixed thickness relative to base scale */
-    border-bottom: calc(var(--text-font-size-proportional) * 0.03) solid var(--color-border-light, #e5e7eb);
+    border-bottom: calc(var(--text-font-size-proportional) * 0.03) solid var(--divider-color, var(--color-border, #d1d5db));
     padding-bottom: calc(var(--text-font-size-proportional) * 0.2);
 }
 
@@ -140,7 +140,7 @@
     font-weight: 700;
     margin: calc(var(--text-font-size-proportional) * 0.75) 0 calc(var(--text-font-size-proportional) * 0.25) 0;
     color: var(--header-color, var(--color-text-heading, #1f2937));
-    border-bottom: calc(var(--text-font-size-proportional) * 0.02) solid var(--color-bg-light, #f3f4f6);
+    border-bottom: calc(var(--text-font-size-proportional) * 0.02) solid var(--divider-color, var(--color-border, #d1d5db));
     padding-bottom: calc(var(--text-font-size-proportional) * 0.1);
 }
 
