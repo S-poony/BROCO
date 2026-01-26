@@ -593,7 +593,7 @@ function renderPageNumber(container) {
     if (!settings.paper.showPageNumbers) return;
 
     const pageNumber = document.createElement('div');
-    pageNumber.className = 'page-number';
+    pageNumber.className = 'paper-page-number';
     pageNumber.textContent = `${state.currentPageIndex + 1}`;
 
     // Position it at the bottom center or bottom right
