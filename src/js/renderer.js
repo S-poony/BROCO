@@ -19,24 +19,30 @@ marked.use({
 // Resize observers removed in favor of CSS Container Queries
 
 export function renderLayout(container, node, options = {}) {
-    // Top-level paper handling: ensure we don't accidentally turn the paper into redt-1
+    // Top-level paper handling: ensure we don't accidentally turn the paper into rect-1
     if (container.id === A4_PAPER_ID || container.classList.contains('a4-paper')) {
         const settings = getSettings();
-        container.innerHTML = '';
-        // Use CSS variable for background color to allow real-time updates
-        container.style.backgroundColor = 'var(--paper-bg-color, #ffffff)';
+
+        // Use a fragment to batch all DOM operations off-screen
+        const fragment = document.createDocumentFragment();
 
         // Proportional scaling now handled by CSS Container Queries on the paper itself
         container.classList.add('a4-paper');
+        container.style.backgroundColor = 'var(--paper-bg-color, #ffffff)';
 
         const rootElement = createDOMRect(node, null);
-        container.appendChild(rootElement);
+        fragment.appendChild(rootElement);
         renderNodeRecursive(rootElement, node, options);
+
         if (!options.hideControls) {
-            addEdgeHandles(container);
+            addEdgeHandles(fragment);
         }
-        renderBackgroundImage(container);
-        renderPageNumber(container);
+        renderBackgroundImage(fragment);
+        renderPageNumber(fragment);
+
+        // Atomic swap
+        container.innerHTML = '';
+        container.appendChild(fragment);
         return;
     }
     renderNodeRecursive(container, node, options);
