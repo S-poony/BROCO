@@ -39,6 +39,12 @@
     width: 100%;
     height: 100%;
     position: relative;
+    overflow: hidden;
+    /* Hide container-level scrollbars in layout mode */
+}
+
+/* Allow container scroll only when editing if needed */
+.is-editing .text-editor-container {
     overflow: auto;
 }
 
@@ -55,6 +61,11 @@
 
 .text-editor-container .hidden {
     display: none !important;
+}
+
+/* Ensure no inner scrollbars in layout mode */
+.splittable-rect:not(.is-editing) .text-editor-container {
+    overflow: hidden !important;
 }
 
 .text-placeholder {
@@ -103,8 +114,8 @@
     width: 100%;
     height: 100%;
     padding: 0.75em;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
+    /* Hide scrollbars and prevent tab focus in layout mode */
     box-sizing: border-box;
     font-family: var(--text-font-family, sans-serif);
     font-size: var(--text-font-size-proportional, 0.875rem);
@@ -118,6 +129,15 @@
     /* Fix html2canvas overlapping lines */
     font-variant-ligatures: none;
     -webkit-font-smoothing: antialiased;
+}
+
+.is-editing .markdown-content {
+    overflow-y: auto;
+}
+
+/* Hide scrollbar Chrome/Safari only in layout mode */
+.splittable-rect:not(.is-editing) .markdown-content::-webkit-scrollbar {
+    display: none;
 }
 
 /* Ensure consistent line height during export to prevent overlapping */
