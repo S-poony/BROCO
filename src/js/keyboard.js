@@ -33,14 +33,14 @@ export function setupKeyboardNavigation() {
         window.electronAPI.onNewPage(() => {
             saveState();
             addPage();
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderAndRestoreFocus(getCurrentPage());
             renderPageList();
         });
 
         window.electronAPI.onDuplicatePage(() => {
             saveState();
             duplicatePage(state.currentPageIndex);
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderAndRestoreFocus(getCurrentPage());
             renderPageList();
         });
 

@@ -1,7 +1,6 @@
 import { saveState } from './history.js';
 import { state, getCurrentPage } from './state.js';
-import { findNodeById } from './layout.js';
-import { renderLayout } from './renderer.js';
+import { findNodeById, renderAndRestoreFocus } from './layout.js';
 import { A4_PAPER_ID } from './constants.js';
 import { showConfirm, showAlert } from './utils.js';
 import { assetManager } from './AssetManager.js';
@@ -33,7 +32,7 @@ export function setupAssetHandlers() {
         assetIds.forEach(id => {
             state.pages.forEach(p => clearAssetFromLayout(p, id));
         });
-        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+        renderAndRestoreFocus(getCurrentPage());
         refreshAllViews();
     };
 
@@ -255,8 +254,9 @@ export function setupAssetHandlers() {
         } else {
             refreshAllViews();
             if (type === 'updated') {
-                const paper = document.getElementById(A4_PAPER_ID);
-                if (paper) renderLayout(paper, getCurrentPage());
+                if (paper) {
+                    renderAndRestoreFocus(getCurrentPage());
+                }
             }
         }
     });
@@ -315,7 +315,7 @@ function setupDropHandlersForList(importHandler) {
                     if (asset) sourceNode.image = null;
                     if (text !== undefined) sourceNode.text = null;
                 }
-                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                renderAndRestoreFocus(getCurrentPage());
                 document.dispatchEvent(new CustomEvent('layoutUpdated'));
             } else if (e.dataTransfer.items) {
                 await importHandler(e.dataTransfer.items);
@@ -376,7 +376,7 @@ function handleDropLogic(target) {
                 sourceNode.textAlign = null;
             }
         }
-        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+        renderAndRestoreFocus(getCurrentPage());
         document.dispatchEvent(new CustomEvent('layoutUpdated'));
     } else if (targetElement) {
         const targetNode = findNodeById(getCurrentPage(), targetElement.id);
@@ -390,7 +390,7 @@ function handleDropLogic(target) {
                 // SWAP logic when dragging between rectangles
                 import('./layout.js').then(m => {
                     m.swapNodesContent(sourceNode, targetNode);
-                    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                    renderAndRestoreFocus(getCurrentPage());
                     document.dispatchEvent(new CustomEvent('layoutUpdated'));
                 });
                 return; // async handling above
@@ -409,7 +409,7 @@ function handleDropLogic(target) {
                 }
             }
 
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderAndRestoreFocus(getCurrentPage());
             document.dispatchEvent(new CustomEvent('layoutUpdated'));
         }
     }
@@ -446,7 +446,7 @@ export async function removeAsset(assetId) {
         clearAssetFromLayout(pageRoot, assetId);
     });
 
-    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+    renderAndRestoreFocus(getCurrentPage());
     document.dispatchEvent(new CustomEvent('layoutUpdated'));
 }
 
@@ -476,7 +476,7 @@ export async function replaceAsset(assetId) {
                 id: assetId // Preserve original ID
             });
 
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderAndRestoreFocus(getCurrentPage());
             document.dispatchEvent(new CustomEvent('layoutUpdated'));
         } catch (err) {
             console.error('Replacement failed:', err);
@@ -508,7 +508,7 @@ export async function replaceAsset(assetId) {
                     id: assetId
                 });
 
-                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                renderAndRestoreFocus(getCurrentPage());
                 document.dispatchEvent(new CustomEvent('layoutUpdated'));
             } catch (err) {
                 console.error('Replacement failed:', err);
@@ -548,7 +548,7 @@ export async function importImageToNode(nodeId) {
                 };
                 node.text = null;
 
-                renderLayout(document.getElementById(A4_PAPER_ID), pageRoot);
+                renderAndRestoreFocus(pageRoot, nodeId);
                 document.dispatchEvent(new CustomEvent('layoutUpdated'));
             }
         } catch (err) {

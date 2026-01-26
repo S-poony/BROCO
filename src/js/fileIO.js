@@ -1,6 +1,6 @@
 import { state, updateCurrentId, updateLayout } from './state.js';
 import { assetManager } from './AssetManager.js';
-import { renderLayout } from './renderer.js';
+import { renderAndRestoreFocus } from './layout.js';
 import { renderPageList } from './pages.js';
 import { A4_PAPER_ID } from './constants.js';
 import { showAlert } from './utils.js';
@@ -90,7 +90,7 @@ export async function openLayout() {
                 // Re-render UI
                 const paper = document.getElementById(A4_PAPER_ID);
                 if (paper) {
-                    renderLayout(paper, state.pages[state.currentPageIndex]);
+                    renderAndRestoreFocus(state.pages[state.currentPageIndex], `rect-${state.currentId}`);
                 }
                 renderPageList();
 

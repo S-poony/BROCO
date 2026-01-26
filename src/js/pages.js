@@ -1,5 +1,5 @@
 import { state, addPage, duplicatePage, switchPage, deletePage, reorderPage, getCurrentPage } from './state.js';
-import { renderLayout } from './renderer.js';
+import { renderAndRestoreFocus } from './layout.js';
 import { A4_PAPER_ID } from './constants.js';
 import { saveState } from './history.js';
 import { showConfirm, showAlert } from './utils.js';
@@ -14,14 +14,14 @@ export function setupPageHandlers() {
     addPageBtn.addEventListener('click', () => {
         saveState();
         addPage();
-        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+        renderAndRestoreFocus(getCurrentPage());
         renderPageList();
     });
 
     // Listen for state definition/restoration
     document.addEventListener('stateRestored', () => {
         renderPageList();
-        renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+        renderAndRestoreFocus(getCurrentPage());
     });
 
     document.addEventListener('layoutUpdated', () => {
@@ -71,7 +71,7 @@ export function renderPageList() {
                 if (confirmed) {
                     saveState();
                     deletePage(index);
-                    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                    renderAndRestoreFocus(getCurrentPage());
                     renderPageList();
                 }
             } else {
@@ -89,7 +89,7 @@ export function renderPageList() {
             e.stopPropagation();
             saveState();
             duplicatePage(index);
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderAndRestoreFocus(getCurrentPage());
             renderPageList();
         };
 
@@ -124,7 +124,7 @@ export function renderPageList() {
             if (fromIndex !== toIndex) {
                 saveState();
                 reorderPage(fromIndex, toIndex);
-                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                renderAndRestoreFocus(getCurrentPage());
                 renderPageList();
             }
             item.classList.remove('drag-over');
@@ -133,7 +133,7 @@ export function renderPageList() {
         item.addEventListener('click', () => {
             if (state.currentPageIndex !== index) {
                 switchPage(index);
-                renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+                renderAndRestoreFocus(getCurrentPage());
                 renderPageList();
             }
         });
@@ -184,7 +184,7 @@ function handlePageDropLogic(target) {
         if (fromIndex !== toIndex) {
             saveState();
             reorderPage(fromIndex, toIndex);
-            renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
+            renderAndRestoreFocus(getCurrentPage());
             renderPageList();
         }
     }

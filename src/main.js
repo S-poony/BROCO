@@ -1,5 +1,5 @@
 import { undo, redo } from './js/history.js';
-import { handleSplitClick, createTextInRect } from './js/layout.js';
+import { handleSplitClick, createTextInRect, renderAndRestoreFocus } from './js/layout.js';
 import { setupAssetHandlers, setupDropHandlers } from './js/assets.js';
 import { setupExportHandlers } from './js/export.js';
 import { state, getCurrentPage } from './js/state.js';
@@ -42,8 +42,7 @@ function setupGlobalHandlers() {
                         // Empty editor: trigger global undo to remove the text node
                         e.preventDefault();
                         undo(() => {
-                            renderLayout(document.getElementById('a4-paper'), getCurrentPage());
-                            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+                            renderAndRestoreFocus(getCurrentPage());
                         });
                     }
                     // Otherwise, let the native undo work
@@ -53,8 +52,7 @@ function setupGlobalHandlers() {
                 // Not in a text input: trigger global undo
                 e.preventDefault();
                 undo(() => {
-                    renderLayout(document.getElementById('a4-paper'), getCurrentPage());
-                    document.dispatchEvent(new CustomEvent('layoutUpdated'));
+                    renderAndRestoreFocus(getCurrentPage());
                 });
             }
         }
@@ -68,8 +66,7 @@ function setupGlobalHandlers() {
             if (!isInput) {
                 e.preventDefault();
                 redo(() => {
-                    renderLayout(document.getElementById('a4-paper'), getCurrentPage());
-                    document.dispatchEvent(new CustomEvent('layoutUpdated'));
+                    renderAndRestoreFocus(getCurrentPage());
                 });
             }
         }
@@ -267,9 +264,8 @@ function initialize() {
     document.addEventListener('settingsUpdated', () => {
         const paper = document.getElementById('a4-paper');
         if (paper) {
-            renderLayout(paper, getCurrentPage());
-            // Same here: update visual hover state without stealing focus
-            updateHoverAt(lastMousePos.x, lastMousePos.y, false);
+            renderAndRestoreFocus(getCurrentPage());
+            // Hover state will naturally refresh on the next mouse movement
         }
     });
 
@@ -338,7 +334,7 @@ function initialize() {
     });
 
     // Initial render from state
-    renderLayout(document.getElementById('a4-paper'), getCurrentPage());
+    renderAndRestoreFocus(getCurrentPage());
 
     // Auto-focus the first rectangle so keyboard shortcuts work immediately
     const firstRect = document.getElementById('rect-1');
