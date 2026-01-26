@@ -7,8 +7,8 @@
 .align-text-btn,
 .flip-image-btn,
 .import-image-btn {
-    --btn-size: calc(var(--paper-scale-ref, 1000px) * 0.035);
-    --btn-offset: calc(var(--paper-scale-ref, 1000px) * 0.01);
+    --btn-size: calc(var(--paper-scale-ref, 1000px) * 0.045);
+    --btn-offset: calc(var(--paper-scale-ref, 1000px) * 0.012);
 
     position: absolute;
     width: var(--btn-size);
@@ -43,8 +43,8 @@
 .align-text-btn svg,
 .flip-image-btn svg,
 .import-image-btn svg {
-    width: calc(var(--paper-scale-ref, 1000px) * 0.022);
-    height: calc(var(--paper-scale-ref, 1000px) * 0.022);
+    width: calc(var(--paper-scale-ref, 1000px) * 0.03);
+    height: calc(var(--paper-scale-ref, 1000px) * 0.03);
 }
 
 /* Image controls container buttons should not be absolute */

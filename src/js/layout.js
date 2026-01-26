@@ -240,7 +240,7 @@ export function toggleTextAlignment(rectId) {
     saveState();
     node.textAlign = node.textAlign === 'center' ? 'left' : 'center';
 
-    renderAndRestoreFocus(getCurrentPage(), `align-btn-${rectId}`);
+    renderAndRestoreFocus(getCurrentPage(), rectId);
 }
 
 export function toggleImageFlip(rectId) {
@@ -251,8 +251,8 @@ export function toggleImageFlip(rectId) {
     // Toggle flip state (undefined/false -> true -> false)
     node.image.flip = !node.image.flip;
 
-    // Restore focus to flip button
-    renderAndRestoreFocus(getCurrentPage(), `flip-btn-${rectId}`);
+    // Restore focus to the rectangle itself
+    renderAndRestoreFocus(getCurrentPage(), rectId);
 }
 
 /**
