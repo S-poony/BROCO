@@ -332,7 +332,7 @@ export function snapDivider(focusedRect, direction) {
     // Use a Set of rounded strings to ensure clean deduplication during construction
     const candidatesSet = new Set();
     const addCandidate = (val) => {
-        if (val > 0.5 && val < 99.5) {
+        if (val >= 1 && val <= 99) {
             candidatesSet.add(Math.round(val * 10) / 10); // Round to 1 decimal place (e.g. 33.3)
         }
     };
@@ -391,9 +391,13 @@ export function snapDivider(focusedRect, direction) {
     let targetPct = null;
 
     if (direction === 'ArrowRight' || direction === 'ArrowDown') {
+        // Prioritize the 99% boundary if it's the next logical step toward deletion
         targetPct = sortedCandidates.find(c => c >= currentPct + MIN_JUMP);
+        if (targetPct === undefined && currentPct < 99) targetPct = 99;
     } else {
+        // Prioritize the 1% boundary if it's the next logical step toward deletion
         targetPct = [...sortedCandidates].reverse().find(c => c <= currentPct - MIN_JUMP);
+        if (targetPct === undefined && currentPct > 1) targetPct = 1;
     }
 
     if (targetPct !== undefined && targetPct !== null) {
