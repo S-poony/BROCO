@@ -184,27 +184,7 @@ export function handleSplitClick(event) {
     // If it's a mouse click (has coordinates), we focus whatever is under the mouse after split.
     // If it's a keyboard split (Spacebar), we default to childA.
 
-    renderLayout(document.getElementById(A4_PAPER_ID), getCurrentPage());
-
-    const isMouseClick = event.clientX > 0 || event.clientY > 0;
-    let focused = false;
-
-    if (isMouseClick) {
-        const elUnderMouse = document.elementFromPoint(event.clientX, event.clientY);
-        const newRect = elUnderMouse ? elUnderMouse.closest('.splittable-rect[data-split-state="unsplit"]') : null;
-        if (newRect) {
-            newRect.focus({ preventScroll: true });
-            focused = true;
-        }
-    }
-
-    if (!focused) {
-        // Fallback for keyboard or if elementFromPoint failed
-        const newFocus = document.getElementById(childA.id);
-        if (newFocus) newFocus.focus({ preventScroll: true });
-    }
-
-    document.dispatchEvent(new CustomEvent('layoutUpdated'));
+    renderAndRestoreFocus(getCurrentPage(), childA.id);
 }
 
 export function createTextInRect(rectId, initialText = null) {

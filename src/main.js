@@ -231,11 +231,16 @@ function initialize() {
             }
 
             // Restore focus follows mouse
-            if (rect.id !== lastHoveredRectId || !rect.classList.contains('is-hovered-active')) {
+            if (rect && rect.id !== lastHoveredRectId) {
+                lastHoveredRectId = rect.id;
                 document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
                 rect.classList.add('is-hovered-active');
 
-                // Only change focus if explicitly allowed (stops keyboard actions from being hijacked by mouse pos)
+                requestAnimationFrame(() => {
+                    const node = findNodeById(getCurrentPage(), rect.id);
+                    shortcutsOverlay.update(node);
+                });
+
                 if (shouldFocus) {
                     rect.focus({ preventScroll: true });
                 }
@@ -243,8 +248,8 @@ function initialize() {
             }
 
             // Update shortcut hints
-            const node = findNodeById(getCurrentPage(), rect.id);
-            shortcutsOverlay.update(node);
+            // const node = findNodeById(getCurrentPage(), rect.id);
+            // shortcutsOverlay.update(node);
 
         } catch (err) {
             // Silently ignore
@@ -254,10 +259,8 @@ function initialize() {
     // Listen for layout updates to manage focus and reset selection state
     document.addEventListener('layoutUpdated', () => {
         lastHoveredRectId = null;
-        // Recapture hover state after DOM elements were replaced.
-        // We pass false for shouldFocus because we want to update the visual hover classes and overlay
-        // but we DON'T want to steal focus from whatever the keyboard just selected.
-        updateHoverAt(lastMousePos.x, lastMousePos.y, false);
+        // Hover state will naturally refresh on the next mouse movement, 
+        // avoiding a forced reflow immediately after a render.
     });
 
     // Handle settings updates that require re-render (breaking circular dependency)
@@ -310,8 +313,10 @@ function initialize() {
             lastHoveredRectId = e.target.id;
 
             // Update shortcut hints when focus changes (keyboard or direct click)
-            const node = findNodeById(getCurrentPage(), e.target.id);
-            shortcutsOverlay.update(node);
+            requestAnimationFrame(() => {
+                const node = findNodeById(getCurrentPage(), e.target.id);
+                shortcutsOverlay.update(node);
+            });
         }
     });
 

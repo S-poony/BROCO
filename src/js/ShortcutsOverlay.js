@@ -51,8 +51,10 @@ export class ShortcutsOverlay {
 
         // Only update DOM if changed to avoid thrashing
         if (html !== this.currentHints) {
-            this.element.innerHTML = html;
-            this.currentHints = html;
+            requestAnimationFrame(() => {
+                this.element.innerHTML = html;
+                this.currentHints = html;
+            });
         }
 
         this.show();
