@@ -9,11 +9,13 @@
     flex-direction: column;
     gap: 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    height: auto;
-    max-height: calc(100vh - var(--header-height) - 2rem);
+    height: 100%;
+    /* Fill container height */
     overflow-y: auto;
+    /* Card scrolls if needed */
     z-index: 10;
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 #pages-list {
