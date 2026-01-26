@@ -2,7 +2,10 @@
 export const A4_PAPER_ID = 'a4-paper';
 
 /** Snap points for divider dragging (%) */
-export const SNAP_POINTS = [33.33, 50, 66.67];
+export const SNAP_POINTS = [50];
+
+/** Responsive Breakpoint (match with CSS --breakpoint-laptop) */
+export const LAPTOP_BREAKPOINT = 1024;
 
 /** Snap threshold for divider dragging (px) */
 export const SNAP_THRESHOLD = 20;

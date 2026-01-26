@@ -21,6 +21,7 @@
     /* Layout */
     --header-height: 60px;
     --sidebar-width: 280px;
+    --breakpoint-laptop: 1024px;
 
     /* Fonts */
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
