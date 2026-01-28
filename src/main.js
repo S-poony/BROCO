@@ -1,21 +1,21 @@
-import { undo, redo } from './js/history.js';
-import { handleSplitClick, createTextInRect, renderAndRestoreFocus } from './js/layout.js';
-import { setupAssetHandlers, setupDropHandlers } from './js/assets.js';
-import { setupExportHandlers } from './js/export.js';
-import { state, getCurrentPage } from './js/state.js';
-import { renderLayout } from './js/renderer.js';
+import { undo, redo } from './js/io/history.js';
+import { handleSplitClick, createTextInRect, renderAndRestoreFocus } from './js/layout/layout.js';
+import { setupAssetHandlers, setupDropHandlers } from './js/assets/assets.js';
+import { setupExportHandlers } from './js/io/export.js';
+import { state, getCurrentPage } from './js/core/state.js';
+import { renderLayout } from './js/layout/renderer.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { DIVIDER_SIZE } from './js/constants.js';
-import { setupSettingsHandlers } from './js/settings.js';
-import { setupGlobalErrorHandler } from './js/errorHandler.js';
+import { DIVIDER_SIZE } from './js/core/constants.js';
+import { setupSettingsHandlers } from './js/ui/settings.js';
+import { setupGlobalErrorHandler } from './js/core/errorHandler.js';
 
-import { setupPageHandlers } from './js/pages.js';
-import { setupFileIOHandlers } from './js/fileIO.js';
-import { setupKeyboardNavigation } from './js/keyboard.js';
-import { shortcutsOverlay } from './js/ShortcutsOverlay.js';
-import { findNodeById } from './js/layout.js';
-import { setupPlatformAdapters } from './js/platform.js';
+import { setupPageHandlers } from './js/layout/pages.js';
+import { setupFileIOHandlers } from './js/io/fileIO.js';
+import { setupKeyboardNavigation } from './js/ui/keyboard.js';
+import { shortcutsOverlay } from './js/ui/ShortcutsOverlay.js';
+import { findNodeById } from './js/layout/layout.js';
+import { setupPlatformAdapters } from './js/core/platform.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {

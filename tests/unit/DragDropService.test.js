@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DragDropService } from '../../src/js/DragDropService.js';
+import { DragDropService } from '../../src/js/ui/DragDropService.js';
 
 describe('DragDropService', () => {
     let service;

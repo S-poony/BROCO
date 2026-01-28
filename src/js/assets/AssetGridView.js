@@ -1,5 +1,5 @@
 import { assetManager } from './AssetManager.js';
-import { dragDropService } from './DragDropService.js';
+import { dragDropService } from '../ui/DragDropService.js';
 
 export class AssetGridView {
     constructor(containerId) {

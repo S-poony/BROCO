@@ -1,6 +1,6 @@
-import { A4_PAPER_ID, SNAP_POINTS, SNAP_THRESHOLD, MIN_AREA_PERCENT } from './constants.js';
-import { state, getCurrentPage } from './state.js';
-import { saveState } from './history.js';
+import { A4_PAPER_ID, SNAP_POINTS, SNAP_THRESHOLD, MIN_AREA_PERCENT } from '../core/constants.js';
+import { state, getCurrentPage } from '../core/state.js';
+import { saveState } from '../io/history.js';
 import { renderLayout } from './renderer.js';
 
 // Helper to restore focus after render

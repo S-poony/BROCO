@@ -7,8 +7,8 @@ const mockDocument = {
 vi.stubGlobal('document', mockDocument);
 
 // Import after mocking
-const { saveState, undo, redo, clearHistory } = await import('../../src/js/history.js');
-const { state, updateCurrentId, getCurrentPage, addPage, deletePage, switchPage } = await import('../../src/js/state.js');
+const { saveState, undo, redo, clearHistory } = await import('../../src/js/io/history.js');
+const { state, updateCurrentId, getCurrentPage, addPage, deletePage, switchPage } = await import('../../src/js/core/state.js');
 
 describe('History Module', () => {
     beforeEach(() => {

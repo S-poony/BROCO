@@ -1,13 +1,13 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
-import { assetManager } from './AssetManager.js';
-import { A4_PAPER_ID } from './constants.js';
-import { state } from './state.js';
-import { renderLayout } from './renderer.js';
-import { showAlert, showPublishSuccess } from './utils.js';
-import { toast } from './errorHandler.js';
-import { calculatePaperDimensions, getSettings } from './settings.js';
+import { assetManager } from '../assets/AssetManager.js';
+import { A4_PAPER_ID } from '../core/constants.js';
+import { state } from '../core/state.js';
+import { renderLayout } from '../layout/renderer.js';
+import { showAlert, showPublishSuccess } from '../core/utils.js';
+import { toast } from '../core/errorHandler.js';
+import { calculatePaperDimensions, getSettings } from '../ui/settings.js';
 
 const FLIPBOOK_API_ENDPOINT = 'https://content.lojkine.art/api/flipbook';
 

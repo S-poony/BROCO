@@ -1,8 +1,8 @@
-import { GHOST_SIZE } from './constants.js';
+import { GHOST_SIZE } from '../core/constants.js';
 
 /**
  * @typedef {Object} DragData
- * @property {import('./AssetManager.js').Asset} [asset]
+ * @property {import('../assets/AssetManager.js').Asset} [asset]
  * @property {string} [text]
  * @property {number} [pageIndex]
  * @property {HTMLElement} [sourceRect]
@@ -11,7 +11,7 @@ import { GHOST_SIZE } from './constants.js';
 
 export class DragDropService {
     constructor() {
-        /** @type {import('./AssetManager.js').Asset|null} */
+        /** @type {import('../assets/AssetManager.js').Asset|null} */
         this.draggedAsset = null;
         /** @type {string|undefined} */
         this.draggedText = undefined;

@@ -1,10 +1,10 @@
-import { saveState } from './history.js';
-import { state, getCurrentPage } from './state.js';
-import { findNodeById, renderAndRestoreFocus } from './layout.js';
-import { A4_PAPER_ID } from './constants.js';
-import { showConfirm, showAlert } from './utils.js';
+import { saveState } from '../io/history.js';
+import { state, getCurrentPage } from '../core/state.js';
+import { findNodeById, renderAndRestoreFocus } from '../layout/layout.js';
+import { A4_PAPER_ID } from '../core/constants.js';
+import { showConfirm, showAlert } from '../core/utils.js';
 import { assetManager } from './AssetManager.js';
-import { dragDropService } from './DragDropService.js';
+import { dragDropService } from '../ui/DragDropService.js';
 import { AssetGridView } from './AssetGridView.js';
 import { AssetListView } from './AssetListView.js';
 
@@ -388,7 +388,7 @@ function handleDropLogic(target) {
 
             if (sourceNode) {
                 // SWAP logic when dragging between rectangles
-                import('./layout.js').then(m => {
+                import('../layout/layout.js').then(m => {
                     m.swapNodesContent(sourceNode, targetNode);
                     renderAndRestoreFocus(getCurrentPage());
                     document.dispatchEvent(new CustomEvent('layoutUpdated'));

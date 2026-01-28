@@ -1,32 +1,32 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { saveLayout, openLayout } from '../../src/js/fileIO.js';
-import { state, updateCurrentId } from '../../src/js/state.js';
-import { assetManager } from '../../src/js/AssetManager.js';
-import { exportSettings, loadSettings } from '../../src/js/settings.js';
-import * as rendererModule from '../../src/js/renderer.js';
-import { A4_PAPER_ID } from '../../src/js/constants.js';
+import { saveLayout, openLayout } from '../../src/js/io/fileIO.js';
+import { state, updateCurrentId } from '../../src/js/core/state.js';
+import { assetManager } from '../../src/js/assets/AssetManager.js';
+import { exportSettings, loadSettings } from '../../src/js/ui/settings.js';
+import * as rendererModule from '../../src/js/layout/renderer.js';
+import { A4_PAPER_ID } from '../../src/js/core/constants.js';
 
 // Mock dependencies
-vi.mock('../../src/js/renderer.js', () => ({
+vi.mock('../../src/js/layout/renderer.js', () => ({
     renderLayout: vi.fn(),
     renderCoverImage: vi.fn()
 }));
 
-vi.mock('../../src/js/pages.js', () => ({
+vi.mock('../../src/js/layout/pages.js', () => ({
     renderPageList: vi.fn()
 }));
 
-vi.mock('../../src/js/utils.js', () => ({
+vi.mock('../../src/js/core/utils.js', () => ({
     showAlert: vi.fn()
 }));
 
-vi.mock('../../src/js/history.js', () => ({
+vi.mock('../../src/js/io/history.js', () => ({
     saveState: vi.fn()
 }));
 
 // Mock settings module
-vi.mock('../../src/js/settings.js', () => ({
+vi.mock('../../src/js/ui/settings.js', () => ({
     exportSettings: vi.fn(),
     loadSettings: vi.fn(),
     getSettings: vi.fn(() => ({ paper: { backgroundColor: '#fff' } }))

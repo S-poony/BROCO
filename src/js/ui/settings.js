@@ -1,5 +1,5 @@
-import { DIVIDER_SIZE, A4_PAPER_ID } from './constants.js';
-import { getCurrentPage } from './state.js';
+import { DIVIDER_SIZE, A4_PAPER_ID } from '../core/constants.js';
+import { getCurrentPage } from '../core/state.js';
 // import { renderCoverImage } from './renderer.js'; // REMOVED to break circular dependency
 
 /**

@@ -1,12 +1,12 @@
-import { state, addPage, duplicatePage, getCurrentPage } from './state.js';
-import { handleSplitClick, createTextInRect, findNodeById, swapNodesContent, renderAndRestoreFocus, snapDivider } from './layout.js';
-import { undo, redo, saveState } from './history.js';
-import { renderLayout } from './renderer.js';
-import { renderPageList } from './pages.js';
-import { saveLayout } from './fileIO.js';
-import { A4_PAPER_ID } from './constants.js';
+import { state, addPage, duplicatePage, getCurrentPage } from '../core/state.js';
+import { handleSplitClick, createTextInRect, findNodeById, swapNodesContent, renderAndRestoreFocus, snapDivider } from '../layout/layout.js';
+import { undo, redo, saveState } from '../io/history.js';
+import { renderLayout } from '../layout/renderer.js';
+import { renderPageList } from '../layout/pages.js';
+import { saveLayout } from '../io/fileIO.js';
+import { A4_PAPER_ID } from '../core/constants.js';
 
-import { showConfirm } from './utils.js';
+import { showConfirm } from '../core/utils.js';
 
 /**
  * Setup keyboard navigation handlers

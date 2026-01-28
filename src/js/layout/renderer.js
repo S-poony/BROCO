@@ -1,14 +1,14 @@
-import { state, getCurrentPage } from './state.js';
+import { state, getCurrentPage } from '../core/state.js';
 import { findNodeById } from './layout.js';
-import { A4_PAPER_ID } from './constants.js';
-import { assetManager } from './AssetManager.js';
-import { dragDropService } from './DragDropService.js';
-import { attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd, importImageToNode } from './assets.js';
+import { A4_PAPER_ID } from '../core/constants.js';
+import { assetManager } from '../assets/AssetManager.js';
+import { dragDropService } from '../ui/DragDropService.js';
+import { attachImageDragHandlers, handleTouchStart, handleTouchMove, handleTouchEnd, importImageToNode } from '../assets/assets.js';
 import { handleSplitClick, startDrag, startEdgeDrag, createTextInRect, toggleTextAlignment, renderAndRestoreFocus, toggleImageFlip } from './layout.js';
-import { saveState } from './history.js';
+import { saveState } from '../io/history.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { getSettings } from './settings.js';
+import { getSettings } from '../ui/settings.js';
 
 // Configure marked for GFM and better line breaks
 marked.use({

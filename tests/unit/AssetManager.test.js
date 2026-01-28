@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AssetManager } from '../../src/js/AssetManager.js';
+import { AssetManager } from '../../src/js/assets/AssetManager.js';
 
 describe('AssetManager', () => {
     let assetManager;

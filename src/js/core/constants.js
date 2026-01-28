@@ -1,3 +1,5 @@
+import { state } from './state.js';
+
 /** Paper ID for the main canvas element */
 export const A4_PAPER_ID = 'a4-paper';
 

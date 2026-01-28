@@ -1,5 +1,5 @@
-import { MAX_ASSET_DIMENSION, ASSET_THUMBNAIL_QUALITY, MAX_FILE_SIZE_MB } from './constants.js';
-import { getSettings } from './settings.js';
+import { MAX_ASSET_DIMENSION, ASSET_THUMBNAIL_QUALITY, MAX_FILE_SIZE_MB } from '../core/constants.js';
+import { getSettings } from '../ui/settings.js';
 
 /**
  * @typedef {Object} Asset

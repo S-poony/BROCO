@@ -1,11 +1,11 @@
-import { state, updateCurrentId, updateLayout } from './state.js';
-import { assetManager } from './AssetManager.js';
-import { renderAndRestoreFocus } from './layout.js';
-import { renderPageList } from './pages.js';
-import { A4_PAPER_ID } from './constants.js';
-import { showAlert } from './utils.js';
+import { state, updateCurrentId } from '../core/state.js';
+import { assetManager } from '../assets/AssetManager.js';
+import { renderAndRestoreFocus } from '../layout/layout.js';
+import { renderPageList } from '../layout/pages.js';
+import { A4_PAPER_ID } from '../core/constants.js';
+import { showAlert } from '../core/utils.js';
 import { saveState } from './history.js';
-import { exportSettings, loadSettings } from './settings.js';
+import { exportSettings, loadSettings } from '../ui/settings.js';
 
 /**
  * Saves the current layout to a .json file

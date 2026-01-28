@@ -1,9 +1,10 @@
-import { state, addPage, duplicatePage, switchPage, deletePage, reorderPage, getCurrentPage } from './state.js';
+import { state, addPage, duplicatePage, switchPage, deletePage, reorderPage, getCurrentPage } from '../core/state.js';
+import { A4_PAPER_ID, SNAP_POINTS, SNAP_THRESHOLD, MIN_AREA_PERCENT } from '../core/constants.js';
+import { saveState } from '../io/history.js';
+import { renderLayout } from './renderer.js';
+import { dragDropService } from '../ui/DragDropService.js';
 import { renderAndRestoreFocus } from './layout.js';
-import { A4_PAPER_ID } from './constants.js';
-import { saveState } from './history.js';
-import { showConfirm, showAlert } from './utils.js';
-import { dragDropService } from './DragDropService.js';
+import { showConfirm, showAlert } from '../core/utils.js';
 
 export function setupPageHandlers() {
     const addPageBtn = document.getElementById('add-page-btn');

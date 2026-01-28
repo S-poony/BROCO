@@ -1,5 +1,5 @@
-import { A4_PAPER_ID, MAX_HISTORY } from './constants.js';
-import { state, updateCurrentId } from './state.js';
+import { A4_PAPER_ID, MAX_HISTORY } from '../core/constants.js';
+import { state, updateCurrentId } from '../core/state.js';
 
 let undoStack = [];
 let redoStack = [];

@@ -1,4 +1,4 @@
-import { SHORTCUTS } from './constants.js';
+import { SHORTCUTS } from '../core/constants.js';
 
 export class ShortcutsOverlay {
     constructor() {

@@ -1,6 +1,6 @@
 import { assetManager } from './AssetManager.js';
-import { dragDropService } from './DragDropService.js';
-import { showConfirm } from './utils.js';
+import { dragDropService } from '../ui/DragDropService.js';
+import { showConfirm } from '../core/utils.js';
 
 export class AssetListView {
     constructor(containerId) {
