@@ -1,4 +1,5 @@
 ## Shortcuts and controls
+*all shortcuts using a mouseclick can be replaced with a space press*
 
 ### Global
 
@@ -12,13 +13,19 @@
 `ctrl + arrows` = merge rectangle with neighbor (*deletes divider if it separates only two rectangles*)
 `enter` = select
 
+### Divider
+
+`ctrl + click` = delete divider
+`shift + drag` = snap divider
+
 ### Empty rectangle
 
+`click` = split
+`Alt + click` = long split
+`ctrl + click` = delete rectangle
 `Any letter` = write text
 `space` = split
-`Arrows` = navigation
 `ctrl + space` = delete rectangle
-`Alt + click` = long split
 
 ### Rectangle with content
 
@@ -27,6 +34,17 @@
 `ctrl + shift + click` = split to Target B *(right or bottom)*
 `Alt + click` = long split
 `ctrl + shift + alt + click` = long split to target B
+
+### Image
+
+`click` = change image fit *(cover or contain)*
+
+### Text
+
+`Any alphanumeric key` = replace text
+`Enter` = edit text
+`Escape` = exit edit mode
+`ctrl + k` (with text selected) = insert hyperlink
 
 ***
 
@@ -37,21 +55,6 @@
 `ctrl + n` = new page
 `ctrl + shift + n` = duplicate page
 `ctrl + s` = save layout
-
-***
-
-### Image
-
-`click` = change image fit *(cover or contain)*
-
-***
-
-### Text
-
-`Any alphanumeric key` = replace text
-`Enter` = edit text
-`Escape` = exit edit mode
-`ctrl + k` (with text selected) = insert hyperlink
 
 ### Markdown syntax
 _be careful about the spaces between the special characters and the text_
