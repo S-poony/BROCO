@@ -1,5 +1,5 @@
 import { state, addPage, duplicatePage, getCurrentPage } from '../core/state.js';
-import { handleSplitClick, createTextInRect, findNodeById, swapNodesContent, renderAndRestoreFocus, snapDivider } from '../layout/layout.js';
+import { handleSplitClick, createTextInRect, findNodeById, swapNodesContent, renderAndRestoreFocus, snapDivider, findMergeableParent, mergeNodes } from '../layout/layout.js';
 import { undo, redo, saveState } from '../io/history.js';
 import { renderLayout } from '../layout/renderer.js';
 import { renderPageList } from '../layout/pages.js';
@@ -108,6 +108,11 @@ function handleKeyDown(e) {
                 moveContent(focused, e.key);
             } else if (e.altKey) {
                 snapDivider(focused, e.key);
+            } else if (e.ctrlKey) {
+                const parentToMerge = findMergeableParent(focused, e.key);
+                if (parentToMerge) {
+                    mergeNodes(parentToMerge);
+                }
             } else {
                 navigateRects(focused, e.key);
             }

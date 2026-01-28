@@ -4,7 +4,7 @@ import { saveState } from '../io/history.js';
 import { renderLayout } from './renderer.js';
 
 // Internal modules
-import { findNodeById as findNodeByIdInternal, findParentNode as findParentNodeInternal, countParallelLeaves, deleteNodeFromTree } from './internal/treeUtils.js';
+import { findNodeById as findNodeByIdInternal, findParentNode as findParentNodeInternal, countParallelLeaves, deleteNodeFromTree, isDividerMergeable, mergeNodesInTree } from './internal/treeUtils.js';
 import { snapDivider as snapDividerInternal } from './internal/snapping.js';
 import { renderAndRestoreFocus as renderAndRestoreFocusInternal } from './internal/focusManager.js';
 import * as dragInternal from './internal/dragHandler.js';
@@ -180,5 +180,45 @@ export function startEdgeDrag(event, edge) {
 // Global stopDrag listener is handled within dragHandler's event listeners but we provide a facade if needed.
 export function stopDrag() {
     dragInternal.stopDrag();
+}
+
+/**
+ * Find the first mergeable ancestor in a given direction
+ */
+export function findMergeableParent(focusedRect, direction) {
+    const page = getCurrentPage();
+    let searchNodeId = focusedRect.id;
+    const targetOrientation = (direction === 'ArrowLeft' || direction === 'ArrowRight') ? 'vertical' : 'horizontal';
+
+    while (searchNodeId) {
+        const parent = findParentNodeInternal(page, searchNodeId);
+        if (!parent) break;
+
+        if (parent.orientation === targetOrientation) {
+            // Check if searchNodeId is on the correct side of the divider for this direction
+            const isFirst = parent.children[0].id === searchNodeId ||
+                (parent.children[0].children && findNodeByIdInternal(parent.children[0], searchNodeId));
+            const isSecond = parent.children[1].id === searchNodeId ||
+                (parent.children[1].children && findNodeByIdInternal(parent.children[1], searchNodeId));
+
+            if ((isFirst && (direction === 'ArrowRight' || direction === 'ArrowDown')) ||
+                (isSecond && (direction === 'ArrowLeft' || direction === 'ArrowUp'))) {
+
+                if (isDividerMergeable(parent)) {
+                    return parent;
+                }
+            }
+        }
+        searchNodeId = parent.id;
+    }
+    return null;
+}
+
+export function mergeNodes(parentNode) {
+    saveState();
+    const merged = mergeNodesInTree(parentNode);
+    if (merged) {
+        renderAndRestoreFocus(getCurrentPage(), merged.id);
+    }
 }
 
