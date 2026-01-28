@@ -38,28 +38,34 @@ export class AssetManager extends EventTarget {
             throw new Error(`File too large. Maximum size: ${MAX_FILE_SIZE_MB}MB`);
         }
 
-        return new Promise((resolve, reject) => {
+        // Parallelize Base64 reading (for storage) and Image Processing (for thumbnail)
+        const base64Promise = new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onerror = () => reject(new Error('Failed to read file'));
-            reader.onload = async (e) => {
-                const fullResData = e.target.result;
-                try {
-                    const lowResData = await this._createThumbnail(fullResData);
-                    resolve({
-                        id: crypto.randomUUID(),
-                        name: file.name,
-                        lowResData: lowResData,
-                        fullResData: fullResData,
-                        path: path || file.name,
-                        isBroken: false,
-                        type: 'image'
-                    });
-                } catch (err) {
-                    reject(err);
-                }
-            };
+            reader.onload = (e) => resolve(e.target.result);
             reader.readAsDataURL(file);
         });
+
+        // Use createImageBitmap for off-main-thread decoding (Performance fix)
+        const bitmapPromise = createImageBitmap(file);
+
+        try {
+            const [fullResData, bitmap] = await Promise.all([base64Promise, bitmapPromise]);
+            const lowResData = this._generateThumbnailFromImageSource(bitmap);
+            bitmap.close(); // verified: release memory
+
+            return {
+                id: crypto.randomUUID(),
+                name: file.name,
+                lowResData: lowResData,
+                fullResData: fullResData,
+                path: path || file.name,
+                isBroken: false,
+                type: 'image'
+            };
+        } catch (err) {
+            throw err;
+        }
     }
 
     /**
@@ -87,7 +93,8 @@ export class AssetManager extends EventTarget {
         const settings = getSettings();
         const useReferences = settings.electron?.useFileReferences === true && !!absolutePath;
 
-        const lowResData = await this._createThumbnail(fullResData);
+        // For Base64, we still have to load it to an image to crop/resize
+        const lowResData = await this._createThumbnailFromBase64(fullResData);
 
         return {
             id: crypto.randomUUID(),
@@ -104,45 +111,59 @@ export class AssetManager extends EventTarget {
 
     /**
      * @private
-     * @param {string} imageSource Base64 data or URL
-     * @returns {Promise<string>} Low res base64 data
+     * @param {CanvasImageSource} source 
+     * @returns {string} Low res base64 data
      */
-    _createThumbnail(imageSource) {
+    _generateThumbnailFromImageSource(source) {
+        const canvas = document.createElement('canvas');
+        let width = source.width;
+        let height = source.height;
+
+        if (width > height) {
+            if (width > MAX_ASSET_DIMENSION) {
+                height *= MAX_ASSET_DIMENSION / width;
+                width = MAX_ASSET_DIMENSION;
+            }
+        } else {
+            if (height > MAX_ASSET_DIMENSION) {
+                width *= MAX_ASSET_DIMENSION / height;
+                height = MAX_ASSET_DIMENSION;
+            }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get canvas context');
+        ctx.drawImage(source, 0, 0, width, height);
+
+        return canvas.toDataURL('image/jpeg', ASSET_THUMBNAIL_QUALITY);
+    }
+
+    /**
+     * @private
+     * @param {string} base64Data
+     * @returns {Promise<string>}
+     */
+    _createThumbnailFromBase64(base64Data) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onerror = () => reject(new Error('Failed to load image'));
             img.onload = () => {
                 try {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_ASSET_DIMENSION) {
-                            height *= MAX_ASSET_DIMENSION / width;
-                            width = MAX_ASSET_DIMENSION;
-                        }
-                    } else {
-                        if (height > MAX_ASSET_DIMENSION) {
-                            width *= MAX_ASSET_DIMENSION / height;
-                            height = MAX_ASSET_DIMENSION;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) throw new Error('Could not get canvas context');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const lowResData = canvas.toDataURL('image/jpeg', ASSET_THUMBNAIL_QUALITY);
-                    resolve(lowResData);
+                    const thumb = this._generateThumbnailFromImageSource(img);
+                    resolve(thumb);
                 } catch (err) {
                     reject(err);
                 }
             };
-            img.src = String(imageSource);
+            img.src = base64Data;
         });
+    }
+
+    // Legacy alias if needed, or just internal mapping
+    _createThumbnail(imageSource) {
+        return this._createThumbnailFromBase64(String(imageSource));
     }
 
     async processTextFile(file, path) {
@@ -221,7 +242,7 @@ export class AssetManager extends EventTarget {
                 reader.readAsDataURL(blob);
             });
 
-            const lowResData = await this._createThumbnail(dataUrl);
+            const lowResData = await this._createThumbnailFromBase64(dataUrl);
             this.updateAsset(asset.id, {
                 lowResData,
                 fullResData: null, // Keep it null/reference
