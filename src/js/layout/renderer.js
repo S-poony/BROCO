@@ -225,25 +225,14 @@ function renderLeafNode(container, node, options) {
 <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1H15V15H1V1ZM6 9L8 11L13 6V13H3V12L6 9ZM6.5 7C7.32843 7 8 6.32843 8 5.5C8 4.67157 7.32843 4 6.5 4C5.67157 4 5 4.67157 5 5.5C5 6.32843 5.67157 7 6.5 7Z" fill="currentColor"/>
 </svg>`;
             importBtn.setAttribute('aria-label', 'Import image');
-            importBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                importImageToNode(node.id);
-            });
-
             emptyNodeControls.appendChild(importBtn);
             container.appendChild(emptyNodeControls);
 
+            // Event delegation will handle click
+
             // Allow click to bubble to parent for splitting (handled in main.js -> handleSplitClick)
             // We only intercept keys to start writing
-            container.addEventListener('keydown', (e) => {
-                // Ignore modifiers, navigation keys, etc. if they are not printing characters
-                if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                    createTextInRect(node.id, e.key);
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
+            // Event delegation will handle keyboard entry to start writing
         }
     }
 }
@@ -300,26 +289,7 @@ function renderTextContent(container, node, startInEditMode = false, options = {
         // ... (other listeners)
 
         // Drag preview
-        preview.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return;
-            e.preventDefault();
-            dragDropService.startDrag({ text: node.text, textAlign: node.textAlign, sourceRect: container, sourceTextNode: node }, e);
-        });
-
-        // Touch support
-        preview.addEventListener('touchstart', (e) => handleTouchStart(e, { text: node.text, textAlign: node.textAlign, sourceRect: container, sourceTextNode: node }), { passive: false });
-        preview.addEventListener('touchmove', handleTouchMove, { passive: false });
-        preview.addEventListener('touchend', handleTouchEnd);
-
-
-        // Click preview: enter edit mode
-        preview.addEventListener('click', (e) => {
-            if (e.shiftKey || e.ctrlKey || e.altKey) return;
-            e.stopPropagation();
-            preview.classList.add('hidden');
-            editor.classList.remove('hidden');
-            editor.focus();
-        });
+        // Event delegation will handle edit mode toggle and drag/touch
 
         // ... (Editor listeners, pair completion, etc) ...
         editor.addEventListener('click', (e) => {
@@ -519,10 +489,7 @@ function renderTextContent(container, node, startInEditMode = false, options = {
         alignBtn.innerHTML = isCentered ? leftIcon : centerIcon;
         alignBtn.setAttribute('aria-label', isCentered ? 'Align Left' : 'Align Center');
 
-        alignBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleTextAlignment(node.id);
-        });
+        // Alignment toggle handled by delegation
 
         const removeBtn = document.createElement('button');
         removeBtn.id = `remove-text-btn-${node.id}`;
@@ -530,14 +497,7 @@ function renderTextContent(container, node, startInEditMode = false, options = {
         removeBtn.title = 'Remove text';
         removeBtn.setAttribute('aria-label', 'Remove text');
         removeBtn.innerHTML = '<span class="icon icon-delete" aria-hidden="true"></span>';
-        removeBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            saveState();
-            node.text = null;
-            node.textAlign = null;
-            renderAndRestoreFocus(getCurrentPage(), node.id);
-        });
+        // Remove text handled by delegation
 
         const textControls = document.createElement('div');
         textControls.className = 'text-controls';
@@ -589,8 +549,7 @@ function createDOMDivider(parentNode, rectA, rectB, options = {}) {
     divider.setAttribute('data-parent-id', parentNode.id);
 
     if (!options.hideControls) {
-        divider.addEventListener('mousedown', startDrag);
-        divider.addEventListener('touchstart', startDrag, { passive: false });
+        // Dragging handled by delegation
     }
     return divider;
 }
@@ -600,8 +559,7 @@ function addEdgeHandles(container) {
     edges.forEach(edge => {
         const handle = document.createElement('div');
         handle.className = `edge-handle edge-${edge}`;
-        handle.addEventListener('mousedown', (e) => startEdgeDrag(e, edge));
-        handle.addEventListener('touchstart', (e) => startEdgeDrag(e, edge), { passive: false });
+        // Edge dragging handled by delegation
         container.appendChild(handle);
     });
 }

@@ -1,4 +1,5 @@
-import { undo, redo } from './js/io/history.js';
+import { undo, redo, saveState } from './js/io/history.js';
+
 import { handleSplitClick, createTextInRect, renderAndRestoreFocus } from './js/layout/layout.js';
 import { setupAssetHandlers, setupDropHandlers } from './js/assets/assets.js';
 import { setupExportHandlers } from './js/io/export.js';
@@ -12,9 +13,11 @@ import { setupGlobalErrorHandler } from './js/core/errorHandler.js';
 
 import { setupPageHandlers } from './js/layout/pages.js';
 import { setupFileIOHandlers } from './js/io/fileIO.js';
+import { importImageToNode, handleTouchStart, handleTouchMove, handleTouchEnd } from './js/assets/assets.js';
 import { setupKeyboardNavigation } from './js/ui/keyboard.js';
 import { shortcutsOverlay } from './js/ui/ShortcutsOverlay.js';
-import { findNodeById } from './js/layout/layout.js';
+import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag } from './js/layout/layout.js';
+import { dragDropService } from './js/ui/DragDropService.js';
 import { setupPlatformAdapters } from './js/core/platform.js';
 
 function setupGlobalHandlers() {
@@ -171,6 +174,7 @@ function initialize() {
     setupKeyboardNavigation();
 
     setupShortcutsHandlers();
+    setupDelegatedHandlers();
 
     let lastMousePos = { x: 0, y: 0 };
 
@@ -422,6 +426,281 @@ function setupShortcutsHandlers() {
         }
     });
 
+}
+
+/**
+ * Centrally handles interactive events within the paper via delegation
+ */
+function setupDelegatedHandlers() {
+    const paper = document.getElementById('a4-paper');
+    if (!paper) return;
+
+    // mousedown for dividers and edge handles
+    paper.addEventListener('mousedown', (e) => {
+        const divider = e.target.closest('.divider');
+        if (divider) {
+            startDrag(e, divider);
+            return;
+        }
+
+        const edgeHandle = e.target.closest('.edge-handle');
+        if (edgeHandle) {
+            const edge = ['top', 'bottom', 'left', 'right'].find(ed => edgeHandle.classList.contains(`edge-${ed}`));
+            if (edge) startEdgeDrag(e, edge);
+            return;
+        }
+
+        const preview = e.target.closest('.markdown-content');
+        if (preview && e.button === 0) {
+            // Drag preview start
+            const container = preview.closest('.rectangle-base');
+            const nodeId = container?.id;
+            const node = findNodeById(getCurrentPage(), nodeId);
+            if (node) {
+                e.preventDefault();
+                dragDropService.startDrag({ asset: node.image ? { id: node.image.assetId } : null, text: node.text, textAlign: node.textAlign, sourceRect: container, sourceTextNode: node }, e);
+            }
+        }
+    });
+
+    // touchstart for dividers and edge handles
+    paper.addEventListener('touchstart', (e) => {
+        const divider = e.target.closest('.divider');
+        if (divider) {
+            startDrag(e, divider);
+            return;
+        }
+
+        const edgeHandle = e.target.closest('.edge-handle');
+        if (edgeHandle) {
+            const edge = ['top', 'bottom', 'left', 'right'].find(ed => edgeHandle.classList.contains(`edge-${ed}`));
+            if (edge) startEdgeDrag(e, edge);
+            return;
+        }
+
+        const preview = e.target.closest('.markdown-content');
+        if (preview) {
+            const container = preview.closest('.rectangle-base');
+            const node = findNodeById(getCurrentPage(), container?.id);
+            if (node) {
+                handleTouchStart(e, { text: node.text, textAlign: node.textAlign, sourceRect: container, sourceTextNode: node });
+            }
+        }
+    }, { passive: false });
+
+    paper.addEventListener('touchmove', handleTouchMove, { passive: false });
+    paper.addEventListener('touchend', handleTouchEnd);
+
+    // Global click delegation
+    paper.addEventListener('click', (e) => {
+        // Image Import
+        const importBtn = e.target.closest('.import-image-btn');
+        if (importBtn) {
+            const rect = importBtn.closest('.splittable-rect');
+            if (rect) importImageToNode(rect.id);
+            e.stopPropagation();
+            return;
+        }
+
+        // Text Alignment
+        const alignBtn = e.target.closest('.align-text-btn');
+        if (alignBtn) {
+            const rect = alignBtn.closest('.splittable-rect');
+            if (rect) toggleTextAlignment(rect.id);
+            e.stopPropagation();
+            return;
+        }
+
+        // Remove Text
+        const removeTextBtn = e.target.closest('.remove-text-btn');
+        if (removeTextBtn) {
+            const rect = removeTextBtn.closest('.splittable-rect');
+            if (rect) {
+                const node = findNodeById(getCurrentPage(), rect.id);
+                if (node) {
+                    saveState();
+                    node.text = null;
+                    node.textAlign = null;
+                    renderAndRestoreFocus(getCurrentPage(), rect.id);
+                }
+            }
+            e.stopPropagation();
+            return;
+        }
+
+        // Preview -> Editor flip
+        const preview = e.target.closest('.markdown-content');
+        if (preview) {
+            if (e.shiftKey || e.ctrlKey || e.altKey) return;
+            const container = preview.closest('.rectangle-base');
+            const editor = container?.querySelector('.text-editor');
+            if (editor) {
+                e.stopPropagation();
+                preview.classList.add('hidden');
+                editor.classList.remove('hidden');
+                editor.focus();
+            }
+            return;
+        }
+
+        // Editor click: prevent bubbling
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            if (e.shiftKey || e.ctrlKey || e.altKey) return;
+            e.stopPropagation();
+            return;
+        }
+    });
+
+    // Keydown for starting text entry OR editor logic
+    paper.addEventListener('keydown', (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            handleEditorKeydown(e, editor);
+            return;
+        }
+
+        const rect = e.target.closest('.splittable-rect[data-split-state="unsplit"]');
+        if (rect && !rect.classList.contains('is-editing')) {
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                createTextInRect(rect.id, e.key);
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+    });
+
+    // Input delegation for editor
+    paper.addEventListener('input', (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            const rect = editor.closest('.splittable-rect');
+            const node = findNodeById(getCurrentPage(), rect?.id);
+            if (node) {
+                node.text = editor.value;
+                const preview = editor.previousElementSibling; // renderer structure: [preview, editor, controls]
+                if (preview && preview.classList.contains('markdown-content')) {
+                    preview.innerHTML = DOMPurify.sanitize(marked.parse(node.text || '')) || '<span class="text-placeholder">Click to edit...</span>';
+                }
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            }
+        }
+    });
+
+    // Focus/Blur delegation for editor
+    paper.addEventListener('focusin', (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            const container = editor.closest('.splittable-rect');
+            container?.classList.add('is-editing');
+        }
+    });
+
+    paper.addEventListener('focusout', (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            window._justFinishedEditing = true;
+            setTimeout(() => { window._justFinishedEditing = false; }, 100);
+
+            const container = editor.closest('.splittable-rect');
+            if (container) {
+                container.classList.remove('is-editing');
+                editor.classList.add('hidden');
+                const preview = container.querySelector('.markdown-content');
+                if (preview) preview.classList.remove('hidden');
+                saveState();
+                container.focus();
+            }
+        }
+    });
+}
+
+function handleEditorKeydown(e, editor) {
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const value = editor.value;
+
+    const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '*': '*', '_': '_', '`': '`' };
+    const selection = value.substring(start, end);
+
+    if (pairs[e.key]) {
+        e.preventDefault();
+        if (e.key === '[' && value[start - 1] === '[') {
+            editor.value = value.substring(0, start) + '[' + selection + ']]' + value.substring(end);
+            editor.selectionStart = start + 1;
+            editor.selectionEnd = start + 1 + selection.length;
+        } else {
+            editor.value = value.substring(0, start) + e.key + selection + pairs[e.key] + value.substring(end);
+            editor.selectionStart = start + 1;
+            editor.selectionEnd = start + 1 + selection.length;
+        }
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+    }
+
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        const lineEnd = value.indexOf('\n', start);
+        const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
+        const listMatch = line.match(/^(\s*)([-*+]|\d+\.)(\s+.*)?$/);
+
+        if (listMatch) {
+            // Indent list
+            if (!e.shiftKey) {
+                const newLine = listMatch[1] + '  ' + listMatch[2] + (listMatch[3] || '');
+                editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                editor.selectionStart = editor.selectionEnd = start + 2;
+            } else if (listMatch[1].length >= 2) {
+                const newLine = listMatch[1].substring(2) + listMatch[2] + (listMatch[3] || '');
+                editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                editor.selectionStart = editor.selectionEnd = Math.max(lineStart, start - 2);
+            }
+        } else {
+            editor.setRangeText('  ', start, end, 'end');
+        }
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+    }
+
+    if (e.key === 'Enter') {
+        const line = value.substring(0, start).split('\n').pop();
+        const listMatch = line.match(/^(\s*)([-*+]|(\d+)\.)(\s+)/);
+        if (listMatch) {
+            e.preventDefault();
+            if (line.trim() === listMatch[2]) {
+                const lineStart = start - line.length;
+                editor.value = value.substring(0, lineStart) + '\n' + value.substring(end);
+                editor.selectionStart = editor.selectionEnd = lineStart + 1;
+            } else {
+                let marker = listMatch[2];
+                if (listMatch[3]) marker = (parseInt(listMatch[3], 10) + 1) + '.';
+                const prefix = '\n' + listMatch[1] + marker + listMatch[4];
+                editor.value = value.substring(0, start) + prefix + value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + prefix.length;
+            }
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
+        }
+    }
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        editor.blur();
+        return;
+    }
+
+    if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const selection = value.substring(start, end);
+        const linkText = selection ? `[${selection}](url)` : `[link text](url)`;
+        editor.setRangeText(linkText, start, end, 'select');
+        if (selection) {
+            editor.selectionStart = start + selection.length + 3;
+            editor.selectionEnd = editor.selectionStart + 3;
+        }
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 }
 
 if (document.readyState === 'loading') {

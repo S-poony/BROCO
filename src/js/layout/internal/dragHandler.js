@@ -56,6 +56,21 @@ export function startDrag(event, dividerElement = null) {
         state.parentFullSize = parentRect.height;
     }
 
+    // Cache other dividers for alignment snapping
+    state.cachedDividers = [];
+    if (!event.noSnap) {
+        const otherDividers = document.querySelectorAll(`.divider[data-orientation="${orientation}"]`);
+        for (const other of otherDividers) {
+            if (other === divider) continue;
+            const otherRect = other.getBoundingClientRect();
+            const center = (orientation === 'vertical' ? otherRect.left + otherRect.width / 2 : otherRect.top + otherRect.height / 2);
+            state.cachedDividers.push(center);
+        }
+    }
+
+    // Cache dynamic snap points (percentages) for proportional snapping
+    state.cachedSnapPoints = calculateDynamicSnaps(divider, orientation);
+
     divider.rectA = rectA;
     divider.rectB = rectB;
     divider.parentId = parentId;
@@ -94,7 +109,7 @@ export function startEdgeDrag(event, edge) {
         children: []
     };
 
-    // Start with minimum 5% size to prevent accidental tiny splits on mobile
+    // Start with minimum 2% size to prevent accidental tiny splits on mobile
     const MIN_EDGE_SIZE = 2;
     const newRect = {
         id: `rect-${++state.currentId}`,
@@ -117,7 +132,6 @@ export function startEdgeDrag(event, edge) {
     state.pages[state.currentPageIndex] = newRoot;
 
     // We need a specific render call here
-    // In layout.js we use renderLayout followed by event dispatch
     const a4 = document.getElementById('a4-paper');
     renderLayout(a4, getCurrentPage());
     document.dispatchEvent(new CustomEvent('layoutUpdated'));
@@ -145,7 +159,7 @@ function onDrag(event) {
     let delta = (orientation === 'vertical') ? (clientX - state.startX) : (clientY - state.startY);
 
     let newSizeA = state.startSizeA + delta;
-    let newSizeB = state.startSizeB - delta;
+    let newSizeB = state.availableSpace - newSizeA;
     const minSize = 0;
 
     if (newSizeA < minSize) {
@@ -163,26 +177,20 @@ function onDrag(event) {
         const projectedCenter = state.contentOrigin + newSizeA + state.dividerSize / 2;
         let snappedCenter = null;
 
-        // 1. Divider Alignment Snapping
-        const otherDividers = document.querySelectorAll(`.divider[data-orientation="${orientation}"]`);
-        for (const other of otherDividers) {
-            if (other === divider) continue;
-            const otherRect = other.getBoundingClientRect();
-            const otherCenter = (orientation === 'vertical' ? otherRect.left + otherRect.width / 2 : otherRect.top + otherRect.height / 2);
-
-            if (Math.abs(projectedCenter - otherCenter) < SNAP_THRESHOLD) {
-                snappedCenter = otherCenter;
-                break;
+        // 1. Divider Alignment Snapping (using cache)
+        if (state.cachedDividers) {
+            for (const otherCenter of state.cachedDividers) {
+                if (Math.abs(projectedCenter - otherCenter) < SNAP_THRESHOLD) {
+                    snappedCenter = otherCenter;
+                    break;
+                }
             }
         }
 
-        // 2. Proportional Snapping
-        if (snappedCenter === null) {
-            const uniqueSnaps = calculateDynamicSnaps(divider, orientation);
-
-            for (const snapPoint of uniqueSnaps) {
+        // 2. Proportional Snapping (using cache)
+        if (snappedCenter === null && state.cachedSnapPoints) {
+            for (const snapPoint of state.cachedSnapPoints) {
                 const targetCenter = state.parentOrigin + (snapPoint / 100) * state.parentFullSize;
-
                 if (Math.abs(projectedCenter - targetCenter) < SNAP_THRESHOLD) {
                     snappedCenter = targetCenter;
                     break;

@@ -12,7 +12,7 @@ test.describe('Layout Operations', () => {
             const rect = page.locator('#rect-1');
 
             // Click to split (default is horizontal on first click)
-            await rect.click();
+            await rect.click({ position: { x: 10, y: 10 } });
 
             // Should now have two child rectangles
             await expect(page.locator('#rect-1').locator('.splittable-rect')).toHaveCount(2);
@@ -25,7 +25,7 @@ test.describe('Layout Operations', () => {
             const rect = page.locator('#rect-1');
 
             // Alt+click for vertical split
-            await rect.click({ modifiers: ['Alt'] });
+            await rect.click({ modifiers: ['Alt'], position: { x: 10, y: 10 } });
 
             // Check orientation (should have flex-row for vertical split)
             await expect(rect).toHaveClass(/flex-row/);
@@ -34,11 +34,12 @@ test.describe('Layout Operations', () => {
 
         test('should split nested rectangles', async ({ page }) => {
             // Split first rect
-            await page.locator('#rect-1').click();
+            await page.locator('#rect-1').click({ position: { x: 10, y: 10 } });
 
             // Get the first child and split it too
             const firstChild = page.locator('#rect-1 > .splittable-rect').first();
-            await firstChild.click();
+            await firstChild.click({ position: { x: 10, y: 10 } });
+
 
             // Should now have 3 leaf rectangles total (1 from first split, 2 from nested split)
             const leafRects = page.locator('.splittable-rect[data-split-state="unsplit"]');
@@ -49,7 +50,8 @@ test.describe('Layout Operations', () => {
     test.describe('Deleting', () => {
         test('should delete rectangle with Ctrl+Click', async ({ page }) => {
             // First split to have something to delete
-            await page.locator('#rect-1').click();
+            await page.locator('#rect-1').click({ position: { x: 10, y: 10 } });
+
 
             // Get child rectangles
             const children = page.locator('#rect-1 > .splittable-rect');
@@ -57,7 +59,8 @@ test.describe('Layout Operations', () => {
 
             // Ctrl+click the first child to delete it
             const firstChild = children.first();
-            await firstChild.click({ modifiers: ['Control'] });
+            await firstChild.click({ modifiers: ['Control'], position: { x: 10, y: 10 } });
+
 
             // Parent should collapse back to unsplit state
             await expect(page.locator('#rect-1')).toHaveAttribute('data-split-state', 'unsplit');
@@ -67,7 +70,7 @@ test.describe('Layout Operations', () => {
     test.describe('Divider Resizing', () => {
         test('should resize sections by dragging divider', async ({ page }) => {
             // Split to create a divider
-            await page.locator('#rect-1').click();
+            await page.locator('#rect-1').click({ position: { x: 10, y: 10 } });
 
             const divider = page.locator('.divider').first();
             await expect(divider).toBeVisible();
@@ -138,7 +141,7 @@ test.describe('Multi-Page Operations', () => {
         await page.locator('#add-page-btn').click();
 
         // Modify second page (split it)
-        await page.locator('#a4-paper .splittable-rect[data-split-state="unsplit"]').first().click();
+        await page.locator('#a4-paper .splittable-rect[data-split-state="unsplit"]').first().click({ position: { x: 10, y: 10 } });
 
         // Switch to first page
         await page.locator('.page-thumbnail-item').first().click();
