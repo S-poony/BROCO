@@ -16,7 +16,8 @@ import { setupFileIOHandlers } from './js/io/fileIO.js';
 import { importImageToNode, handleTouchStart, handleTouchMove, handleTouchEnd } from './js/assets/assets.js';
 import { setupKeyboardNavigation } from './js/ui/keyboard.js';
 import { shortcutsOverlay } from './js/ui/ShortcutsOverlay.js';
-import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag } from './js/layout/layout.js';
+import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag, handleDividerMerge } from './js/layout/layout.js';
+
 import { dragDropService } from './js/ui/DragDropService.js';
 import { setupPlatformAdapters } from './js/core/platform.js';
 
@@ -274,16 +275,6 @@ function initialize() {
     });
 
     // Global click delegation for rectangles in the paper
-    const paper = document.getElementById('a4-paper');
-    if (paper) {
-        paper.addEventListener('click', (e) => {
-            const rect = e.target.closest('.splittable-rect[data-split-state="unsplit"]');
-            if (rect) {
-                if (e.target.closest('button')) return;
-                handleSplitClick(e);
-            }
-        });
-    }
 
     document.addEventListener('mousemove', (e) => {
         lastMousePos = { x: e.clientX, y: e.clientY };
@@ -439,6 +430,10 @@ function setupDelegatedHandlers() {
     paper.addEventListener('mousedown', (e) => {
         const divider = e.target.closest('.divider');
         if (divider) {
+            // Feature: Ctrl + Click to merge
+            // If Ctrl is held, we want to allow the click event to fire instead of starting a drag
+            if (e.ctrlKey) return;
+
             startDrag(e, divider);
             return;
         }
@@ -493,6 +488,14 @@ function setupDelegatedHandlers() {
 
     // Global click delegation
     paper.addEventListener('click', (e) => {
+        // Divider Merge (Ctrl + Click)
+        const divider = e.target.closest('.divider');
+        if (divider && (e.ctrlKey || e.metaKey)) {
+            handleDividerMerge(divider);
+            e.stopPropagation();
+            return;
+        }
+
         // Image Import
         const importBtn = e.target.closest('.import-image-btn');
         if (importBtn) {
@@ -531,25 +534,32 @@ function setupDelegatedHandlers() {
         // Preview -> Editor flip
         const preview = e.target.closest('.markdown-content');
         if (preview) {
-            if (e.shiftKey || e.ctrlKey || e.altKey) return;
-            const container = preview.closest('.rectangle-base');
-            const editor = container?.querySelector('.text-editor');
-            if (editor) {
-                e.stopPropagation();
-                preview.classList.add('hidden');
-                editor.classList.remove('hidden');
-                editor.focus();
+            // If modifiers are pressed, we don't want to enter edit mode, but we DO want to potentially split (fallthrough)
+            if (!e.shiftKey && !e.ctrlKey && !e.altKey) {
+                const container = preview.closest('.rectangle-base');
+                const editor = container?.querySelector('.text-editor');
+                if (editor) {
+                    e.stopPropagation();
+                    preview.classList.add('hidden');
+                    editor.classList.remove('hidden');
+                    editor.focus();
+                }
+                return;
             }
-            return;
         }
 
-        // Editor click: prevent bubbling
+        // Editor click: prevent bubbling only if NO modifiers
+        // If modifiers are pressed (e.g. Shift+Click on active editor), we want it to potentially split
         const editor = e.target.closest('.text-editor');
         if (editor) {
-            if (e.shiftKey || e.ctrlKey || e.altKey) return;
-            e.stopPropagation();
-            return;
+            if (!e.shiftKey && !e.ctrlKey && !e.altKey) {
+                e.stopPropagation();
+                return;
+            }
         }
+
+        // Default layout interaction (Split, Delete Rect, Object Fit)
+        handleSplitClick(e);
     });
 
     // Keydown for starting text entry OR editor logic

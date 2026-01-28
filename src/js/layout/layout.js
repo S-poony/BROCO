@@ -222,3 +222,22 @@ export function mergeNodes(parentNode, sourceNodeId) {
     }
 }
 
+export function handleDividerMerge(dividerElement) {
+    const parentId = dividerElement.dataset.parentId;
+    if (!parentId) return;
+
+    const page = getCurrentPage();
+    const parentNode = findNodeByIdInternal(page, parentId);
+
+    if (parentNode && isDividerMergeable(parentNode)) {
+        saveState();
+        // contentPriority: null means default priority (usually focusing on keeping content)
+        // Check mergeNodesInTree signature: (parentNode, focusedNodeId)
+        // We pass null for focusedNodeId so it decides based on content
+        const merged = mergeNodesInTree(parentNode, null);
+
+        // Full layout update is safer for tree structure changes
+        renderAndRestoreFocus(page, merged ? merged.id : parentId);
+    }
+}
+

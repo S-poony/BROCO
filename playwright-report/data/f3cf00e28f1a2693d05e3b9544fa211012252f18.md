@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#a4-paper"
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button "Save Layout" [ref=e7] [cursor=pointer]:
+          - generic [ref=e9]: Save
+        - button "Open Layout" [ref=e10] [cursor=pointer]:
+          - generic [ref=e12]: Open
+        - link "Download Desktop App" [ref=e14] [cursor=pointer]:
+          - /url: https://github.com/S-poony/BROCO/releases/latest
+          - img [ref=e16]
+          - generic [ref=e19]: App
+      - generic [ref=e20]:
+        - button "Keyboard Shortcuts" [ref=e21] [cursor=pointer]:
+          - generic [ref=e23]: Shortcuts
+        - button "Settings" [ref=e24] [cursor=pointer]:
+          - generic [ref=e26]: Settings
+    - complementary "Pages Navigation" [ref=e28]:
+      - button "Add new page" [ref=e29] [cursor=pointer]
+      - generic [ref=e32] [cursor=pointer]:
+        - generic [ref=e33]: "1"
+        - button "Duplicate page 1" [ref=e38]
+        - button "Delete page 1" [ref=e40]
+    - main "Layout Canvas" [ref=e43]:
+      - generic [ref=e44] [cursor=pointer]:
+        - button "Empty region. Click to split, Enter/Type to write." [active] [ref=e45]:
+          - generic: Click to split / Type to write
+          - button "Import image" [ref=e47]:
+            - img [ref=e48]
+        - button "Empty region. Click to split, Enter/Type to write." [ref=e51]:
+          - generic: Click to split / Type to write
+    - complementary [ref=e57]:
+      - generic [ref=e58]:
+        - button "Import" [ref=e59] [cursor=pointer]: Import
+        - generic [ref=e61]:
+          - button "Grid View" [ref=e62] [cursor=pointer]:
+            - img "Grid View" [ref=e63]
+          - button "List View" [ref=e64] [cursor=pointer]:
+            - img "List View" [ref=e65]
+      - separator [ref=e67]
+      - button "Export Layout" [ref=e68] [cursor=pointer]
+      - separator [ref=e69]
+```
