@@ -135,8 +135,8 @@
 /* Edge Handle Styles for Inward Dragging */
 .edge-handle {
     position: absolute;
-    z-index: 50;
-    /* over images but under sidebars */
+    z-index: 70;
+    /* over images (1) and active rects (60), but under sidebars/overlays */
     background-color: transparent;
 }
 
