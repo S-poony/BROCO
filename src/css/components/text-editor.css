@@ -188,6 +188,7 @@
 
 .markdown-content p {
     margin: calc(var(--text-font-size-proportional) * 0.25) 0;
+    white-space: pre-wrap;
 }
 
 .markdown-content ul,
@@ -199,7 +200,7 @@
 
 .markdown-content li {
     margin: calc(var(--text-font-size-proportional) * 0.1) 0;
-    white-space: normal;
+    white-space: pre-wrap;
 }
 
 .markdown-content code {
@@ -231,6 +232,7 @@
     margin: calc(var(--text-font-size-proportional) * 0.5) 0;
     padding-left: calc(var(--text-font-size-proportional) * 0.75);
     color: var(--color-text-muted, #6b7280);
+    white-space: pre-wrap;
 }
 
 .markdown-content hr {
