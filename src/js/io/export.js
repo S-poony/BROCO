@@ -92,7 +92,7 @@ export function setupExportHandlers() {
             await performExport(format, qualityMultiplier);
         } catch (error) {
             console.error('Export failed:', error);
-            showAlert('Export failed. Please try again.', 'Error');
+            toast.error('Export failed. Please try again.');
         } finally {
             confirmBtn.disabled = false;
             confirmBtn.textContent = originalText;
@@ -110,7 +110,7 @@ export function setupExportHandlers() {
                 await performPublishFlipbook(qualityMultiplier);
             } catch (error) {
                 console.error('Publish failed:', error);
-                showAlert('Publishing failed. Please try again.', 'Error');
+                toast.error('Publishing failed. Please try again.');
             } finally {
                 publishConfirmBtn.disabled = false;
                 publishConfirmBtn.textContent = 'Publish Flipbook';
@@ -263,9 +263,9 @@ async function performPublishFlipbook(qualityMultiplier) {
 
         if (progressText) progressText.textContent = 'Uploading to server...';
 
-        // Add timeout for network request (30 seconds)
+        // Add timeout for network request (60 seconds)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
         let response;
         try {
@@ -280,16 +280,20 @@ async function performPublishFlipbook(qualityMultiplier) {
                 signal: controller.signal
             });
         } catch (fetchError) {
+            console.error('Network or CSP Error during publish:', fetchError);
             if (fetchError.name === 'AbortError') {
-                throw new Error('Request timed out. Please check your connection and try again.');
+                throw new Error('Request timed out after 60s. Your flipbook might be too large or your connection slow.');
             }
-            throw new Error('Network error. Please check your internet connection.');
+            if (fetchError.message === 'Failed to fetch') {
+                throw new Error('Network error or request blocked. This can happen if the API domain is blocked by security settings.');
+            }
+            throw new Error(`Connection failed: ${fetchError.message}`);
         } finally {
             clearTimeout(timeoutId);
         }
 
         if (!response.ok) {
-            let errorMessage = 'Failed to publish flipbook';
+            let errorMessage = `Server error: ${response.status} ${response.statusText}`;
             try {
                 const error = await response.json();
                 errorMessage = error.error || errorMessage;
