@@ -22,6 +22,7 @@
     --header-height: 60px;
     --sidebar-width: 280px;
     --breakpoint-laptop: 1024px;
+    --divider-hit-target-min: 25px;
 
     /* Fonts */
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;

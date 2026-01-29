@@ -98,15 +98,17 @@
 .vertical-divider::after {
     top: 0;
     bottom: 0;
-    left: calc(var(--divider-hit-thickness) * -1.5);
-    right: calc(var(--divider-hit-thickness) * -1.5);
+    /* Ensure a minimum clickable width of ~14px, but no extra padding when wide */
+    left: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
+    right: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
 }
 
 .horizontal-divider::after {
     left: 0;
     right: 0;
-    top: calc(var(--divider-hit-thickness) * -1.5);
-    bottom: calc(var(--divider-hit-thickness) * -1.5);
+    /* Ensure a minimum clickable height of ~14px, but no extra padding when wide */
+    top: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
+    bottom: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
 }
 
 .divider:hover {
@@ -159,8 +161,8 @@
 }
 
 .edge-top::after {
-    top: -10px;
-    bottom: -10px;
+    top: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
+    bottom: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
     left: 0;
     right: 0;
 }
@@ -174,8 +176,8 @@
 }
 
 .edge-bottom::after {
-    top: -10px;
-    bottom: -10px;
+    top: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
+    bottom: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
     left: 0;
     right: 0;
 }
@@ -189,8 +191,8 @@
 }
 
 .edge-left::after {
-    left: -10px;
-    right: -10px;
+    left: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
+    right: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
     top: 0;
     bottom: 0;
 }
@@ -204,8 +206,8 @@
 }
 
 .edge-right::after {
-    left: -10px;
-    right: -10px;
+    left: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
+    right: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
     top: 0;
     bottom: 0;
 }
