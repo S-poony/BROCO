@@ -35,10 +35,37 @@ export function setupExportHandlers() {
     qualitySlider.addEventListener('input', updateDimensions);
     updateDimensions(); // Initial call
 
+    const downloadModal = document.getElementById('download-app-modal');
+    const downloadCloseBtn = document.getElementById('download-app-close');
+
     exportBtn.addEventListener('click', () => {
+        // Check if running in Electron (using the API we exposed)
+        if (!window.electronAPI) {
+            if (downloadModal) {
+                downloadModal.classList.add('active');
+            } else {
+                alert('Please download the desktop app to export. Visit https://github.com/S-poony/BROCO/releases');
+            }
+            return;
+        }
+
         modal.classList.add('active');
         updateDimensions();
     });
+
+    // Download Modal Handlers
+    if (downloadModal) {
+        if (downloadCloseBtn) {
+            downloadCloseBtn.addEventListener('click', () => {
+                downloadModal.classList.remove('active');
+            });
+        }
+        downloadModal.addEventListener('click', (e) => {
+            if (e.target === downloadModal) {
+                downloadModal.classList.remove('active');
+            }
+        });
+    }
 
     // Close button (x) or Footer Close
     cancelBtn.addEventListener('click', () => {
