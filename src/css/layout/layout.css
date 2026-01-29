@@ -76,7 +76,6 @@
 /* Style for the draggable divider */
 .divider {
     background-color: var(--divider-color, #d1d5db);
-    transition: background-color 0.2s;
     flex-shrink: 0;
     flex-grow: 0;
     box-sizing: border-box;
@@ -113,6 +112,7 @@
 
 .divider:hover {
     background-color: var(--color-primary-hover, rgb(138, 138, 199));
+    transition: background-color 0.2s;
     /* Fallback changed to generic, need variable if specific color desired */
     /* Or maybe better to stick to primary? */
 }
@@ -137,7 +137,6 @@
     position: absolute;
     z-index: 50;
     /* over images but under sidebars */
-    transition: background-color 0.2s;
     background-color: transparent;
 }
 
@@ -147,6 +146,7 @@
 
 .edge-handle:hover {
     background-color: rgba(79, 70, 229, 0.2);
+    transition: background-color 0.2s;
     /* Variable: primary with opacity? Hard to do with hex var. Keeping hardcoded or define transparent variable. */
 }
 
@@ -210,8 +210,6 @@
     font-weight: 500;
     cursor: pointer;
     position: relative;
-    /* z-index: 1; Removed */
-    transition: background-color 0.15s ease-in-out;
 }
 
 .rectangle-base::after {
@@ -222,7 +220,6 @@
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0);
-    transition: background-color 0.15s;
     pointer-events: none;
     z-index: 1;
 }
@@ -230,6 +227,7 @@
 /* Leaf node hover effect (non-destructive) */
 .splittable-rect[data-split-state="unsplit"]:not(.is-editing):hover::after {
     background-color: rgba(0, 0, 0, 0.03);
+    transition: background-color 0.15s;
 }
 
 /* Image removal button styles moved to floating-buttons.css */
