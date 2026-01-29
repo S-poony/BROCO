@@ -1,7 +1,7 @@
 {
   "name": "broco",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -41,20 +41,19 @@
       "electron/**/*",
       "package.json"
     ],
-    "win": {
-      "target": "nsis",
-      "icon": "src/assets/icons/AppIcon.png",
-      "verifyUpdateCodeSignature": false
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "S-poony",
-      "repo": "BROCO"
-    }
+    "target": "nsis",
+    "icon": "src/assets/icons/AppIcon.png",
+    "verifyUpdateCodeSignature": false,
+    "artifactName": "${productName}-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "S-poony",
+    "repo": "BROCO"
   }
 }
