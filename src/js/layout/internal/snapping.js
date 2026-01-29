@@ -11,6 +11,63 @@ import { findNodeById, findParentNode, countParallelLeaves } from './treeUtils.j
  * @param {Function} deleteCallback (node) => void
  * @param {Function} renderCallback (page, focusId) => void
  */
+/**
+ * Pure function to find the next snap point.
+ * @param {number} currentPct Current percentage (0-100)
+ * @param {number[]} candidates Standard candidates (subject to MIN_JUMP)
+ * @param {number[]} priorityCandidates Priority candidates (subject to EPSILON, e.g. global alignment)
+ * @param {string} direction 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight'
+ * @returns {number|undefined} The best snap point or undefined if none found
+ */
+export function findNextSnapPoint(currentPct, candidates, priorityCandidates, direction) {
+    const MIN_JUMP = 1.2;
+    const EPSILON = 0.01;
+    const isForward = (direction === 'ArrowRight' || direction === 'ArrowDown');
+
+    let bestPoint = undefined;
+    let minDiff = Infinity;
+
+    // Helper to process a list with a specific threshold
+    const processCandidates = (list, threshold) => {
+        list.forEach(pt => {
+            const diff = pt - currentPct;
+
+            // Check direction and threshold
+            // Forward: diff must be positive (pt > current)
+            // Backward: diff must be negative (pt < current)
+            if (isForward) {
+                if (diff >= threshold) { // Must be at least threshold away
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        bestPoint = pt;
+                    }
+                }
+            } else {
+                if (diff <= -threshold) { // Must be at least threshold away (negative)
+                    // We want the point closest to current, so largest negative diff (closest to 0)
+                    // e.g. current=50, pt=40 (diff=-10), pt=45 (diff=-5). We want 45.
+                    // Math.abs(diff) < minDiff
+                    if (Math.abs(diff) < minDiff) {
+                        minDiff = Math.abs(diff);
+                        bestPoint = pt;
+                    }
+                }
+            }
+        });
+    };
+
+    // 1. Process standard candidates with MIN_JUMP
+    processCandidates(candidates, MIN_JUMP);
+
+    // 2. Process priority candidates with EPSILON (overrides if better/closer is found)
+    // Note: Since we want the *closest* valid point, we just run this update.
+    // If a priority point is closer than the best standard point found so far, it will take over
+    // because minDiff will be smaller.
+    processCandidates(priorityCandidates, EPSILON);
+
+    return bestPoint;
+}
+
 export function snapDivider(focusedRect, direction, deleteCallback, renderCallback) {
     const page = getCurrentPage();
     let currentNodeId = focusedRect.id;
@@ -50,85 +107,96 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
     const currentPct = parseFloat(nodeA.size);
     if (isNaN(currentPct)) return;
 
-    // Use a Set of rounded strings to ensure clean deduplication during construction
-    const candidatesSet = new Set();
-    const addCandidate = (val) => {
+    // Use Sets to organize candidates
+    const standardCandidates = new Set();
+    const priorityCandidates = new Set();
+
+    const addStandard = (val) => {
         if (val >= 1 && val <= 99) {
-            candidatesSet.add(Math.round(val * 10) / 10); // Round to 1 decimal place (e.g. 33.3)
+            standardCandidates.add(Math.round(val * 10) / 10);
         }
     };
 
-    // 1. Dynamic Snap Points (Leaf Count)
+    const addPriority = (val) => {
+        if (val >= 1 && val <= 99) {
+            // Keep higher precision for priority alignment
+            priorityCandidates.add(parseFloat(val.toFixed(2)));
+        }
+    };
+
+    // 1. Dynamic Snap Points (Leaf Count) -> Standard
     const totalCount = countParallelLeaves(nodeA, targetDividerOrientation) + countParallelLeaves(nodeB, targetDividerOrientation);
     if (totalCount > 1) {
         // Base 50%
-        addCandidate(50);
+        addStandard(50);
 
         // Dynamic fractions
         for (let i = 1; i < totalCount; i++) {
-            addCandidate((i / totalCount) * 100);
+            addStandard((i / totalCount) * 100);
         }
     } else {
         // Fallback
-        addCandidate(50);
+        addStandard(50);
     }
 
-    // 2. Boundary Snaps (Allow full collapse/expansion)
-    addCandidate(1);
-    addCandidate(99);
-
-    // 3. Recursive Gap Subdivision
+    // 2. Recursive Gap Subdivision -> Standard
     const MIN_GAP_FOR_RECURSION = 10;
     const remainingForward = 100 - currentPct;
     if (remainingForward > MIN_GAP_FOR_RECURSION) {
-        SNAP_POINTS.forEach(p => addCandidate(currentPct + (remainingForward * p / 100)));
+        SNAP_POINTS.forEach(p => addStandard(currentPct + (remainingForward * p / 100)));
     }
     const remainingBackward = currentPct;
     if (remainingBackward > MIN_GAP_FOR_RECURSION) {
-        SNAP_POINTS.forEach(p => addCandidate(remainingBackward * p / 100));
+        SNAP_POINTS.forEach(p => addStandard(remainingBackward * p / 100));
     }
 
-    // 4. Global Alignment Snaps
+    // 3. Global Alignment Snaps -> Priority
     const otherDividers = Array.from(document.querySelectorAll(`.divider[data-orientation="${targetDividerOrientation}"]`));
-    const parentEl = document.getElementById(targetParent.id) || document.getElementById('a4-paper'); // Hardcoded ID fallback to avoid circular dependency
-    const parentRect = parentEl.getBoundingClientRect();
-    const parentStyle = window.getComputedStyle(parentEl);
+    const parentEl = document.getElementById(targetParent.id) || document.getElementById('a4-paper'); // Hardcoded ID fallback
 
-    const movingDivider = document.querySelector(`.divider[data-parent-id="${targetParent.id}"][data-rect-a-id="${nodeA.id}"]`);
-    const movingDivSize = movingDivider ? (targetDividerOrientation === 'vertical' ? movingDivider.offsetWidth : movingDivider.offsetHeight) : 0;
+    if (parentEl) {
+        const parentRect = parentEl.getBoundingClientRect();
+        const parentStyle = window.getComputedStyle(parentEl);
 
-    const parentStart = (targetDividerOrientation === 'vertical' ? parentRect.left : parentRect.top);
-    const parentSize = (targetDividerOrientation === 'vertical' ? parentRect.width : parentRect.height);
-    const startBorder = (targetDividerOrientation === 'vertical' ? parseFloat(parentStyle.borderLeftWidth) : parseFloat(parentStyle.borderTopWidth)) || 0;
-    const endBorder = (targetDividerOrientation === 'vertical' ? parseFloat(parentStyle.borderRightWidth) : parseFloat(parentStyle.borderBottomWidth)) || 0;
+        const movingDivider = document.querySelector(`.divider[data-parent-id="${targetParent.id}"][data-rect-a-id="${nodeA.id}"]`);
+        const movingDivSize = movingDivider ? (targetDividerOrientation === 'vertical' ? movingDivider.offsetWidth : movingDivider.offsetHeight) : 0;
 
-    const availableFlexSpace = parentSize - startBorder - endBorder - movingDivSize;
+        const parentStart = (targetDividerOrientation === 'vertical' ? parentRect.left : parentRect.top);
+        const parentSize = (targetDividerOrientation === 'vertical' ? parentRect.width : parentRect.height);
+        const startBorder = (targetDividerOrientation === 'vertical' ? parseFloat(parentStyle.borderLeftWidth) : parseFloat(parentStyle.borderTopWidth)) || 0;
+        const endBorder = (targetDividerOrientation === 'vertical' ? parseFloat(parentStyle.borderRightWidth) : parseFloat(parentStyle.borderBottomWidth)) || 0;
 
-    if (availableFlexSpace > 0) {
-        otherDividers.forEach(div => {
-            if (div === movingDivider) return;
-            const divRect = div.getBoundingClientRect();
-            const divCenter = (targetDividerOrientation === 'vertical' ? divRect.left + divRect.width / 2 : divRect.top + divRect.height / 2);
+        const availableFlexSpace = parentSize - startBorder - endBorder - movingDivSize;
 
-            const relCenter = divCenter - parentStart;
-            const flexPos = relCenter - startBorder - (movingDivSize / 2);
-            const relPct = (flexPos / availableFlexSpace) * 100;
+        if (availableFlexSpace > 0) {
+            otherDividers.forEach(div => {
+                if (div === movingDivider) return;
+                const divRect = div.getBoundingClientRect();
+                const divCenter = (targetDividerOrientation === 'vertical' ? divRect.left + divRect.width / 2 : divRect.top + divRect.height / 2);
 
-            addCandidate(relPct);
-        });
+                const relCenter = divCenter - parentStart;
+                const flexPos = relCenter - startBorder - (movingDivSize / 2);
+                const relPct = (flexPos / availableFlexSpace) * 100;
+
+                addPriority(relPct);
+            });
+        }
     }
 
-    const sortedCandidates = Array.from(candidatesSet).map(Number).sort((a, b) => a - b);
+    // Convert sets to arrays
+    const candidatesArr = Array.from(standardCandidates);
+    const priorityArr = Array.from(priorityCandidates);
 
-    const MIN_JUMP = 1.2;
-    let targetPct = null;
+    let targetPct = findNextSnapPoint(currentPct, candidatesArr, priorityArr, direction);
 
-    if (direction === 'ArrowRight' || direction === 'ArrowDown') {
-        targetPct = sortedCandidates.find(c => c >= currentPct + MIN_JUMP);
-        if (targetPct === undefined && currentPct < 99) targetPct = 99;
-    } else {
-        targetPct = [...sortedCandidates].reverse().find(c => c <= currentPct - MIN_JUMP);
-        if (targetPct === undefined && currentPct > 1) targetPct = 1;
+    // Fallbacks for boundaries if no snap point found (mimicking original behavior)
+    // Original: if (targetPct === undefined && currentPct < 99) targetPct = 99;
+    if (targetPct === undefined) {
+        if ((direction === 'ArrowRight' || direction === 'ArrowDown') && currentPct < 99) {
+            targetPct = 99;
+        } else if ((direction === 'ArrowLeft' || direction === 'ArrowUp') && currentPct > 1) {
+            targetPct = 1;
+        }
     }
 
     if (targetPct !== undefined && targetPct !== null) {
