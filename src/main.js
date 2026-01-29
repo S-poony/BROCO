@@ -842,7 +842,8 @@ async function initializeExportMode() {
                     // Render the layout into the wrapper
                     await renderLayout(pageWrapper, layout, {
                         useHighResImages: true,
-                        hideControls: true
+                        hideControls: true,
+                        pageNumber: i + 1
                     });
                 }
                 // Wait for all images

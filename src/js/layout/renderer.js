@@ -38,7 +38,7 @@ export function renderLayout(container, node, options = {}) {
             addEdgeHandles(fragment);
         }
         renderBackgroundImage(fragment);
-        renderPageNumber(fragment);
+        renderPageNumber(fragment, options);
 
         // Atomic swap
         container.innerHTML = '';
@@ -374,13 +374,16 @@ function addEdgeHandles(container) {
     });
 }
 
-function renderPageNumber(container) {
+function renderPageNumber(container, options = {}) {
     const settings = getSettings();
     if (!settings.paper.showPageNumbers) return;
 
+    // Use provided page number or fall back to current state
+    const number = options.pageNumber !== undefined ? options.pageNumber : (state.currentPageIndex + 1);
+
     const pageNumber = document.createElement('div');
     pageNumber.className = 'paper-page-number';
-    pageNumber.textContent = `${state.currentPageIndex + 1}`;
+    pageNumber.textContent = `${number}`;
 
     // Position it at the bottom center or bottom right
     container.appendChild(pageNumber);
