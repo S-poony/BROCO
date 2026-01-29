@@ -164,6 +164,90 @@ app.whenReady().then(() => {
         filePaths.forEach(p => processPath(p));
         return results;
     });
+
+    // Handle Off-screen Export
+    ipcMain.handle('render-export', async (event, options) => {
+        const { pageLayout, pageLayouts, width, height, format, settings, assets } = options;
+
+        // Create an off-screen window
+        let exportWin = new BrowserWindow({
+            show: false,
+            width: width,
+            height: height,
+            webPreferences: {
+                offscreen: false, // We use a visible but hidden window for better compatibility than true offscreen
+                preload: join(__dirname, 'preload.cjs'),
+                contextIsolation: true,
+                nodeIntegration: false
+            }
+        });
+
+        try {
+            // Load the app in export mode
+            if (!app.isPackaged) {
+                await exportWin.loadURL('http://localhost:5173?mode=export');
+            } else {
+                await exportWin.loadFile(join(__dirname, '../dist/index.html'), { search: 'mode=export' });
+            }
+
+            // High-DPI support: Set zoom factor if we are exporting high-res images
+            // But we actually pass specific width/height, so 1.0 is safer.
+            exportWin.webContents.setZoomFactor(1.0);
+
+            // Wait for window to be ready to render
+            // The renderer needs time to initialize its listener
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Send layout data with full context (settings + assets)
+            exportWin.webContents.send('render-content', {
+                pageLayout,
+                pageLayouts,
+                width,
+                height,
+                settings,
+                assets
+            });
+
+            // Wait for completion signal
+            const metadata = await new Promise((resolve) => {
+                ipcMain.once('render-complete', (event, data) => resolve(data || {}));
+            });
+
+            if (metadata.error) {
+                throw new Error(metadata.error);
+            }
+
+            // Capture logic
+            let buffer;
+            if (format === 'pdf') {
+                buffer = await exportWin.webContents.printToPDF({
+                    printBackground: true,
+                    landscape: width > height,
+                    pageSize: { width: width / 96, height: height / 96, unit: 'in' }, // Convert px to inches (96DPI)
+                    margins: { top: 0, bottom: 0, left: 0, right: 0 }
+                });
+            } else {
+                // Image capture
+                const image = await exportWin.webContents.capturePage();
+
+                if (format === 'jpeg' || format === 'jpg') {
+                    buffer = image.toJPEG(90);
+                } else {
+                    buffer = image.toPNG();
+                }
+            }
+
+            return {
+                data: buffer,
+                links: metadata.links // Return extracted links
+            };
+        } catch (err) {
+            console.error('Export error (main):', err);
+            throw err;
+        } finally {
+            if (exportWin) exportWin.destroy();
+        }
+    });
 });
 
 app.on('window-all-closed', () => {

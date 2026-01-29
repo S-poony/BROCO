@@ -1,5 +1,3 @@
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
 import { assetManager } from '../assets/AssetManager.js';
 import { A4_PAPER_ID } from '../core/constants.js';
@@ -102,228 +100,79 @@ async function performExport(format, qualityMultiplier) {
 
     if (loadingOverlay) {
         loadingOverlay.classList.add('active');
-        // Dynamic status text based on format
         const formatText = format.toUpperCase();
         loadingStatus.textContent = `Generating ${formatText === 'JPEG' ? 'JPG' : formatText}...`;
     }
 
-    const tempContainer = document.createElement('div');
     const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
-
-    tempContainer.style.position = 'fixed';
-    tempContainer.style.top = '0';
-    tempContainer.style.left = '0';
-    tempContainer.style.zIndex = '-9999';
-    tempContainer.style.width = `${layoutWidth}px`;
-    tempContainer.style.height = `${layoutHeight}px`;
-    tempContainer.style.backgroundColor = '#ffffff';
-    tempContainer.style.boxSizing = 'border-box';
-    tempContainer.style.margin = '0';
-    tempContainer.style.padding = '0';
-    tempContainer.style.border = 'none';
-    tempContainer.style.boxShadow = 'none';
-
-    tempContainer.className = 'export-container';
-    // Fix: Ensure container queries (cqw/cqh) resolve correctly against this container
-    tempContainer.style.containerType = 'size';
-    document.body.appendChild(tempContainer);
+    const width = Math.round(layoutWidth * qualityMultiplier);
+    const height = Math.round(layoutHeight * qualityMultiplier);
 
     const isSingleImageExport = (format === 'png' || format === 'jpeg') && state.pages.length === 1;
     const zip = (format === 'png' || format === 'jpeg') && state.pages.length > 1 ? new JSZip() : null;
-    let pdf = null;
 
     try {
-        for (let i = 0; i < state.pages.length; i++) {
-            if (progressText) {
-                progressText.textContent = `Processing page ${i + 1} of ${state.pages.length}...`;
-            }
+        if (format === 'pdf') {
+            if (progressText) progressText.textContent = 'Rendering PDF...';
 
-            const pageLayout = state.pages[i];
-
-            tempContainer.innerHTML = '';
-            const paperWrapper = document.createElement('div');
-            paperWrapper.className = 'a4-paper is-exporting';
-            paperWrapper.style.width = '100%';
-            paperWrapper.style.height = '100%';
-            paperWrapper.style.boxShadow = 'none';
-            paperWrapper.style.margin = '0';
-            paperWrapper.style.zoom = '1';
-            // PROPORTIONAL EXPORT: Set the fixed base width/height so calculations are stable
-            paperWrapper.style.setProperty('--paper-current-width', `${layoutWidth}px`);
-            paperWrapper.style.setProperty('--paper-current-height', `${layoutHeight}px`);
-            tempContainer.appendChild(paperWrapper);
-
-            renderLayout(paperWrapper, pageLayout, {
-                useHighResImages: true,
-                hideControls: true
+            // For PDF, we render all pages at once
+            const result = await window.electronAPI.renderExport({
+                pageLayouts: state.pages,
+                width,
+                height,
+                format: 'pdf',
+                settings: getSettings(),
+                assets: assetManager.getAssets()
             });
 
-            // Wait for high-res images and fonts to be ready for capture
-            await waitForBackgroundImages(paperWrapper);
-            await document.fonts.ready;
+            if (result.error) throw new Error(result.error);
 
-            // SVG Overlay Injection
-            const svgOverlay = generateSvgOverlay(paperWrapper, layoutWidth, layoutHeight);
-            if (svgOverlay) {
-                paperWrapper.appendChild(svgOverlay);
-            }
+            // Result data is a Buffer (Uint8Array)
+            const blob = new Blob([result.data], { type: 'application/pdf' });
+            const timestamp = new Date().getTime();
+            downloadBlob(blob, `layout-export-${timestamp}.pdf`);
 
-            const canvas = await html2canvas(tempContainer, {
-                scale: qualityMultiplier,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                width: layoutWidth,
-                height: layoutHeight,
-                windowWidth: layoutWidth,
-                windowHeight: layoutHeight
-            });
-
-            const timestampForFile = new Date().getTime();
-            const exportFileName = `layout-export-${timestampForFile}`;
-
-            if (format === 'pdf') {
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-                // Calculate PDF dimensions (maintain aspect ratio)
-                // Default PDF unit is 'pt' (1 pt = 1/72 inch). 
-                // We'll use points but match the pixel aspect ratio directly.
-                // Optionally we could just use 'px' unit in jsPDF but strict 'pt' is standar.
-                // Let's map 1px = 0.75pt (approx) or just use the layout dimensions directly as points 
-                // to keep it simple and perfectly proportional.
-                const pdfWidth = layoutWidth * 0.75;
-                const pdfHeight = layoutHeight * 0.75;
-                const orientation = pdfWidth > pdfHeight ? 'landscape' : 'portrait';
-
-                if (!pdf) {
-                    pdf = new jsPDF({
-                        orientation: orientation,
-                        unit: 'pt',
-                        format: [pdfWidth, pdfHeight]
-                    });
-                } else {
-                    pdf.addPage([pdfWidth, pdfHeight], orientation);
+        } else {
+            // Image Export
+            for (let i = 0; i < state.pages.length; i++) {
+                if (progressText) {
+                    progressText.textContent = `Processing page ${i + 1} of ${state.pages.length}...`;
                 }
 
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                const pageLayout = state.pages[i];
+                const result = await window.electronAPI.renderExport({
+                    pageLayout,
+                    width,
+                    height,
+                    format: format, // 'png' or 'jpeg'
+                    settings: getSettings(), // Pass current settings (colors, borders)
+                    assets: assetManager.getAssets() // Pass all current assets
+                });
 
-                // Add interactive links
-                // Scale factor for links: PDF dimensions / Layout dimensions
-                addLinksToPdf(pdf, paperWrapper, pdfWidth / layoutWidth);
+                if (result.error) throw new Error(result.error);
 
-            } else if (isSingleImageExport) {
                 const ext = format === 'jpeg' ? 'jpg' : 'png';
                 const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-                const dataUrl = canvas.toDataURL(mime, format === 'jpeg' ? 0.95 : 1.0);
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = `${exportFileName}.${ext}`;
-                link.click();
-            } else if (zip) {
-                const ext = format === 'jpeg' ? 'jpg' : 'png';
-                const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-                const dataUrl = canvas.toDataURL(mime, format === 'jpeg' ? 0.95 : 1.0);
-                const base64Data = dataUrl.split(',')[1];
-                zip.file(`page-${i + 1}.${ext}`, base64Data, { base64: true });
+                const blob = new Blob([result.data], { type: mime });
+
+                if (isSingleImageExport) {
+                    const timestamp = new Date().getTime();
+                    downloadBlob(blob, `layout-export-${timestamp}.${ext}`);
+                } else if (zip) {
+                    zip.file(`page-${i + 1}.${ext}`, blob);
+                }
+            }
+
+            if (zip) {
+                if (progressText) progressText.textContent = 'Creating ZIP archive...';
+                const timestamp = new Date().getTime();
+                const content = await zip.generateAsync({ type: 'blob' });
+                downloadBlob(content, `layout-export-${timestamp}.zip`);
             }
         }
-
-        const timestamp = new Date().getTime();
-        if (format === 'pdf' && pdf) {
-            // Add bookmarks for headings from text content
-            addPdfBookmarks(pdf, state.pages);
-            pdf.save(`layout-export-${timestamp}.pdf`);
-        } else if (zip) {
-            const content = await zip.generateAsync({ type: 'blob' });
-            downloadBlob(content, `layout-export-${timestamp}.zip`);
-        }
     } finally {
-        document.body.removeChild(tempContainer);
         if (loadingOverlay) loadingOverlay.classList.remove('active');
     }
-}
-
-function generateSvgOverlay(paperWrapper, layoutWidth, layoutHeight) {
-    const settings = getSettings();
-    const dividerRatio = settings.dividers.width / 1000;
-    const scaleRef = Math.max(layoutWidth, layoutHeight);
-    const borderThickness = dividerRatio * scaleRef;
-    const borderColor = settings.dividers.color;
-
-    // If thickness is 0, no dividers or borders should be rendered
-    if (borderThickness <= 0) return null;
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', layoutWidth);
-    svg.setAttribute('height', layoutHeight);
-    svg.setAttribute('viewBox', `0 0 ${layoutWidth} ${layoutHeight}`);
-
-    // Position SVG precisely over the paper
-    Object.assign(svg.style, {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: '9999'
-    });
-
-    // 1. Draw Paper Border
-    if (settings.dividers.showBorders) {
-        const borderRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        const halfWidth = borderThickness / 2;
-
-        // Inset the rect by half the stroke width to match CSS border behavior
-        borderRect.setAttribute('x', halfWidth);
-        borderRect.setAttribute('y', halfWidth);
-        borderRect.setAttribute('width', layoutWidth - borderThickness);
-        borderRect.setAttribute('height', layoutHeight - borderThickness);
-        borderRect.setAttribute('fill', 'none');
-        borderRect.setAttribute('stroke', borderColor);
-        borderRect.setAttribute('stroke-width', borderThickness);
-        svg.appendChild(borderRect);
-    }
-
-    // 2. Draw Dividers
-    const dividers = paperWrapper.querySelectorAll('.divider');
-    const paperRect = paperWrapper.getBoundingClientRect();
-
-    // Support varying export resolutions by mapping DOM coordinates to SVG viewBox
-    const scaleX = layoutWidth / paperRect.width;
-    const scaleY = layoutHeight / paperRect.height;
-
-    dividers.forEach(div => {
-        const r = div.getBoundingClientRect();
-
-        const x = (r.left - paperRect.left) * scaleX;
-        const y = (r.top - paperRect.top) * scaleY;
-        const w = r.width * scaleX;
-        const h = r.height * scaleY;
-
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-
-        // Bleed strategy: Expand the rect slightly (0.5px) to prevent sub-pixel white slivers
-        const bleed = 0.5;
-        rect.setAttribute('x', x - bleed);
-        rect.setAttribute('y', y - bleed);
-        rect.setAttribute('width', w + (bleed * 2));
-        rect.setAttribute('height', h + (bleed * 2));
-
-        rect.setAttribute('fill', borderColor);
-        // crispEdges disables anti-aliasing which is critical for perfect gaps-free rendering
-        rect.setAttribute('shape-rendering', 'crispEdges');
-
-        svg.appendChild(rect);
-
-        // Hide original DOM divider while preserving layout
-        div.style.opacity = '0';
-    });
-
-    // Hide original DOM border
-    paperWrapper.style.border = 'none';
-
-    return svg;
 }
 
 async function performPublishFlipbook(qualityMultiplier) {
@@ -336,32 +185,12 @@ async function performPublishFlipbook(qualityMultiplier) {
         loadingStatus.textContent = 'Publishing Flipbook...';
     }
 
-    // STRICT ALIGNMENT WITH performExport
-    const tempContainer = document.createElement('div');
-    // Basic resets
     const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
-
-    tempContainer.style.position = 'fixed';
-    tempContainer.style.top = '0';
-    tempContainer.style.left = '0';
-    tempContainer.style.zIndex = '-9999';
-    tempContainer.style.width = `${layoutWidth}px`;
-    tempContainer.style.height = `${layoutHeight}px`;
-    tempContainer.style.backgroundColor = '#ffffff';
-    // CRITICAL: Copy styles from performExport that affect layout/wrapping
-    tempContainer.style.boxSizing = 'border-box';
-    tempContainer.style.margin = '0';
-    tempContainer.style.padding = '0';
-    tempContainer.style.border = 'none';
-    tempContainer.style.boxShadow = 'none';
-
-    // CRITICAL: Add the class that might provide CSS resets
-    tempContainer.className = 'export-container';
-    // Fix: Ensure container queries (cqw/cqh) resolve correctly against this container
-    tempContainer.style.containerType = 'size';
-    document.body.appendChild(tempContainer);
+    const width = Math.round(layoutWidth * qualityMultiplier);
+    const height = Math.round(layoutHeight * qualityMultiplier);
 
     const apiPages = [];
+    const bookmarks = extractBookmarksForApi(state.pages); // Keep existing local extraction for bookmarks
 
     try {
         for (let i = 0; i < state.pages.length; i++) {
@@ -370,63 +199,42 @@ async function performPublishFlipbook(qualityMultiplier) {
             }
 
             const pageLayout = state.pages[i];
-            tempContainer.innerHTML = '';
-            const paperWrapper = document.createElement('div');
-            paperWrapper.className = 'a4-paper is-exporting';
-            paperWrapper.style.width = '100%';
-            paperWrapper.style.height = '100%';
-            paperWrapper.style.boxShadow = 'none';
-            paperWrapper.style.margin = '0';
-            // CRITICAL: Layout consistency
-            paperWrapper.style.zoom = '1';
-            // PROPORTIONAL EXPORT: Set the fixed base width/height so calculations are stable
-            paperWrapper.style.setProperty('--paper-current-width', `${layoutWidth}px`);
-            paperWrapper.style.setProperty('--paper-current-height', `${layoutHeight}px`);
-            tempContainer.appendChild(paperWrapper);
 
-            renderLayout(paperWrapper, pageLayout, {
-                useHighResImages: true,
-                hideControls: true
+            // Render as JPEG
+            const result = await window.electronAPI.renderExport({
+                pageLayout,
+                width,
+                height,
+                format: 'jpeg',
+                settings: getSettings(),
+                assets: assetManager.getAssets()
             });
 
-            await waitForBackgroundImages(paperWrapper);
-            await document.fonts.ready;
+            if (result.error) throw new Error(result.error);
 
-            // SVG Overlay Injection
-            const svgOverlay = generateSvgOverlay(paperWrapper, layoutWidth, layoutHeight);
-            if (svgOverlay) {
-                paperWrapper.appendChild(svgOverlay);
+            // Convert buffer to base64 for upload
+            // We can use FileReader or a simple function
+            const blob = new Blob([result.data], { type: 'image/jpeg' });
+            const base64Data = await blobToBase64(blob);
+
+            // result.links contains the links extracted from the offscreen window
+            // Since we render one page at a time here, result.links should be an array of links for this page.
+            // Wait, src/main.js returns { links: allLinks } where allLinks is array of array of links.
+            // Since we passed single pageLayout, result.links[0] should be the links for this page.
+            let links = [];
+            if (result.links && result.links.length > 0) {
+                links = result.links[0];
             }
 
-            // Remove UI elements logic is now handled by renderLayout options
-
-            // Ensure all links are extracted based on the rendered DOM
-            const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
-
-            const canvas = await html2canvas(tempContainer, {
-                scale: qualityMultiplier,
-                useCORS: true,
-                width: layoutWidth,
-                height: layoutHeight,
-                windowWidth: layoutWidth,
-                windowHeight: layoutHeight,
-                backgroundColor: '#ffffff'
-            });
-
-            const imageData = canvas.toDataURL('image/jpeg', 0.9);
-            const links = extractLinksForApi(paperWrapper);
-
             apiPages.push({
-                imageData,
-                width: layoutWidth,
-                height: layoutHeight,
+                imageData: base64Data, // Data URL
+                width,
+                height,
                 links
             });
         }
 
         if (progressText) progressText.textContent = 'Uploading to server...';
-
-        const bookmarks = extractBookmarksForApi(state.pages);
 
         // Add timeout for network request (30 seconds)
         const controller = new AbortController();
@@ -472,7 +280,6 @@ async function performPublishFlipbook(qualityMultiplier) {
             window._pendingSuccessUrl = result.url;
         }
     } finally {
-        document.body.removeChild(tempContainer);
         if (loadingOverlay) loadingOverlay.classList.remove('active');
 
         // If we have a pending success URL, show the modal now that the loading screen is gone
@@ -482,49 +289,6 @@ async function performPublishFlipbook(qualityMultiplier) {
             await showPublishSuccess(url);
         }
     }
-}
-
-
-function extractLinksForApi(container) {
-    const links = [];
-    const containerRect = container.getBoundingClientRect();
-    const anchorElements = container.querySelectorAll('a');
-
-    anchorElements.forEach(a => {
-        const href = a.getAttribute('href') || '';
-        const rects = a.getClientRects();
-
-        for (let i = 0; i < rects.length; i++) {
-            const r = rects[i];
-
-            // Convert to percentages relative to paper container
-            const x = ((r.left - containerRect.left) / containerRect.width) * 100;
-            const y = ((r.top - containerRect.top) / containerRect.height) * 100;
-            const w = (r.width / containerRect.width) * 100;
-            const h = (r.height / containerRect.height) * 100;
-
-            const linkData = {
-                title: a.textContent.trim(),
-                rect: { x, y, width: w, height: h }
-            };
-
-            if (href.startsWith('#page=')) {
-                linkData.type = 'internal';
-                linkData.targetPage = parseInt(href.replace('#page=', ''));
-            } else if (href.startsWith('http') || href.startsWith('mailto:')) {
-                linkData.type = 'external';
-                linkData.url = href;
-            } else {
-                // Default to external if it starts with anything else (like www.)
-                linkData.type = 'external';
-                linkData.url = href;
-            }
-
-            links.push(linkData);
-        }
-    });
-
-    return links;
 }
 
 function extractBookmarksForApi(pages) {
@@ -539,80 +303,6 @@ function extractBookmarksForApi(pages) {
         });
     });
     return bookmarks;
-}
-
-function waitForBackgroundImages(container) {
-    const promises = [];
-    const elements = container.querySelectorAll('*');
-    for (let el of elements) {
-        const bg = getComputedStyle(el).backgroundImage;
-        if (bg && bg !== 'none') {
-            const match = bg.match(/url\(['"]?(.*?)['"]?\)/);
-            if (match && match[1]) {
-                promises.push(new Promise((resolve) => {
-                    const img = new Image();
-                    img.src = match[1];
-                    if (img.complete) {
-                        resolve();
-                    } else {
-                        img.onload = resolve;
-                        img.onerror = resolve; // Resolve anyway to avoid hanging
-                    }
-                }));
-            }
-        }
-    }
-    return Promise.all(promises);
-}
-
-function downloadBlob(blob, filename) {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-}
-function addPdfBookmarks(pdf, pages) {
-    // Extract headings from all text nodes across pages
-    pages.forEach((page, pageIndex) => {
-        const headings = extractHeadingsFromNode(page);
-        headings.forEach(heading => {
-            try {
-                // jsPDF outline API: pdf.outline.add(parent, title, options)
-                // Page numbers are 1-indexed in jsPDF
-                pdf.outline.add(null, heading.text, { pageNumber: pageIndex + 1 });
-            } catch (e) {
-                // Outline API may not be available in all jsPDF versions
-                console.warn('PDF bookmark not added:', e.message);
-            }
-        });
-    });
-}
-
-function addLinksToPdf(pdf, container, scale) {
-    const links = container.querySelectorAll('a');
-    const containerRect = container.getBoundingClientRect();
-
-    links.forEach(link => {
-        const href = link.getAttribute('href');
-        if (!href) return;
-
-        const rects = link.getClientRects(); // Using getClientRects for multi-line links
-        for (let i = 0; i < rects.length; i++) {
-            const rect = rects[i];
-
-            // Calculate coordinates relative to container
-            const x = (rect.left - containerRect.left) * scale;
-            const y = (rect.top - containerRect.top) * scale;
-            const w = rect.width * scale;
-            const h = rect.height * scale;
-
-            // Add link to PDF
-            pdf.link(x, y, w, h, { url: href });
-        }
-    });
 }
 
 function extractHeadingsFromNode(node) {
@@ -639,4 +329,23 @@ function extractHeadingsFromNode(node) {
     }
 
     return headings;
+}
+
+function downloadBlob(blob, filename) {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 }
