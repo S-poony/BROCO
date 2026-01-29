@@ -3,6 +3,7 @@ import { state, getCurrentPage } from '../core/state.js';
 import { findNodeById, renderAndRestoreFocus } from '../layout/layout.js';
 import { A4_PAPER_ID } from '../core/constants.js';
 import { showConfirm, showAlert } from '../core/utils.js';
+import { toast } from '../core/errorHandler.js';
 import { assetManager } from './AssetManager.js';
 import { dragDropService } from '../ui/DragDropService.js';
 import { AssetGridView } from './AssetGridView.js';
@@ -480,7 +481,7 @@ export async function replaceAsset(assetId) {
             document.dispatchEvent(new CustomEvent('layoutUpdated'));
         } catch (err) {
             console.error('Replacement failed:', err);
-            showAlert(`Replacement failed: ${err.message}`, 'Replace Error');
+            toast.error(`Replacement failed: ${err.message}`);
         }
     };
 
@@ -512,7 +513,7 @@ export async function replaceAsset(assetId) {
                 document.dispatchEvent(new CustomEvent('layoutUpdated'));
             } catch (err) {
                 console.error('Replacement failed:', err);
-                showAlert(`Replacement failed: ${err.message}`, 'Replace Error');
+                toast.error(`Replacement failed: ${err.message}`);
             }
         };
 
@@ -553,7 +554,7 @@ export async function importImageToNode(nodeId) {
             }
         } catch (err) {
             console.error('Import failed:', err);
-            showAlert(`Import failed: ${err.message}`, 'Import Error');
+            toast.error(`Import failed: ${err.message}`);
         } finally {
             document.body.removeChild(fileInput);
         }

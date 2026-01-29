@@ -5,6 +5,7 @@ import { renderLayout } from './renderer.js';
 import { dragDropService } from '../ui/DragDropService.js';
 import { renderAndRestoreFocus } from './layout.js';
 import { showConfirm, showAlert } from '../core/utils.js';
+import { toast } from '../core/errorHandler.js';
 
 export function setupPageHandlers() {
     const addPageBtn = document.getElementById('add-page-btn');
@@ -76,7 +77,7 @@ export function renderPageList() {
                     renderPageList();
                 }
             } else {
-                showAlert('Cannot delete the last page.', 'Action Restricted');
+                toast.warning('Cannot delete the last page.');
             }
         };
 

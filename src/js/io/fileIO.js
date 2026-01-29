@@ -4,6 +4,7 @@ import { renderAndRestoreFocus } from '../layout/layout.js';
 import { renderPageList } from '../layout/pages.js';
 import { A4_PAPER_ID } from '../core/constants.js';
 import { showAlert } from '../core/utils.js';
+import { toast } from '../core/errorHandler.js';
 import { saveState } from './history.js';
 import { exportSettings, loadSettings } from '../ui/settings.js';
 
@@ -99,7 +100,7 @@ export async function openLayout() {
 
             } catch (err) {
                 console.error('Failed to open layout:', err);
-                showAlert(`Failed to open layout: ${err.message}`, 'Open Error');
+                toast.error(`Failed to open layout: ${err.message}`);
             }
         };
         reader.readAsText(file);
