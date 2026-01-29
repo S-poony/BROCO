@@ -41,10 +41,12 @@
       "electron/**/*",
       "package.json"
     ],
-    "target": "nsis",
-    "icon": "src/assets/icons/AppIcon.png",
-    "verifyUpdateCodeSignature": false,
-    "artifactName": "${productName}-Setup-${version}.${ext}"
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/icons/AppIcon.png",
+      "verifyUpdateCodeSignature": false,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    }
   },
   "nsis": {
     "oneClick": false,
