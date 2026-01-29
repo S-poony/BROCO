@@ -780,6 +780,16 @@ async function initializeExportMode() {
     document.body.style.overflow = 'visible';
 
     // Create the paper container
+    const paper = document.createElement('div');
+    paper.id = 'export-root';
+    // Ensure it fills the window for capture or flows for PDF
+    paper.style.margin = '0';
+    paper.style.padding = '0';
+    paper.style.width = '100%';
+    paper.style.minHeight = '100vh';
+    paper.style.display = 'flex';
+    paper.style.flexDirection = 'column';
+
     document.body.appendChild(paper);
 
     // Initial ready signal to main process

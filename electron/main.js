@@ -214,10 +214,8 @@ app.whenReady().then(() => {
                 ? `http://localhost:5173?mode=export&rid=${requestId}`
                 : pathToFileURL(join(__dirname, '../dist/index.html')).toString() + `?mode=export&rid=${requestId}`;
 
-            await win.loadURL(exportUrl);
-
-            // Handshake: Wait for renderer to be ready
-            await new Promise((resolve, reject) => {
+            // Handshake: Prepare the listener BEFORE loading the URL to avoid race conditions
+            const handshakePromise = new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
                     ipcMain.removeListener('ready-to-render', onReady);
                     reject(new Error('Export window handshake timed out (ready-to-render)'));
@@ -232,6 +230,11 @@ app.whenReady().then(() => {
                 }
                 ipcMain.on('ready-to-render', onReady);
             });
+
+            await win.loadURL(exportUrl);
+
+            // Wait for handshake
+            await handshakePromise;
 
             // Send layout data
             win.webContents.send('render-content', {
