@@ -50,7 +50,7 @@
     border: var(--layout-border-actual) solid var(--divider-color, #d1d5db);
     box-sizing: border-box;
 
-    overflow: hidden;
+    overflow: visible;
     position: relative;
     display: flex;
     flex-shrink: 0;
@@ -142,9 +142,7 @@
 }
 
 .edge-handle::after {
-    content: '';
-    position: absolute;
-    z-index: 10;
+    content: none;
 }
 
 .edge-handle:hover {
@@ -153,63 +151,35 @@
 }
 
 .edge-top {
-    top: 0;
+    top: calc(var(--divider-hit-target-min) / -2);
     left: 0;
     right: 0;
-    height: var(--divider-thickness);
+    height: var(--divider-hit-target-min);
     cursor: ns-resize;
-}
-
-.edge-top::after {
-    top: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    bottom: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    left: 0;
-    right: 0;
 }
 
 .edge-bottom {
-    bottom: 0;
+    bottom: calc(var(--divider-hit-target-min) / -2);
     left: 0;
     right: 0;
-    height: var(--divider-thickness);
+    height: var(--divider-hit-target-min);
     cursor: ns-resize;
-}
-
-.edge-bottom::after {
-    top: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    bottom: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    left: 0;
-    right: 0;
 }
 
 .edge-left {
     top: 0;
     bottom: 0;
-    left: 0;
-    width: var(--divider-thickness);
+    left: calc(var(--divider-hit-target-min) / -2);
+    width: var(--divider-hit-target-min);
     cursor: ew-resize;
-}
-
-.edge-left::after {
-    left: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    right: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    top: 0;
-    bottom: 0;
 }
 
 .edge-right {
     top: 0;
     bottom: 0;
-    right: 0;
-    width: var(--divider-thickness);
+    right: calc(var(--divider-hit-target-min) / -2);
+    width: var(--divider-hit-target-min);
     cursor: ew-resize;
-}
-
-.edge-right::after {
-    left: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    right: calc(min(0px, (var(--divider-thickness) - var(--divider-hit-target-min)) / 2));
-    top: 0;
-    bottom: 0;
 }
 
 
@@ -221,6 +191,7 @@
     min-width: 0;
     min-height: 0;
     position: relative;
+    overflow: hidden;
     z-index: 1;
     /* Above background image (0) */
 }
