@@ -174,8 +174,10 @@ app.whenReady().then(() => {
             show: false,
             width: width,
             height: height,
+            useContentSize: true, // Ensure viewport matches width/height exactly
+            frame: false, // Remove window frame to avoid decoration offset
             webPreferences: {
-                offscreen: false, // We use a visible but hidden window for better compatibility than true offscreen
+                offscreen: true, // Enable true Off-Screen Rendering (OSR) to avoid screen clamping
                 preload: join(__dirname, 'preload.cjs'),
                 contextIsolation: true,
                 nodeIntegration: false
@@ -197,6 +199,19 @@ app.whenReady().then(() => {
             // Wait for window to be ready to render
             // The renderer needs time to initialize its listener
             await new Promise(resolve => setTimeout(resolve, 500));
+
+            const bounds = exportWin.getBounds();
+            console.log(`[Main] Export Request: ${width}x${height}`);
+            console.log(`[Main] Actual Window Bounds: ${bounds.width}x${bounds.height}`);
+
+            // Force size if not matching (attempt)
+            if (bounds.width !== width || bounds.height !== height) {
+                console.log('[Main] Window size mismatch, attempting resize...');
+                exportWin.setSize(width, height);
+                exportWin.setContentSize(width, height);
+                const newBounds = exportWin.getBounds();
+                console.log(`[Main] Post-resize Bounds: ${newBounds.width}x${newBounds.height}`);
+            }
 
             // Send layout data with full context (settings + assets)
             exportWin.webContents.send('render-content', {
@@ -228,6 +243,8 @@ app.whenReady().then(() => {
                 });
             } else {
                 // Image capture
+                // Small delay to ensure GPU paint is complete
+                await new Promise(resolve => setTimeout(resolve, 100));
                 const image = await exportWin.webContents.capturePage();
 
                 if (format === 'jpeg' || format === 'jpg') {
