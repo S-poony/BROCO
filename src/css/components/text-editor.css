@@ -51,7 +51,6 @@
 .text-editor-container .markdown-content {
     width: 100%;
     height: 100%;
-    cursor: text;
 }
 
 .text-editor-container .text-editor {
@@ -121,7 +120,6 @@
     font-size: var(--text-font-size-proportional, 0.875rem);
     color: var(--text-color, inherit);
     line-height: 1.6;
-    cursor: text;
     word-break: break-word;
     overflow-wrap: break-word;
     /* Removed white-space: pre-wrap to allow proper margin collapsing and prevent extra newlines between blocks */
@@ -133,6 +131,7 @@
 
 .is-editing .markdown-content {
     overflow-y: auto;
+    cursor: text;
 }
 
 /* Hide scrollbar Chrome/Safari only in layout mode */
