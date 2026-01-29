@@ -152,7 +152,10 @@ export function getClosestRect(current, direction) {
     const allRects = Array.from(document.querySelectorAll('.splittable-rect[data-split-state="unsplit"]'));
     if (allRects.length <= 1) return null;
 
+    // Gather all bounds in one pass to minimize layout thrashing
     const currentRect = current.getBoundingClientRect();
+    const rectBounds = allRects.map(el => ({ el, bounds: el.getBoundingClientRect() }));
+
     const currentCenter = {
         x: currentRect.left + currentRect.width / 2,
         y: currentRect.top + currentRect.height / 2
@@ -161,10 +164,9 @@ export function getClosestRect(current, direction) {
     let closest = null;
     let minDist = Infinity;
 
-    allRects.forEach(rect => {
-        if (rect === current) return;
+    rectBounds.forEach(({ el, bounds: r }) => {
+        if (el === current) return;
 
-        const r = rect.getBoundingClientRect();
         const center = {
             x: r.left + r.width / 2,
             y: r.top + r.height / 2
@@ -177,7 +179,6 @@ export function getClosestRect(current, direction) {
             case 'ArrowUp':
                 if (center.y < currentCenter.y) {
                     isValid = true;
-                    // Weighted distance: minimize x deviation
                     dist = Math.abs(currentCenter.y - center.y) + Math.abs(currentCenter.x - center.x) * 2;
                 }
                 break;
@@ -203,7 +204,7 @@ export function getClosestRect(current, direction) {
 
         if (isValid && dist < minDist) {
             minDist = dist;
-            closest = rect;
+            closest = el;
         }
     });
 

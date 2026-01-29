@@ -165,56 +165,77 @@ app.whenReady().then(() => {
         return results;
     });
 
-    // Handle Off-screen Export
-    ipcMain.handle('render-export', async (event, options) => {
-        const { pageLayout, pageLayouts, width, height, format, settings, assets } = options;
+    // Handle Asset Picker ... (skipped lines 122-166)
 
-        // Create an off-screen window
-        let exportWin = new BrowserWindow({
+    // Singleton export window to avoid overhead and leaks
+    let exportWin = null;
+
+    async function getExportWindow() {
+        if (exportWin && !exportWin.isDestroyed()) {
+            return exportWin;
+        }
+
+        exportWin = new BrowserWindow({
             show: false,
-            width: width,
-            height: height,
-            useContentSize: true, // Ensure viewport matches width/height exactly
-            frame: false, // Remove window frame to avoid decoration offset
+            width: 1280,
+            height: 800,
+            useContentSize: true,
+            frame: false,
             webPreferences: {
-                offscreen: true, // Enable true Off-Screen Rendering (OSR) to avoid screen clamping
+                offscreen: true,
                 preload: join(__dirname, 'preload.cjs'),
                 contextIsolation: true,
                 nodeIntegration: false
             }
         });
 
+        // Optional: Increase memory limit for heavy exports if needed
+        // exportWin.webContents.setAudioMuted(true); 
+
+        return exportWin;
+    }
+
+    // Handle Off-screen Export
+    ipcMain.handle('render-export', async (event, options) => {
+        const { pageLayout, pageLayouts, width, height, format, settings, assets } = options;
+        const requestId = Math.random().toString(36).substring(7);
+
+        const win = await getExportWindow();
+
         try {
-            // Load the app in export mode
-            if (!app.isPackaged) {
-                await exportWin.loadURL('http://localhost:5173?mode=export');
-            } else {
-                await exportWin.loadFile(join(__dirname, '../dist/index.html'), { search: 'mode=export' });
-            }
+            // Resize to requested dimensions
+            win.setSize(width, height);
+            win.setContentSize(width, height);
+            win.webContents.setZoomFactor(1.0);
 
-            // High-DPI support: Set zoom factor if we are exporting high-res images
-            // But we actually pass specific width/height, so 1.0 is safer.
-            exportWin.webContents.setZoomFactor(1.0);
+            // Load mode if not already loaded or if we need to reset
+            // Using a query param to trigger clean state in renderer
+            const exportUrl = !app.isPackaged
+                ? `http://localhost:5173?mode=export&rid=${requestId}`
+                : pathToFileURL(join(__dirname, '../dist/index.html')).toString() + `?mode=export&rid=${requestId}`;
 
-            // Wait for window to be ready to render
-            // The renderer needs time to initialize its listener
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await win.loadURL(exportUrl);
 
-            const bounds = exportWin.getBounds();
-            console.log(`[Main] Export Request: ${width}x${height}`);
-            console.log(`[Main] Actual Window Bounds: ${bounds.width}x${bounds.height}`);
+            // Handshake: Wait for renderer to be ready
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    ipcMain.removeListener('ready-to-render', onReady);
+                    reject(new Error('Export window handshake timed out (ready-to-render)'));
+                }, 10000);
 
-            // Force size if not matching (attempt)
-            if (bounds.width !== width || bounds.height !== height) {
-                console.log('[Main] Window size mismatch, attempting resize...');
-                exportWin.setSize(width, height);
-                exportWin.setContentSize(width, height);
-                const newBounds = exportWin.getBounds();
-                console.log(`[Main] Post-resize Bounds: ${newBounds.width}x${newBounds.height}`);
-            }
+                function onReady(event, data) {
+                    if (data.requestId === requestId) {
+                        clearTimeout(timeout);
+                        ipcMain.removeListener('ready-to-render', onReady);
+                        resolve();
+                    }
+                }
+                ipcMain.on('ready-to-render', onReady);
+            });
 
-            // Send layout data with full context (settings + assets)
-            exportWin.webContents.send('render-content', {
+            // Send layout data
+            win.webContents.send('render-content', {
+                requestId,
                 pageLayout,
                 pageLayouts,
                 width,
@@ -224,45 +245,52 @@ app.whenReady().then(() => {
             });
 
             // Wait for completion signal
-            const metadata = await new Promise((resolve) => {
-                ipcMain.once('render-complete', (event, data) => resolve(data || {}));
+            const metadata = await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    ipcMain.removeListener('render-complete', onComplete);
+                    reject(new Error('Export render timed out (render-complete)'));
+                }, 30000);
+
+                function onComplete(event, data) {
+                    // Check if it's our request
+                    if (data && data.requestId === requestId) {
+                        clearTimeout(timeout);
+                        ipcMain.removeListener('render-complete', onComplete);
+                        resolve(data);
+                    }
+                }
+                ipcMain.on('render-complete', onComplete);
             });
 
-            if (metadata.error) {
-                throw new Error(metadata.error);
-            }
+            if (metadata.error) throw new Error(metadata.error);
 
             // Capture logic
             let buffer;
             if (format === 'pdf') {
-                buffer = await exportWin.webContents.printToPDF({
+                buffer = await win.webContents.printToPDF({
                     printBackground: true,
                     landscape: width > height,
-                    pageSize: { width: width / 96, height: height / 96, unit: 'in' }, // Convert px to inches (96DPI)
+                    pageSize: { width: width / 96, height: height / 96, unit: 'in' },
                     margins: { top: 0, bottom: 0, left: 0, right: 0 }
                 });
             } else {
-                // Image capture
-                // Small delay to ensure GPU paint is complete
+                // Ensure paint is done (OSR can be tricky)
                 await new Promise(resolve => setTimeout(resolve, 100));
-                const image = await exportWin.webContents.capturePage();
-
-                if (format === 'jpeg' || format === 'jpg') {
-                    buffer = image.toJPEG(90);
-                } else {
-                    buffer = image.toPNG();
-                }
+                const image = await win.webContents.capturePage();
+                buffer = (format === 'jpeg' || format === 'jpg') ? image.toJPEG(90) : image.toPNG();
             }
 
             return {
                 data: buffer,
-                links: metadata.links // Return extracted links
+                links: metadata.links
             };
         } catch (err) {
             console.error('Export error (main):', err);
+            // If it's a critical error (like crash), we might want to destroy the window
+            if (win && !win.isDestroyed()) {
+                // win.destroy(); // Optional: destroy on error to recover from bad state
+            }
             throw err;
-        } finally {
-            if (exportWin) exportWin.destroy();
         }
     });
 });

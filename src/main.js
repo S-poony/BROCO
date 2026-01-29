@@ -350,19 +350,21 @@ function initialize() {
     // Timeout to ensure CSS variables and layout are settled
     // setTimeout(updatePaperScale, 100);
 
-    // Handle window resize
-    // window.addEventListener('resize', () => {
-    //     requestAnimationFrame(updatePaperScale);
-    // });
+    // Handle window resize with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            requestAnimationFrame(updatePaperScale);
+        }, 150);
+    });
 
     // Listen for settings and layout updates to re-scale
     document.addEventListener('settingsUpdated', () => {
-        // setTimeout(updatePaperScale, 50);
+        requestAnimationFrame(updatePaperScale);
     });
     document.addEventListener('layoutUpdated', () => {
-        // Layout update might change content height but usually not width? 
-        // But if orientation changes it triggers this.
-        // setTimeout(updatePaperScale, 50);
+        requestAnimationFrame(updatePaperScale);
     });
 }
 
@@ -778,23 +780,22 @@ async function initializeExportMode() {
     document.body.style.overflow = 'visible';
 
     // Create the paper container
-    const paper = document.createElement('div');
-    paper.id = 'export-root';
-    // Ensure it fills the window for capture or flows for PDF
-    paper.style.margin = '0';
-    paper.style.padding = '0';
-    paper.style.width = '100%';
-    paper.style.minHeight = '100vh';
-    paper.style.display = 'flex';
-    paper.style.flexDirection = 'column';
-
     document.body.appendChild(paper);
+
+    // Initial ready signal to main process
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('rid');
+    if (window.electronAPI && window.electronAPI.sendReadyToRender) {
+        window.electronAPI.sendReadyToRender(requestId);
+    }
 
     // Listen for content to render
     if (window.electronAPI && window.electronAPI.onRenderContent) {
         window.electronAPI.onRenderContent(async (data) => {
+            const { requestId, pageLayout, pageLayouts, width, height, settings, assets } = data;
             try {
-                const { pageLayout, pageLayouts, width, height, settings, assets } = data;
+                // Clear existing content for window reuse case
+                paper.innerHTML = '';
 
                 // 1. Apply Settings (Restores CSS variables for borders, colors, fonts)
                 if (settings) {
@@ -862,11 +863,11 @@ async function initializeExportMode() {
                     allLinks.push(links);
                 });
 
-                // Signal completion
-                window.electronAPI.sendRenderComplete({ links: allLinks });
+                // Signal completion with requestId
+                window.electronAPI.sendRenderComplete({ requestId, links: allLinks });
             } catch (err) {
                 console.error('Export render failed:', err);
-                window.electronAPI.sendRenderComplete({ error: err.message });
+                window.electronAPI.sendRenderComplete({ requestId, error: err.message });
             }
         });
     }

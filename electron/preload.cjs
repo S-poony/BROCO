@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Export APIs
     renderExport: (options) => ipcRenderer.invoke('render-export', options),
+    sendReadyToRender: (requestId) => ipcRenderer.send('ready-to-render', { requestId }),
     onRenderContent: (callback) => ipcRenderer.on('render-content', (event, data) => callback(data)),
     sendRenderComplete: (metadata) => ipcRenderer.send('render-complete', metadata)
 });
