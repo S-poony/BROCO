@@ -126,7 +126,7 @@
     overflow-wrap: break-word;
     /* Removed white-space: pre-wrap to allow proper margin collapsing and prevent extra newlines between blocks */
 
-    /* Fix html2canvas overlapping lines */
+    /* Fix overlapping lines */
     font-variant-ligatures: none;
     -webkit-font-smoothing: antialiased;
 }

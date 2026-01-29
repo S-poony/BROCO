@@ -102,7 +102,7 @@ function renderLeafNode(container, node, options) {
             container.innerHTML = '';
             container.style.position = 'relative';
 
-            // Check if we should use high-res logic (background-image mostly for html2canvas stability)
+            // Check if we should use high-res logic
             if (options.useHighResImages) {
                 let imageUrl = asset.fullResData;
 
