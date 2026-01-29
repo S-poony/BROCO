@@ -346,25 +346,10 @@ function initialize() {
         firstRect.focus();
     }
 
-    // Initial scale calculation
-    // Timeout to ensure CSS variables and layout are settled
-    // setTimeout(updatePaperScale, 100);
-
-    // Handle window resize with debouncing
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            requestAnimationFrame(updatePaperScale);
-        }, 150);
-    });
-
     // Listen for settings and layout updates to re-scale
     document.addEventListener('settingsUpdated', () => {
-        requestAnimationFrame(updatePaperScale);
     });
     document.addEventListener('layoutUpdated', () => {
-        requestAnimationFrame(updatePaperScale);
     });
 }
 
