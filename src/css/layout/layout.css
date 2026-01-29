@@ -8,11 +8,21 @@
        We use the same math as the sizing logic to ensures border and dividers 
        use the identical numerical reference. */
     --p-width: min(calc(100cqw - 40px), calc((100cqh - 40px) * var(--ratio, 0.707)));
-    --paper-scale-ref: var(--p-width);
+    --p-height: calc(var(--p-width) / var(--ratio, 0.707));
+    --paper-scale-ref: max(var(--p-width), var(--p-height));
 
-    /* Fallback for older browsers (approx 1000px base) */
+    /* Fallback for older browsers or when explicitly exporting */
     @supports not (container-type: size) {
-        --paper-scale-ref: calc((var(--paper-current-width, 1000px) + var(--paper-current-height, 1000px)) * 0.5);
+        --p-width-fb: var(--paper-current-width, 1000px);
+        --p-height-fb: var(--paper-current-height, 1414px);
+        --paper-scale-ref: max(var(--p-width-fb), var(--p-height-fb));
+    }
+
+    /* Force fallback logic during export to avoid container query instability in hidden DOM */
+    &.is-exporting {
+        --p-width: var(--paper-current-width, 1000px);
+        --p-height: var(--paper-current-height, 1414px);
+        --paper-scale-ref: max(var(--p-width), var(--p-height));
     }
 
     --divider-thickness: round(calc(var(--paper-scale-ref) * var(--divider-ratio)), 1px);

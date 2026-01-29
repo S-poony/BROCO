@@ -56,11 +56,13 @@ export function updateSetting(category, key, value) {
         settings[category][key] = value;
         applySettings();
 
-        // If we toggled page numbers, we need a full render because it's a DOM change
-        // This is now handled by the event listener in main.js to avoid circular dependency
+        // Optimization: Some settings only update CSS variables and don't need a full DOM re-render.
+        // Page numbers, font family, and background image (since it's added via DOM) need full renders.
+        const cssOnly = !(['showPageNumbers', 'fontFamily', 'backgroundImage'].includes(key));
 
-
-        document.dispatchEvent(new CustomEvent('settingsUpdated'));
+        document.dispatchEvent(new CustomEvent('settingsUpdated', {
+            detail: { category, key, value, cssOnly }
+        }));
     }
 }
 

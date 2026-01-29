@@ -266,11 +266,14 @@ function initialize() {
     });
 
     // Handle settings updates that require re-render (breaking circular dependency)
-    document.addEventListener('settingsUpdated', () => {
+    document.addEventListener('settingsUpdated', (e) => {
+        // Optimization: Some settings only update CSS variables and don't need a full DOM re-render.
+        // We only re-render if it's NOT a 'css-only' update.
+        if (e.detail && e.detail.cssOnly) return;
+
         const paper = document.getElementById('a4-paper');
         if (paper) {
             renderAndRestoreFocus(getCurrentPage());
-            // Hover state will naturally refresh on the next mouse movement
         }
     });
 
@@ -565,41 +568,6 @@ function setupDelegatedHandlers() {
         handleSplitClick(e);
     });
 
-    // Keydown for starting text entry OR editor logic
-    paper.addEventListener('keydown', (e) => {
-        const editor = e.target.closest('.text-editor');
-        if (editor) {
-            handleEditorKeydown(e, editor);
-            return;
-        }
-
-        const rect = e.target.closest('.splittable-rect[data-split-state="unsplit"]');
-        if (rect && !rect.classList.contains('is-editing')) {
-            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                createTextInRect(rect.id, e.key);
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        }
-    });
-
-    // Input delegation for editor
-    paper.addEventListener('input', (e) => {
-        const editor = e.target.closest('.text-editor');
-        if (editor) {
-            const rect = editor.closest('.splittable-rect');
-            const node = findNodeById(getCurrentPage(), rect?.id);
-            if (node) {
-                node.text = editor.value;
-                const preview = editor.previousElementSibling; // renderer structure: [preview, editor, controls]
-                if (preview && preview.classList.contains('markdown-content')) {
-                    preview.innerHTML = DOMPurify.sanitize(marked.parse(node.text || '')) || '<span class="text-placeholder">Click to edit...</span>';
-                }
-                document.dispatchEvent(new CustomEvent('layoutUpdated'));
-            }
-        }
-    });
-
     // Focus/Blur delegation for editor
     paper.addEventListener('focusin', (e) => {
         const editor = e.target.closest('.text-editor');
@@ -626,6 +594,41 @@ function setupDelegatedHandlers() {
             }
         }
     });
+
+    // Input delegation for live preview
+    paper.addEventListener('input', (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            const rect = editor.closest('.splittable-rect');
+            const node = findNodeById(getCurrentPage(), rect?.id);
+            if (node) {
+                node.text = editor.value;
+                const preview = editor.previousElementSibling; // renderer structure: [preview, editor, controls]
+                if (preview && preview.classList.contains('markdown-content')) {
+                    preview.innerHTML = DOMPurify.sanitize(marked.parse(node.text || '')) || '<span class="text-placeholder">Click to edit...</span>';
+                }
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            }
+        }
+    });
+
+    // Consolidated editor keydown logic (tab, enter, auto-pairing, etc.)
+    paper.addEventListener('keydown', (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            handleEditorKeydown(e, editor);
+            return;
+        }
+
+        const rect = e.target.closest('.splittable-rect[data-split-state="unsplit"]');
+        if (rect && !rect.classList.contains('is-editing')) {
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                createTextInRect(rect.id, e.key);
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+    });
 }
 
 function handleEditorKeydown(e, editor) {
@@ -636,6 +639,7 @@ function handleEditorKeydown(e, editor) {
     const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '*': '*', '_': '_', '`': '`' };
     const selection = value.substring(start, end);
 
+    // Auto-pairing
     if (pairs[e.key]) {
         e.preventDefault();
         if (e.key === '[' && value[start - 1] === '[') {
@@ -651,6 +655,7 @@ function handleEditorKeydown(e, editor) {
         return;
     }
 
+    // Tab / Indentation
     if (e.key === 'Tab') {
         e.preventDefault();
         const lineStart = value.lastIndexOf('\n', start - 1) + 1;
@@ -659,44 +664,70 @@ function handleEditorKeydown(e, editor) {
         const listMatch = line.match(/^(\s*)([-*+]|\d+\.)(\s+.*)?$/);
 
         if (listMatch) {
-            // Indent list
             if (!e.shiftKey) {
+                // Indent
                 const newLine = listMatch[1] + '  ' + listMatch[2] + (listMatch[3] || '');
                 editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
                 editor.selectionStart = editor.selectionEnd = start + 2;
             } else if (listMatch[1].length >= 2) {
+                // Outdent
                 const newLine = listMatch[1].substring(2) + listMatch[2] + (listMatch[3] || '');
                 editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
                 editor.selectionStart = editor.selectionEnd = Math.max(lineStart, start - 2);
             }
         } else {
-            editor.setRangeText('  ', start, end, 'end');
+            // General tab
+            const before = value.substring(0, start);
+            const after = value.substring(end);
+            editor.value = before + '  ' + after;
+            editor.selectionStart = editor.selectionEnd = start + 2;
         }
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         return;
     }
 
+    // Auto-list on Enter
     if (e.key === 'Enter') {
         const line = value.substring(0, start).split('\n').pop();
         const listMatch = line.match(/^(\s*)([-*+]|(\d+)\.)(\s+)/);
         if (listMatch) {
             e.preventDefault();
-            if (line.trim() === listMatch[2]) {
+            const indent = listMatch[1];
+            const marker = listMatch[2];
+            const number = listMatch[3];
+            const space = listMatch[4];
+
+            if (line.trim() === marker) {
+                // End list if empty marker
                 const lineStart = start - line.length;
                 editor.value = value.substring(0, lineStart) + '\n' + value.substring(end);
                 editor.selectionStart = editor.selectionEnd = lineStart + 1;
             } else {
-                let marker = listMatch[2];
-                if (listMatch[3]) marker = (parseInt(listMatch[3], 10) + 1) + '.';
-                const prefix = '\n' + listMatch[1] + marker + listMatch[4];
+                // Continue list
+                let nextMarker = marker;
+                if (number) nextMarker = (parseInt(number, 10) + 1) + '.';
+                const prefix = '\n' + indent + nextMarker + space;
                 editor.value = value.substring(0, start) + prefix + value.substring(end);
                 editor.selectionStart = editor.selectionEnd = start + prefix.length;
             }
             editor.dispatchEvent(new Event('input', { bubbles: true }));
             return;
+        } else {
+            // Preserve indentation for non-list lines
+            const contentIndentMatch = line.match(/^(\s+)/);
+            if (contentIndentMatch && contentIndentMatch[1].length > 0) {
+                e.preventDefault();
+                const indent = contentIndentMatch[1];
+                const prefix = '\n' + indent;
+                editor.value = value.substring(0, start) + prefix + value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + prefix.length;
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
+            }
         }
     }
 
+    // Escape or Ctrl+K
     if (e.key === 'Escape') {
         e.preventDefault();
         editor.blur();
@@ -705,16 +736,17 @@ function handleEditorKeydown(e, editor) {
 
     if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        const selection = value.substring(start, end);
-        const linkText = selection ? `[${selection}](url)` : `[link text](url)`;
-        editor.setRangeText(linkText, start, end, 'select');
-        if (selection) {
-            editor.selectionStart = start + selection.length + 3;
+        const selected = value.substring(start, end);
+        const link = selected ? `[${selected}](url)` : `[link text](url)`;
+        editor.setRangeText(link, start, end, 'select');
+        if (selected) {
+            editor.selectionStart = start + selected.length + 3;
             editor.selectionEnd = editor.selectionStart + 3;
         }
         editor.dispatchEvent(new Event('input', { bubbles: true }));
     }
 }
+
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize);

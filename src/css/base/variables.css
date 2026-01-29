@@ -36,4 +36,11 @@
     --z-dropdown: 50;
     --z-modal: 100;
     --z-tooltip: 150;
+
+    /* Proportional Scaling Ratios */
+    --default-divider-ratio: 0.005;
+    --default-text-ratio: 0.02;
+    --btn-size-ratio: 0.045;
+    --btn-offset-ratio: 0.012;
+    --icon-size-ratio: 0.03;
 }

@@ -142,14 +142,15 @@ async function performExport(format, qualityMultiplier) {
 
             tempContainer.innerHTML = '';
             const paperWrapper = document.createElement('div');
-            paperWrapper.className = 'a4-paper';
+            paperWrapper.className = 'a4-paper is-exporting';
             paperWrapper.style.width = '100%';
             paperWrapper.style.height = '100%';
             paperWrapper.style.boxShadow = 'none';
             paperWrapper.style.margin = '0';
             paperWrapper.style.zoom = '1';
-            // PROPORTIONAL EXPORT: Set the fixed base width so calculations are stable
+            // PROPORTIONAL EXPORT: Set the fixed base width/height so calculations are stable
             paperWrapper.style.setProperty('--paper-current-width', `${layoutWidth}px`);
+            paperWrapper.style.setProperty('--paper-current-height', `${layoutHeight}px`);
             tempContainer.appendChild(paperWrapper);
 
             renderLayout(paperWrapper, pageLayout, {
@@ -244,7 +245,9 @@ async function performExport(format, qualityMultiplier) {
 
 function generateSvgOverlay(paperWrapper, layoutWidth, layoutHeight) {
     const settings = getSettings();
-    const borderThickness = settings.dividers.width;
+    const dividerRatio = settings.dividers.width / 1000;
+    const scaleRef = Math.max(layoutWidth, layoutHeight);
+    const borderThickness = dividerRatio * scaleRef;
     const borderColor = settings.dividers.color;
 
     // If thickness is 0, no dividers or borders should be rendered
@@ -369,15 +372,16 @@ async function performPublishFlipbook(qualityMultiplier) {
             const pageLayout = state.pages[i];
             tempContainer.innerHTML = '';
             const paperWrapper = document.createElement('div');
-            paperWrapper.className = 'a4-paper';
+            paperWrapper.className = 'a4-paper is-exporting';
             paperWrapper.style.width = '100%';
             paperWrapper.style.height = '100%';
             paperWrapper.style.boxShadow = 'none';
             paperWrapper.style.margin = '0';
             // CRITICAL: Layout consistency
             paperWrapper.style.zoom = '1';
-            // PROPORTIONAL EXPORT: Set the fixed base width so calculations are stable
+            // PROPORTIONAL EXPORT: Set the fixed base width/height so calculations are stable
             paperWrapper.style.setProperty('--paper-current-width', `${layoutWidth}px`);
+            paperWrapper.style.setProperty('--paper-current-height', `${layoutHeight}px`);
             tempContainer.appendChild(paperWrapper);
 
             renderLayout(paperWrapper, pageLayout, {

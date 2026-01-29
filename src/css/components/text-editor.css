@@ -2,10 +2,10 @@
 
 .text-prompt {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    max-width: calc(100% - 16px);
+    top: calc(var(--paper-scale-ref) * 0.01);
+    left: calc(var(--paper-scale-ref) * 0.01);
+    right: calc(var(--paper-scale-ref) * 0.01);
+    max-width: calc(100% - var(--paper-scale-ref) * 0.02);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -193,7 +193,7 @@
 .markdown-content ul,
 .markdown-content ol {
     margin: calc(var(--text-font-size-proportional) * 0.25) 0 calc(var(--text-font-size-proportional) * 0.5) 0;
-    padding-left: calc(var(--text-font-size-proportional) * 1.5);
+    padding-left: calc(var(--text-font-size-proportional) * 2.5);
     white-space: normal;
 }
 
