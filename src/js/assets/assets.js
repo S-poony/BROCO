@@ -255,7 +255,7 @@ export function setupAssetHandlers() {
         } else {
             refreshAllViews();
             if (type === 'updated') {
-                if (paper) {
+                if (document.getElementById(A4_PAPER_ID)) {
                     renderAndRestoreFocus(getCurrentPage());
                 }
             }
