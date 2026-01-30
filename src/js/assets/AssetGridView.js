@@ -56,8 +56,10 @@ export class AssetGridView {
 
         if (asset.type === 'text') {
             const txtBox = document.createElement('div');
-            txtBox.className = 'text-icon-placeholder';
-            txtBox.textContent = 'TXT';
+            txtBox.className = 'text-asset-preview';
+            // Fallback to fullResData (truncated) if lowResData is missing (for older assets or folder imports)
+            const snippet = asset.lowResData || (asset.fullResData ? asset.fullResData.substring(0, 400) : '');
+            txtBox.textContent = snippet;
             element.appendChild(txtBox);
         } else {
             if (asset.isBroken) {

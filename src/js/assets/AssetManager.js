@@ -78,10 +78,11 @@ export class AssetManager extends EventTarget {
      */
     async processRawImage(name, fullResData, type, path, absolutePath) {
         if (type !== 'image') {
+            const lowResData = (type === 'text') ? fullResData.substring(0, 400) : null;
             return {
                 id: crypto.randomUUID(),
                 name: name,
-                lowResData: null,
+                lowResData: lowResData,
                 fullResData: fullResData,
                 path: path || name,
                 absolutePath: absolutePath, // Always store if available
@@ -171,11 +172,14 @@ export class AssetManager extends EventTarget {
             const reader = new FileReader();
             reader.onerror = () => reject(new Error('Failed to read text file'));
             reader.onload = (e) => {
+                const text = e.target.result;
+                const lowResData = text.substring(0, 400); // 400 chars is enough for a good preview
+
                 resolve({
                     id: crypto.randomUUID(),
                     name: file.name,
-                    lowResData: null, // No thumbnail for text
-                    fullResData: e.target.result,
+                    lowResData: lowResData,
+                    fullResData: text,
                     path: path || file.name,
                     isBroken: false,
                     type: 'text'
