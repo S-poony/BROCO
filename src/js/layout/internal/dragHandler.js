@@ -1,6 +1,6 @@
 import { state, getCurrentPage } from '../../core/state.js';
 import { saveState } from '../../io/history.js';
-import { SNAP_THRESHOLD, MIN_AREA_PERCENT } from '../../core/constants.js';
+import { SNAP_THRESHOLD, MIN_AREA_PERCENT, LAPTOP_BREAKPOINT } from '../../core/constants.js';
 import { renderLayout } from '../renderer.js';
 import { findNodeById, deleteNodeFromTree } from './treeUtils.js';
 import { calculateDynamicSnaps } from './snapping.js';
@@ -90,6 +90,8 @@ export function startDrag(event, dividerElement = null) {
  * @param {string} edge 
  */
 export function startEdgeDrag(event, edge) {
+    if (window.innerWidth < LAPTOP_BREAKPOINT) return;
+
     event.preventDefault();
     event.stopPropagation();
     saveState();

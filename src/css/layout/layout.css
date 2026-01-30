@@ -140,6 +140,13 @@
     background-color: transparent;
 }
 
+@media (max-width: 1024px) {
+    /*see constants.js for breakpoint*/
+    .edge-handle {
+        display: none !important;
+    }
+}
+
 .edge-handle::after {
     content: none;
 }
