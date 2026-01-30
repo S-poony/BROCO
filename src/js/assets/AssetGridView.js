@@ -80,12 +80,14 @@ export class AssetGridView {
         const actions = document.createElement('div');
         actions.className = 'asset-actions';
 
-        const replaceBtn = document.createElement('button');
-        replaceBtn.className = 'asset-action-btn replace';
-        replaceBtn.dataset.id = asset.id;
-        replaceBtn.title = 'Replace Asset';
-        replaceBtn.innerHTML = '<span class="icon icon-replace"></span>';
-        actions.appendChild(replaceBtn);
+        if (asset.type !== 'text') {
+            const replaceBtn = document.createElement('button');
+            replaceBtn.className = 'asset-action-btn replace';
+            replaceBtn.dataset.id = asset.id;
+            replaceBtn.title = 'Replace Asset';
+            replaceBtn.innerHTML = '<span class="icon icon-replace"></span>';
+            actions.appendChild(replaceBtn);
+        }
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'asset-action-btn remove';

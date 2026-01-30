@@ -96,9 +96,11 @@ export class AssetListView {
                 <span class="list-icon">${icon}</span>
                 <span class="list-text" title="${name}">${name}</span>
                 <div class="list-actions no-fade">
+                    ${asset.type !== 'text' ? `
                     <button class="asset-action-btn replace small" data-id="${asset.id}" title="Replace">
                         <span class="icon icon-replace"></span>
                     </button>
+                    ` : ''}
                     <button class="asset-action-btn remove small" data-id="${asset.id}" title="Remove">
                         <span class="icon icon-delete"></span>
                     </button>
