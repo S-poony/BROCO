@@ -201,7 +201,7 @@ function renderMiniLayout(container, node) {
         if (node.splitState === 'split') {
             domNode.style.display = 'flex';
             domNode.style.flexDirection = node.orientation === 'vertical' ? 'row' : 'column';
-            domNode.style.gap = '1px';
+            domNode.style.gap = '2.5px';
             domNode.style.backgroundColor = '#d1d5db'; // Same as main layout border/divider color
 
             node.children.forEach(child => {

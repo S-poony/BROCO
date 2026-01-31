@@ -51,6 +51,12 @@ describe('History Module', () => {
             redo(() => { });
             expect(state.pages[0].text).toBe('new branch');
         });
+
+        it('should set isDirty to true when saving state', () => {
+            state.isDirty = false;
+            saveState();
+            expect(state.isDirty).toBe(true);
+        });
     });
 
     describe('undo', () => {

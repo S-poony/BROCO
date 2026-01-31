@@ -119,6 +119,12 @@ describe('fileIO.js', () => {
             expect(mockAnchor.download).toMatch(/layout-.*\.layout\.json/);
             expect(mockAnchor.click).toHaveBeenCalled();
         });
+
+        it('should reset isDirty to false on successful save', async () => {
+            state.isDirty = true;
+            await saveLayout();
+            expect(state.isDirty).toBe(false);
+        });
     });
 
     // openLayout test removed due to limitations in mocking File/FileReader in this environment

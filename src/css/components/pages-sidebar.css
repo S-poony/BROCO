@@ -89,7 +89,7 @@
 
 .page-thumbnail-preview {
     width: 80px;
-    aspect-ratio: 1 / 1.414;
+    aspect-ratio: 1 / 1;
     background: white;
     border: 1px solid #d1d5db;
     overflow: hidden;
@@ -212,7 +212,7 @@
 
     .page-thumbnail-preview {
         width: 40px;
-        aspect-ratio: 1 / 1.414;
+        aspect-ratio: 1 / 1;
     }
 
     .page-number {
