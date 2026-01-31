@@ -3,7 +3,7 @@ import { state, getCurrentPage } from '../core/state.js';
 import { findNodeById, renderAndRestoreFocus } from '../layout/layout.js';
 import { A4_PAPER_ID } from '../core/constants.js';
 import { showConfirm, showAlert } from '../core/utils.js';
-import { toast } from '../core/errorHandler.js';
+import { toast, ensureArray } from '../core/errorHandler.js';
 import { assetManager } from './AssetManager.js';
 import { dragDropService } from '../ui/DragDropService.js';
 import { AssetGridView } from './AssetGridView.js';
@@ -49,10 +49,10 @@ export function setupAssetHandlers() {
 
     importBtn.addEventListener('click', async () => {
         if (window.electronAPI?.openAssets) {
-            // Electron Smart Picker: Returns { assets: Array, path: string }
             const result = await window.electronAPI.openAssets({ directory: false });
-            if (result?.assets && result.assets.length > 0) {
-                processItems(result.assets);
+            const assets = ensureArray(result?.assets, 'Asset Picker');
+            if (assets.length > 0) {
+                processItems(assets);
             }
         } else {
             fileInput.click();

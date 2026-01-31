@@ -142,3 +142,33 @@ export async function withErrorHandling(fn, errorMessage = 'Operation failed') {
         return null;
     }
 }
+
+/**
+ * Asserts that data matches a required shape, throwing an error if it doesn't.
+ * @param {any} data - Data to check
+ * @param {(d: any) => boolean} validator - Validation function
+ * @param {string} errorMsg - Error message if validation fails
+ */
+export function assertShape(data, validator, errorMsg = 'Invalid data received') {
+    if (data === null || data === undefined) return data; // Allow optionalish nulls, caller handles
+    if (!validator(data)) {
+        const err = new Error(errorMsg);
+        err.name = 'ValidationError';
+        throw err;
+    }
+    return data;
+}
+
+/**
+ * Ensures data is an array, throwing a useful error if not.
+ * @param {any} data 
+ * @param {string} context - Context for the error message
+ */
+export function ensureArray(data, context = 'Data') {
+    if (data === null || data === undefined) return [];
+    if (!Array.isArray(data)) {
+        console.error(`${context} is not an array:`, data);
+        throw new Error(`${context} failed: expected a list of items but received something else.`);
+    }
+    return data;
+}
