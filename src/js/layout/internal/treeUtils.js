@@ -258,6 +258,7 @@ export function mergeNodesInTree(parentNode, focusedNodeId) {
             childA.children[0], // A1
             newInnerParent
         ];
+        return childA.children[1]; // The merged leaf
     } else if (isParallelA) {
         // [ [A1|A2] | B ] -> Merge A2 and B
         const factor = sizeA / 100;
@@ -273,6 +274,7 @@ export function mergeNodesInTree(parentNode, focusedNodeId) {
         parentNode.splitState = 'split';
         parentNode.children = childA.children;
         parentNode.orientation = childA.orientation;
+        return leafA;
     } else if (isParallelB) {
         // [ A | [B1|B2] ] -> Merge A and B1
         const factor = sizeB / 100;
@@ -288,10 +290,10 @@ export function mergeNodesInTree(parentNode, focusedNodeId) {
         parentNode.splitState = 'split';
         parentNode.children = childB.children;
         parentNode.orientation = childB.orientation;
+        return leafB;
     } else {
         // Simple case: A | B
         Object.assign(parentNode, mergedContent);
+        return parentNode;
     }
-
-    return parentNode;
 }
