@@ -127,7 +127,7 @@ app.whenReady().then(() => {
 
         const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
             properties,
-            filters: [
+            filters: options.filters || [
                 { name: 'Assets', extensions: ['jpg', 'png', 'gif', 'webp', 'jpeg', 'txt', 'md'] }
             ]
         });
@@ -172,6 +172,17 @@ app.whenReady().then(() => {
             return { success: true };
         } catch (err) {
             console.error('Save error:', err);
+            return { success: false, error: err.message };
+        }
+    });
+
+    // Handle File Read
+    ipcMain.handle('file:read', async (event, filePath) => {
+        try {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            return { success: true, content };
+        } catch (err) {
+            console.error('Read error:', err);
             return { success: false, error: err.message };
         }
     });

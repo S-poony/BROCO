@@ -1,4 +1,4 @@
-import { state } from '../../core/state.js';
+import { state, getCurrentPage } from '../../core/state.js';
 
 /**
  * Helper to find node in the layout tree
@@ -7,8 +7,8 @@ import { state } from '../../core/state.js';
  * @returns {Object|null}
  */
 export function findNodeById(root, id) {
-    // Attempt O(1) lookup first if it exists in state
-    if (state.nodeMap && state.nodeMap.has(id)) {
+    // Attempt O(1) lookup first ONLY if we are searching the entire current page
+    if (root === getCurrentPage() && state.nodeMap && state.nodeMap.has(id)) {
         return state.nodeMap.get(id);
     }
 

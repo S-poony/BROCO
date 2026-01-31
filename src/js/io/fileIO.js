@@ -109,20 +109,72 @@ export async function saveLayoutAs() {
 export async function openLayout() {
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
+    const processData = (data, filePath) => {
+        try {
+            if (!data.pages || !Array.isArray(data.pages) || !data.assets) {
+                throw new Error('Invalid layout file format');
+            }
+
+            saveState();
+
+            assetManager.dispose();
+            data.assets.forEach(asset => {
+                assetManager.addAsset(asset);
+                if (asset.isReference && !asset.lowResData) {
+                    assetManager.rehydrateAsset(asset);
+                }
+            });
+
+            state.pages = data.pages;
+            state.currentPageIndex = data.currentPageIndex || 0;
+            updateCurrentId(data.currentId || 1);
+
+            if (data.settings) {
+                loadSettings(data.settings);
+            }
+
+            const paper = document.getElementById(A4_PAPER_ID);
+            if (paper) {
+                renderAndRestoreFocus(state.pages[state.currentPageIndex], `rect-${state.currentId}`);
+            }
+            renderPageList();
+
+            // Set file path and clear dirty state
+            if (filePath) setCurrentFilePath(filePath);
+            setDirty(false);
+
+            document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            toast.success('Layout opened successfully');
+
+        } catch (err) {
+            console.error('Failed to open layout:', err);
+            toast.error(`Failed to open layout: ${err.message}`);
+        }
+    };
+
     if (isElectron) {
-        const result = await window.electronAPI.openAssets({ multiSelections: false, filters: [{ name: 'Layout JSON', extensions: ['json'] }] });
-        // The current openAssets implementation returns an array of processed assets or just path?
-        // Wait, openAssets in electron/main.js is set up for assets.
-        // Actually, let's look at how openAssets works. It returns { assets: [], path: '' } after my previous change.
+        const result = await window.electronAPI.openAssets({
+            multiSelections: false,
+            filters: [{ name: 'Layout JSON', extensions: ['json'] }]
+        });
+
         if (!result || !result.path) return;
 
-        try {
-            // We need a way to read a JSON file from a path in Electron...
-            // Or use the standard input[type=file] which also works in Electron
-        } catch (err) { }
+        const readResult = await window.electronAPI.readFile(result.path);
+        if (readResult.success) {
+            try {
+                const data = JSON.parse(readResult.content);
+                processData(data, result.path);
+            } catch (err) {
+                toast.error(`Malformed JSON file: ${err.message}`);
+            }
+        } else {
+            toast.error(`Failed to read file: ${readResult.error}`);
+        }
+        return;
     }
 
-    // Standard file input works in both Web and Electron for reading local content chosen by user
+    // Standard file input for Web
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -131,51 +183,13 @@ export async function openLayout() {
         const file = e.target.files[0];
         if (!file) return;
 
-        // In Electron, the file object may contain the path
-        const filePath = file.path || null;
-
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-
-                if (!data.pages || !Array.isArray(data.pages) || !data.assets) {
-                    throw new Error('Invalid layout file format');
-                }
-
-                saveState();
-
-                assetManager.dispose();
-                data.assets.forEach(asset => {
-                    assetManager.addAsset(asset);
-                    if (asset.isReference && !asset.lowResData) {
-                        assetManager.rehydrateAsset(asset);
-                    }
-                });
-
-                state.pages = data.pages;
-                state.currentPageIndex = data.currentPageIndex || 0;
-                updateCurrentId(data.currentId || 1);
-
-                if (data.settings) {
-                    loadSettings(data.settings);
-                }
-
-                const paper = document.getElementById(A4_PAPER_ID);
-                if (paper) {
-                    renderAndRestoreFocus(state.pages[state.currentPageIndex], `rect-${state.currentId}`);
-                }
-                renderPageList();
-
-                // Set file path and clear dirty state
-                if (filePath) setCurrentFilePath(filePath);
-                setDirty(false);
-
-                document.dispatchEvent(new CustomEvent('layoutUpdated'));
-
+                processData(data, null);
             } catch (err) {
-                console.error('Failed to open layout:', err);
-                toast.error(`Failed to open layout: ${err.message}`);
+                toast.error(`Malformed JSON file: ${err.message}`);
             }
         };
         reader.readAsText(file);
