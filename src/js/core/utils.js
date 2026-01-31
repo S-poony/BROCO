@@ -140,6 +140,47 @@ export function showAlert(message, title = 'Notification') {
 }
 
 /**
+ * Custom 3-button modal for unsaved changes on exit
+ * @returns {Promise<'save' | 'discard' | 'cancel'>}
+ */
+export function showUnsavedChangesModal() {
+    const modal = document.getElementById('unsaved-changes-modal');
+    const saveBtn = document.getElementById('unsaved-save');
+    const discardBtn = document.getElementById('unsaved-discard');
+    const cancelBtn = document.getElementById('unsaved-cancel');
+
+    if (!modal || !saveBtn || !discardBtn || !cancelBtn) {
+        // Fallback or skip if DOM not ready
+        return Promise.resolve('cancel');
+    }
+
+    modal.classList.add('active');
+
+    return new Promise((resolve) => {
+        const cleanup = (result) => {
+            modal.classList.remove('active');
+            saveBtn.removeEventListener('click', onSave);
+            discardBtn.removeEventListener('click', onDiscard);
+            cancelBtn.removeEventListener('click', onCancel);
+            modal.removeEventListener('click', onOverlay);
+            resolve(result);
+        };
+
+        const onSave = () => cleanup('save');
+        const onDiscard = () => cleanup('discard');
+        const onCancel = () => cleanup('cancel');
+        const onOverlay = (e) => {
+            if (e.target === modal) cleanup('cancel');
+        };
+
+        saveBtn.addEventListener('click', onSave);
+        discardBtn.addEventListener('click', onDiscard);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onOverlay);
+    });
+}
+
+/**
  * Shows the specialized success modal for flipbook publishing
  * @param {string} url 
  * @returns {Promise<void>}

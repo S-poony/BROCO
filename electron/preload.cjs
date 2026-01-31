@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveFile: (data, path) => ipcRenderer.invoke('file:save', data, path),
     saveFileDialog: (data) => ipcRenderer.invoke('file:save-dialog', data),
     updateDirtyStatus: (isDirty, path) => ipcRenderer.send('update-dirty-status', isDirty, path),
+    onRequestClose: (callback) => ipcRenderer.on('app:request-close', () => callback()),
+    forceClose: () => ipcRenderer.send('app:force-close'),
 
     // Export APIs
     renderExport: (options) => ipcRenderer.invoke('render-export', options),

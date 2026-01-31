@@ -23,6 +23,7 @@ import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag, handleDivi
 
 import { dragDropService } from './js/ui/DragDropService.js';
 import { setupPlatformAdapters } from './js/core/platform.js';
+import { showUnsavedChangesModal } from './js/core/utils.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -235,6 +236,18 @@ function initialize() {
     if (window.electronAPI && window.electronAPI.onSaveLayout) {
         window.electronAPI.onSaveLayout((options) => {
             saveLayout(options);
+        });
+    }
+
+    if (window.electronAPI && window.electronAPI.onRequestClose) {
+        window.electronAPI.onRequestClose(async () => {
+            const result = await showUnsavedChangesModal();
+            if (result === 'save') {
+                await saveLayout({ closeAfterSave: true });
+            } else if (result === 'discard') {
+                window.electronAPI.forceClose();
+            }
+            // cancel = do nothing
         });
     }
 

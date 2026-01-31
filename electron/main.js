@@ -46,25 +46,8 @@ function createWindow() {
     mainWindow.on('close', async (e) => {
         if (mainWindow.isDirty) {
             e.preventDefault(); // Stop the close
-            const { response } = await dialog.showMessageBox(mainWindow, {
-                type: 'question',
-                buttons: ['Save', 'Discard', 'Cancel'],
-                defaultId: 0,
-                cancelId: 2,
-                title: 'Unsaved Changes',
-                message: 'You have unsaved changes. Do you want to save them before closing?'
-            });
-
-            if (response === 0) { // Save
-                // We notify the renderer to perform the save. 
-                // The renderer will call file:save or file:save-dialog which will reset isDirty.
-                // We can then try to close again.
-                mainWindow.webContents.send('shortcut:save-layout', { closeAfterSave: true });
-            } else if (response === 1) { // Discard
-                mainWindow.isDirty = false; // Reset so we don't prompt again
-                mainWindow.close();
-            }
-            // response === 2 (Cancel) -> do nothing
+            // Notify the renderer to show the themed modal
+            mainWindow.webContents.send('app:request-close');
         }
     });
 
@@ -221,6 +204,14 @@ app.whenReady().then(() => {
             // Optional: Update title to show dirty state
             const title = "BROCO" + (isDirty ? " •" : "");
             mainWindow.setTitle(title);
+        }
+    });
+
+    // Handle Force Close from Renderer (Discard changes bypass)
+    ipcMain.on('app:force-close', () => {
+        if (mainWindow) {
+            mainWindow.isDirty = false;
+            mainWindow.close();
         }
     });
 
