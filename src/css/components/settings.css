@@ -188,6 +188,7 @@ summary.settings-section-title:focus-visible {
     outline: 2px solid var(--color-primary, #4f46e5);
     outline-offset: -2px;
     border-radius: 1rem;
+    transition: none !important;
 }
 
 summary.settings-section-title::-webkit-details-marker {
@@ -279,6 +280,7 @@ summary.settings-section-title .icon {
     outline: none;
     border-color: var(--color-primary, #4f46e5);
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    transition: none !important;
 }
 
 /* Font family selector - show each option in its font */
@@ -455,6 +457,12 @@ summary.settings-section-title .icon {
     color: var(--color-primary, #4f46e5);
 }
 
+.custom-color-trigger:focus-visible {
+    outline: 2px solid var(--color-primary, #4f46e5);
+    outline-offset: -2px;
+    transition: none !important;
+}
+
 .custom-color-preview {
     width: 14px;
     height: 14px;
@@ -499,6 +507,12 @@ summary.settings-section-title .icon {
     opacity: 0;
     width: 0;
     height: 0;
+}
+
+.toggle-switch input:focus-visible+.toggle-slider {
+    outline: 2px solid var(--color-primary, #4f46e5);
+    outline-offset: 2px;
+    transition: none !important;
 }
 
 .toggle-slider {

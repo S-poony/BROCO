@@ -250,6 +250,14 @@ export function setupSettingsHandlers() {
     setupDividerControls();
     setupElectronControls();
 
+    // Allow toggling checkboxes with Enter key
+    settingsContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+            e.preventDefault();
+            e.target.click();
+        }
+    });
+
     // Re-apply settings on layout updates
     document.addEventListener('layoutUpdated', () => {
         applySettings();
