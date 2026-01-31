@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveFileDialog: (data) => ipcRenderer.invoke('file:save-dialog', data),
     readFile: (path) => ipcRenderer.invoke('file:read', path),
     updateDirtyStatus: (isDirty, path) => ipcRenderer.send('update-dirty-status', isDirty, path),
+    onOpenFile: (callback) => ipcRenderer.on('file:open', (event, path) => callback(path)),
     onRequestClose: (callback) => ipcRenderer.on('app:request-close', () => callback()),
     forceClose: () => ipcRenderer.send('app:force-close'),
 

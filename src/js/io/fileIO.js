@@ -106,7 +106,7 @@ export async function saveLayoutAs() {
 /**
  * Opens a .json layout file and restores the state
  */
-export async function openLayout() {
+export async function openLayout(forcedPath = null) {
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
     const processData = (data, filePath, fileName = null) => {
@@ -155,6 +155,23 @@ export async function openLayout() {
     };
 
     if (isElectron) {
+        // Direct open from double-click or CLI
+        if (forcedPath && typeof forcedPath === 'string') {
+            const readResult = await window.electronAPI.readFile(forcedPath);
+            if (readResult.success) {
+                try {
+                    const data = JSON.parse(readResult.content);
+                    processData(data, forcedPath);
+                } catch (err) {
+                    toast.error(`Malformed JSON file: ${err.message}`);
+                }
+            } else {
+                toast.error(`Failed to read file: ${readResult.error}`);
+            }
+            return;
+        }
+
+        // Standard Dialog
         const result = await window.electronAPI.openAssets({
             multiSelections: false,
             filters: [{ name: 'Broco Layout', extensions: ['broco', 'json'] }]

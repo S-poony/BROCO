@@ -132,6 +132,14 @@ app.whenReady().then(() => {
 
     createWindow();
 
+    // Handle Cold Start file open (Double-click from OS)
+    const coldStartFile = process.argv.find((arg, index) => index >= 1 && (arg.endsWith('.broco') || arg.endsWith('.json')));
+    if (coldStartFile && mainWindow) {
+        mainWindow.once('ready-to-show', () => {
+            mainWindow.webContents.send('file:open', coldStartFile);
+        });
+    }
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();

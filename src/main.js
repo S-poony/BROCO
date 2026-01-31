@@ -15,7 +15,7 @@ import { DIVIDER_SIZE } from './js/core/constants.js';
 import { setupSettingsHandlers } from './js/ui/settings.js';
 import { setupGlobalErrorHandler } from './js/core/errorHandler.js';
 import { setupPageHandlers } from './js/layout/pages.js';
-import { setupFileIOHandlers, saveLayout, saveLayoutAs } from './js/io/fileIO.js';
+import { setupFileIOHandlers, saveLayout, saveLayoutAs, openLayout } from './js/io/fileIO.js';
 import { importImageToNode, handleTouchStart, handleTouchMove, handleTouchEnd } from './js/assets/assets.js';
 import { setupKeyboardNavigation } from './js/ui/keyboard.js';
 import { shortcutsOverlay } from './js/ui/ShortcutsOverlay.js';
@@ -248,6 +248,12 @@ function initialize() {
     if (window.electronAPI && window.electronAPI.onSaveLayout) {
         window.electronAPI.onSaveLayout((options) => {
             saveLayout(options);
+        });
+    }
+
+    if (window.electronAPI && window.electronAPI.onOpenFile) {
+        window.electronAPI.onOpenFile((path) => {
+            openLayout(path);
         });
     }
 
