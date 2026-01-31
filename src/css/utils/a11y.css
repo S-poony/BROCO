@@ -19,10 +19,21 @@
 
 .splittable-rect:focus-visible,
 .splittable-rect:focus {
-    /* Inner focus ring for content areas */
-    outline: 3px solid #4f46e5;
-    outline-offset: -3px;
-    z-index: 10;
+    outline: none;
+}
+
+.splittable-rect:focus-visible::after,
+.splittable-rect:focus::after {
+    /* Using box-shadow on pseudo-element with high z-index to stay above transformed children (flipped images) */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-shadow: inset 0 0 0 4px #4f46e5;
+    z-index: 100;
+    pointer-events: none;
 }
 
 .divider:focus-visible {
