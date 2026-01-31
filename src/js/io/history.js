@@ -1,5 +1,5 @@
-import { A4_PAPER_ID, MAX_HISTORY } from '../core/constants.js';
-import { state, updateCurrentId } from '../core/state.js';
+import { MAX_HISTORY } from '../core/constants.js';
+import { state, updateCurrentId, setDirty } from '../core/state.js';
 
 let undoStack = [];
 let redoStack = [];
@@ -27,6 +27,7 @@ export function saveState() {
         undoStack.shift();
     }
     redoStack = [];
+    setDirty(true);
 }
 
 export function clearHistory() {

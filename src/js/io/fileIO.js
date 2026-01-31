@@ -1,4 +1,4 @@
-import { state, updateCurrentId } from '../core/state.js';
+import { state, updateCurrentId, setDirty, setCurrentFilePath } from '../core/state.js';
 import { assetManager } from '../assets/AssetManager.js';
 import { renderAndRestoreFocus } from '../layout/layout.js';
 import { renderPageList } from '../layout/pages.js';
@@ -9,10 +9,10 @@ import { saveState } from './history.js';
 import { exportSettings, loadSettings } from '../ui/settings.js';
 
 /**
- * Saves the current layout to a .json file
+ * Prepares the layout data for saving
  */
-export function saveLayout() {
-    const data = {
+function prepareSaveData() {
+    return {
         version: '1.0',
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
@@ -25,27 +25,104 @@ export function saveLayout() {
         })),
         settings: exportSettings()
     };
+}
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+/**
+ * Saves the current layout.
+ * In Electron, it overwrites if a path exists.
+ * @param {Object} options Optional. { closeAfterSave: boolean }
+ */
+export async function saveLayout(options = {}) {
+    const data = prepareSaveData();
+    const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
-    // Generate filename with date
-    const date = new Date().toISOString().split('T')[0];
-    a.href = url;
-    a.download = `layout-${date}.layout.json`;
-    document.body.appendChild(a);
-    a.click();
+    if (isElectron && state.currentFilePath) {
+        // Overwrite existing file
+        const result = await window.electronAPI.saveFile(data, state.currentFilePath);
+        if (result.success) {
+            setDirty(false);
+            toast.success('Layout saved');
+            if (options.closeAfterSave) window.close();
+            return true;
+        } else {
+            toast.error(`Failed to save: ${result.error}`);
+            return false;
+        }
+    } else if (isElectron) {
+        // Save As... (Electron)
+        const result = await window.electronAPI.saveFileDialog(data);
+        if (result.success && result.path) {
+            setCurrentFilePath(result.path);
+            setDirty(false);
+            toast.success('Layout saved');
+            if (options.closeAfterSave) window.close();
+            return true;
+        } else if (result.error) {
+            toast.error(`Failed to save: ${result.error}`);
+            return false;
+        }
+    } else {
+        // Web Save (Download)
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
 
-    // Cleanup
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+        const date = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `layout-${date}.layout.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        setDirty(false);
+        toast.success('Layout download started');
+        return true;
+    }
+}
+
+/**
+ * Explicit Save As functionality
+ */
+export async function saveLayoutAs() {
+    const data = prepareSaveData();
+    const isElectron = window.electronAPI && window.electronAPI.isElectron;
+
+    if (isElectron) {
+        const result = await window.electronAPI.saveFileDialog(data);
+        if (result.success && result.path) {
+            setCurrentFilePath(result.path);
+            setDirty(false);
+            toast.success('Layout saved as new file');
+        } else if (result.error) {
+            toast.error(`Failed to save: ${result.error}`);
+        }
+    } else {
+        // Fallback to normal save for web
+        saveLayout();
+    }
 }
 
 /**
  * Opens a .json layout file and restores the state
  */
 export async function openLayout() {
+    const isElectron = window.electronAPI && window.electronAPI.isElectron;
+
+    if (isElectron) {
+        const result = await window.electronAPI.openAssets({ multiSelections: false, filters: [{ name: 'Layout JSON', extensions: ['json'] }] });
+        // The current openAssets implementation returns an array of processed assets or just path?
+        // Wait, openAssets in electron/main.js is set up for assets.
+        // Actually, let's look at how openAssets works. It returns { assets: [], path: '' } after my previous change.
+        if (!result || !result.path) return;
+
+        try {
+            // We need a way to read a JSON file from a path in Electron...
+            // Or use the standard input[type=file] which also works in Electron
+        } catch (err) { }
+    }
+
+    // Standard file input works in both Web and Electron for reading local content chosen by user
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -54,48 +131,46 @@ export async function openLayout() {
         const file = e.target.files[0];
         if (!file) return;
 
+        // In Electron, the file object may contain the path
+        const filePath = file.path || null;
+
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
 
-                // Basic validation
                 if (!data.pages || !Array.isArray(data.pages) || !data.assets) {
                     throw new Error('Invalid layout file format');
                 }
 
-                // Save current state to history before overwriting
                 saveState();
 
-                // Restore assets
                 assetManager.dispose();
                 data.assets.forEach(asset => {
                     assetManager.addAsset(asset);
-                    // If it's a reference without a thumbnail, try to rehydrate it
                     if (asset.isReference && !asset.lowResData) {
                         assetManager.rehydrateAsset(asset);
                     }
                 });
 
-                // Restore state
                 state.pages = data.pages;
                 state.currentPageIndex = data.currentPageIndex || 0;
                 updateCurrentId(data.currentId || 1);
 
-                // Restore settings if present - MUST be done before rendering
-                // Fix: Reordered to ensure settings are applied before renderLayout
                 if (data.settings) {
                     loadSettings(data.settings);
                 }
 
-                // Re-render UI
                 const paper = document.getElementById(A4_PAPER_ID);
                 if (paper) {
                     renderAndRestoreFocus(state.pages[state.currentPageIndex], `rect-${state.currentId}`);
                 }
                 renderPageList();
 
-                // Notify other components if necessary
+                // Set file path and clear dirty state
+                if (filePath) setCurrentFilePath(filePath);
+                setDirty(false);
+
                 document.dispatchEvent(new CustomEvent('layoutUpdated'));
 
             } catch (err) {

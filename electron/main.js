@@ -39,6 +39,35 @@ function createWindow() {
         icon: join(__dirname, '../src/assets/icons/AppIcon.png')
     });
 
+    mainWindow.isDirty = false;
+    mainWindow.currentFilePath = null;
+
+    // Handle Close Confirmation
+    mainWindow.on('close', async (e) => {
+        if (mainWindow.isDirty) {
+            e.preventDefault(); // Stop the close
+            const { response } = await dialog.showMessageBox(mainWindow, {
+                type: 'question',
+                buttons: ['Save', 'Discard', 'Cancel'],
+                defaultId: 0,
+                cancelId: 2,
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes. Do you want to save them before closing?'
+            });
+
+            if (response === 0) { // Save
+                // We notify the renderer to perform the save. 
+                // The renderer will call file:save or file:save-dialog which will reset isDirty.
+                // We can then try to close again.
+                mainWindow.webContents.send('shortcut:save-layout', { closeAfterSave: true });
+            } else if (response === 1) { // Discard
+                mainWindow.isDirty = false; // Reset so we don't prompt again
+                mainWindow.close();
+            }
+            // response === 2 (Cancel) -> do nothing
+        }
+    });
+
     // Completely remove the default menu (File, Edit, etc.)
     Menu.setApplicationMenu(null);
 
@@ -72,22 +101,10 @@ function createWindow() {
         globalShortcut.register('Alt+Space', () => {
             if (mainWindow) mainWindow.webContents.send('shortcut:long-split');
         });
-        globalShortcut.register('CommandOrControl+N', () => {
-            if (mainWindow) mainWindow.webContents.send('shortcut:new-page');
-        });
-        globalShortcut.register('CommandOrControl+Shift+N', () => {
-            if (mainWindow) mainWindow.webContents.send('shortcut:duplicate-page');
-        });
-        globalShortcut.register('CommandOrControl+S', () => {
-            if (mainWindow) mainWindow.webContents.send('shortcut:save-layout');
-        });
     });
 
     mainWindow.on('blur', () => {
         globalShortcut.unregister('Alt+Space');
-        globalShortcut.unregister('CommandOrControl+N');
-        globalShortcut.unregister('CommandOrControl+Shift+N');
-        globalShortcut.unregister('CommandOrControl+S');
     });
 
     // Check for updates once window is ready
@@ -162,7 +179,49 @@ app.whenReady().then(() => {
         };
 
         filePaths.forEach(p => processPath(p));
-        return results;
+        return { assets: results, path: filePaths[0] }; // Return assets and the path of the first chosen file
+    });
+
+    // Handle File Save (Overwrite)
+    ipcMain.handle('file:save', async (event, data, filePath) => {
+        try {
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+            return { success: true };
+        } catch (err) {
+            console.error('Save error:', err);
+            return { success: false, error: err.message };
+        }
+    });
+
+    // Handle Save As Dialog
+    ipcMain.handle('file:save-dialog', async (event, data) => {
+        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save Layout',
+            defaultPath: `layout-${new Date().toISOString().split('T')[0]}.layout.json`,
+            filters: [{ name: 'Layout JSON', extensions: ['json'] }]
+        });
+
+        if (canceled || !filePath) return { canceled: true };
+
+        try {
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+            return { success: true, path: filePath };
+        } catch (err) {
+            console.error('Save As error:', err);
+            return { success: false, error: err.message };
+        }
+    });
+
+    // Handle Dirty Status Updates from Renderer
+    ipcMain.on('update-dirty-status', (event, isDirty, path) => {
+        if (mainWindow) {
+            mainWindow.isDirty = isDirty;
+            mainWindow.currentFilePath = path;
+
+            // Optional: Update title to show dirty state
+            const title = "BROCO" + (isDirty ? " •" : "");
+            mainWindow.setTitle(title);
+        }
     });
 
     // Handle Asset Picker ... (skipped lines 122-166)

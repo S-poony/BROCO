@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onNewPage: (callback) => ipcRenderer.on('shortcut:new-page', () => callback()),
     onDuplicatePage: (callback) => ipcRenderer.on('shortcut:duplicate-page', () => callback()),
     onSaveLayout: (callback) => ipcRenderer.on('shortcut:save-layout', () => callback()),
+    saveFile: (data, path) => ipcRenderer.invoke('file:save', data, path),
+    saveFileDialog: (data) => ipcRenderer.invoke('file:save-dialog', data),
+    updateDirtyStatus: (isDirty, path) => ipcRenderer.send('update-dirty-status', isDirty, path),
 
     // Export APIs
     renderExport: (options) => ipcRenderer.invoke('render-export', options),

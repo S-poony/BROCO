@@ -9,7 +9,9 @@ export let state = {
     pages: [], // Array of layout objects
     currentPageIndex: 0,
     hoveredRectId: null,
-    nodeMap: new Map() // O(1) lookup for current page
+    nodeMap: new Map(), // O(1) lookup for current page
+    isDirty: false,
+    currentFilePath: null
 };
 
 // Initialize with one empty page
@@ -124,6 +126,28 @@ export function syncNodeMap() {
         }
     };
     traverse(page);
+}
+
+export function setDirty(val) {
+    if (state.isDirty === val) return;
+    state.isDirty = val;
+    document.dispatchEvent(new CustomEvent('dirtyChanged', { detail: { isDirty: val } }));
+
+    // Notify Electron if available
+    if (window.electronAPI && window.electronAPI.updateDirtyStatus) {
+        window.electronAPI.updateDirtyStatus(val, state.currentFilePath);
+    }
+}
+
+export function setCurrentFilePath(path) {
+    if (state.currentFilePath === path) return;
+    state.currentFilePath = path;
+    document.dispatchEvent(new CustomEvent('filePathChanged', { detail: { path: path } }));
+
+    // Also update Electron just in case it needs the path
+    if (window.electronAPI && window.electronAPI.updateDirtyStatus) {
+        window.electronAPI.updateDirtyStatus(state.isDirty, path);
+    }
 }
 
 // Initial sync

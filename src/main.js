@@ -3,7 +3,8 @@ import { undo, redo, saveState } from './js/io/history.js';
 import { handleSplitClick, createTextInRect, renderAndRestoreFocus } from './js/layout/layout.js';
 import { setupAssetHandlers, setupDropHandlers } from './js/assets/assets.js';
 import { setupExportHandlers } from './js/io/export.js';
-import { state, getCurrentPage } from './js/core/state.js';
+import { renderPageList } from './js/layout/pages.js';
+import { state, getCurrentPage, addPage, duplicatePage } from './js/core/state.js';
 import { renderLayout } from './js/layout/renderer.js';
 import { marked } from 'marked';
 import { loadSettings, applySettings } from './js/ui/settings.js';
@@ -13,9 +14,8 @@ import DOMPurify from 'dompurify';
 import { DIVIDER_SIZE } from './js/core/constants.js';
 import { setupSettingsHandlers } from './js/ui/settings.js';
 import { setupGlobalErrorHandler } from './js/core/errorHandler.js';
-
 import { setupPageHandlers } from './js/layout/pages.js';
-import { setupFileIOHandlers } from './js/io/fileIO.js';
+import { setupFileIOHandlers, saveLayout, saveLayoutAs } from './js/io/fileIO.js';
 import { importImageToNode, handleTouchStart, handleTouchMove, handleTouchEnd } from './js/assets/assets.js';
 import { setupKeyboardNavigation } from './js/ui/keyboard.js';
 import { shortcutsOverlay } from './js/ui/ShortcutsOverlay.js';
@@ -76,6 +76,36 @@ function setupGlobalHandlers() {
                     renderAndRestoreFocus(getCurrentPage());
                 });
             }
+        }
+
+        // Save: Ctrl + S
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            saveLayout();
+        }
+
+        // Save As: Ctrl + Shift + S
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            saveLayoutAs();
+        }
+
+        // New Page: Ctrl + N
+        if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'n') {
+            e.preventDefault();
+            saveState();
+            addPage();
+            renderAndRestoreFocus(getCurrentPage());
+            renderPageList();
+        }
+
+        // Duplicate Page: Ctrl + Shift + N
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'n') {
+            e.preventDefault();
+            saveState();
+            duplicatePage(state.currentPageIndex);
+            renderAndRestoreFocus(getCurrentPage());
+            renderPageList();
         }
 
         // Global Tab navigation (from body/top level to layout)
@@ -176,6 +206,37 @@ function initialize() {
     loadShortcuts();
     setupPageHandlers();
     setupKeyboardNavigation();
+
+    // UI Updates for Dirty State and File Path
+    const saveBtn = document.getElementById('save-layout-btn');
+    const saveBtnText = saveBtn?.querySelector('span:not(.icon)');
+
+    document.addEventListener('dirtyChanged', (e) => {
+        if (saveBtn) {
+            if (e.detail.isDirty) {
+                saveBtn.classList.add('is-dirty');
+            } else {
+                saveBtn.classList.remove('is-dirty');
+            }
+        }
+    });
+
+    document.addEventListener('filePathChanged', (e) => {
+        if (saveBtnText) {
+            saveBtnText.textContent = e.detail.path ? 'Save' : 'Save new layout';
+        }
+    });
+
+    // Initial state check
+    if (saveBtnText) {
+        saveBtnText.textContent = state.currentFilePath ? 'Save' : 'Save new layout';
+    }
+
+    if (window.electronAPI && window.electronAPI.onSaveLayout) {
+        window.electronAPI.onSaveLayout((options) => {
+            saveLayout(options);
+        });
+    }
 
     setupShortcutsHandlers();
     setupDelegatedHandlers();

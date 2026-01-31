@@ -37,6 +37,16 @@
     pointer-events: auto;
 }
 
+#save-layout-btn.is-dirty::after {
+    content: '*';
+    color: var(--color-danger, #ef4444);
+    margin-left: 4px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    line-height: 0;
+    vertical-align: middle;
+}
+
 .file-actions-left,
 .file-actions-right {
     display: flex;

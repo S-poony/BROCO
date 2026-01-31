@@ -43,10 +43,6 @@ export function setupKeyboardNavigation() {
             renderAndRestoreFocus(getCurrentPage());
             renderPageList();
         });
-
-        window.electronAPI.onSaveLayout(() => {
-            saveLayout();
-        });
     }
 }
 
