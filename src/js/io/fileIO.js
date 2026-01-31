@@ -109,7 +109,7 @@ export async function saveLayoutAs() {
 export async function openLayout() {
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
-    const processData = (data, filePath) => {
+    const processData = (data, filePath, fileName = null) => {
         try {
             if (!data.pages || !Array.isArray(data.pages) || !data.assets) {
                 throw new Error('Invalid layout file format');
@@ -144,7 +144,9 @@ export async function openLayout() {
             setDirty(false);
 
             document.dispatchEvent(new CustomEvent('layoutUpdated'));
-            toast.success('Layout opened successfully');
+
+            const displayId = fileName || (filePath ? filePath.split(/[\\/]/).pop() : null);
+            toast.success(displayId ? `Opened: ${displayId}` : 'Layout opened successfully');
 
         } catch (err) {
             console.error('Failed to open layout:', err);
@@ -187,7 +189,7 @@ export async function openLayout() {
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                processData(data, null);
+                processData(data, null, file.name);
             } catch (err) {
                 toast.error(`Malformed JSON file: ${err.message}`);
             }
