@@ -43,13 +43,22 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "src/assets/icons/AppIcon.png",
+      "icon": "src/assets/icons/AppIcon.ico",
       "verifyUpdateCodeSignature": false,
       "artifactName": "${productName}-Setup-${version}.${ext}"
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "broco",
+        "name": "Broco Layout",
+        "description": "Broco Layout File",
+        "icon": "src/assets/icons/AppIcon.ico"
+      }
+    ]
   },
   "nsis": {
     "oneClick": false,
+    "perMachine": true,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
   },
