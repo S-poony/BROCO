@@ -239,6 +239,12 @@ function initialize() {
         });
     }
 
+    if (window.electronAPI && window.electronAPI.onSaveLayoutAs) {
+        window.electronAPI.onSaveLayoutAs(() => {
+            saveLayoutAs();
+        });
+    }
+
     if (window.electronAPI && window.electronAPI.onRequestClose) {
         window.electronAPI.onRequestClose(async () => {
             const result = await showUnsavedChangesModal();

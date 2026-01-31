@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onNewPage: (callback) => ipcRenderer.on('shortcut:new-page', () => callback()),
     onDuplicatePage: (callback) => ipcRenderer.on('shortcut:duplicate-page', () => callback()),
     onSaveLayout: (callback) => ipcRenderer.on('shortcut:save-layout', () => callback()),
+    onSaveLayoutAs: (callback) => ipcRenderer.on('shortcut:save-layout-as', () => callback()),
     saveFile: (data, path) => ipcRenderer.invoke('file:save', data, path),
     saveFileDialog: (data) => ipcRenderer.invoke('file:save-dialog', data),
     readFile: (path) => ipcRenderer.invoke('file:read', path),

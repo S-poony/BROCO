@@ -55,6 +55,7 @@
 `ctrl + n` = new page
 `ctrl + shift + n` = duplicate page
 `ctrl + s` = save layout
+`ctrl + shift + s` = save as
 
 ### Markdown syntax
 _be careful about the spaces between the special characters and the text_

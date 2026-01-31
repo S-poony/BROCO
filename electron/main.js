@@ -84,10 +84,18 @@ function createWindow() {
         globalShortcut.register('Alt+Space', () => {
             if (mainWindow) mainWindow.webContents.send('shortcut:long-split');
         });
+        globalShortcut.register('CommandOrControl+S', () => {
+            if (mainWindow) mainWindow.webContents.send('shortcut:save-layout');
+        });
+        globalShortcut.register('CommandOrControl+Shift+S', () => {
+            if (mainWindow) mainWindow.webContents.send('shortcut:save-layout-as');
+        });
     });
 
     mainWindow.on('blur', () => {
         globalShortcut.unregister('Alt+Space');
+        globalShortcut.unregister('CommandOrControl+S');
+        globalShortcut.unregister('CommandOrControl+Shift+S');
     });
 
     // Check for updates once window is ready
