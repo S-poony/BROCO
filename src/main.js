@@ -265,18 +265,20 @@ function initialize() {
      */
     const updateHoverAt = (x, y, shouldFocus = true) => {
         try {
-            // Don't steal focus if user is currently typing
-            if (document.activeElement &&
+            const paper = document.getElementById('a4-paper');
+            const isEditingInPaper = document.activeElement &&
+                paper?.contains(document.activeElement) &&
                 (document.activeElement.tagName === 'TEXTAREA' ||
                     document.activeElement.tagName === 'INPUT' ||
-                    document.activeElement.isContentEditable)) {
+                    document.activeElement.isContentEditable);
+
+            if (isEditingInPaper) {
                 return;
             }
 
             const elUnderCursor = document.elementFromPoint(x, y);
             if (!elUnderCursor) return;
 
-            const paper = document.getElementById('a4-paper');
             if (!paper || !paper.contains(elUnderCursor)) {
                 // If we moved outside paper, clear hover/focus if needed
                 if (lastHoveredRectId) {
