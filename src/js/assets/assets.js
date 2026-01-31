@@ -49,10 +49,10 @@ export function setupAssetHandlers() {
 
     importBtn.addEventListener('click', async () => {
         if (window.electronAPI?.openAssets) {
-            // Electron Smart Picker: Returns array of { name, path, type, data }
-            const results = await window.electronAPI.openAssets({ directory: false });
-            if (results && results.length > 0) {
-                processItems(results);
+            // Electron Smart Picker: Returns { assets: Array, path: string }
+            const result = await window.electronAPI.openAssets({ directory: false });
+            if (result?.assets && result.assets.length > 0) {
+                processItems(result.assets);
             }
         } else {
             fileInput.click();
@@ -74,9 +74,9 @@ export function setupAssetHandlers() {
                 if (isEditing) return;
 
                 e.preventDefault();
-                const results = await window.electronAPI.openAssets({ directory: true });
-                if (results && results.length > 0) {
-                    processItems(results);
+                const result = await window.electronAPI.openAssets({ directory: true });
+                if (result?.assets && result.assets.length > 0) {
+                    processItems(result.assets);
                 }
             }
         });
@@ -487,9 +487,9 @@ export async function replaceAsset(assetId) {
 
     if (window.electronAPI?.openAssets) {
         // Electron path
-        const results = await window.electronAPI.openAssets({ directory: false });
-        if (results && results.length > 0) {
-            await handleResult(results[0]);
+        const result = await window.electronAPI.openAssets({ directory: false });
+        if (result?.assets && result.assets.length > 0) {
+            await handleResult(result.assets[0]);
         }
     } else {
         // Web fallback
