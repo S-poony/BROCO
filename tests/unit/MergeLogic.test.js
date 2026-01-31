@@ -113,11 +113,13 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
         // Merge A and B1.
         // childA is A, childB is BC. orientation is vertical.
         // leafA is A, leafB is B1.
-        const merged = mergeNodesInTree(parent, 'rect-A');
+        const focusTarget = mergeNodesInTree(parent, 'rect-A');
 
-        // Children of P are now [Merged(A+B1), B2]
-        expect(merged.children[0].size).toBe('58%');
-        expect(merged.children[1].size).toBe('42%');
+        // parent (P) children are now [Merged(A+B1), B2]
+        // Note: In this specific case, rect-B1 survives and rect-A is removed
+        expect(parent.children[0].size).toBe('58%');
+        expect(parent.children[1].size).toBe('42%');
+        expect(focusTarget.id).toBe('rect-B1');
     });
 
     it('should handle Split-Split merges [ [A1|A2] | [B1|B2] ]', () => {
@@ -151,22 +153,23 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
         };
         // Merge A2 and B1.
         expect(isDividerMergeable(parent)).toBe(true);
-        const merged = mergeNodesInTree(parent, 'rect-A2');
+        const focusTarget = mergeNodesInTree(parent, 'rect-A2');
 
-        // P should now be A1 | [ Merged | B2 ]
+        // P (parent) should now be A1 | [ Merged | B2 ]
         // A1 Abs: 20%. New size = 20%
         // Merged Abs: 20% + 18% = 38%. New size = 38%
         // B2 Abs: 42%. New size = 42%
 
-        expect(merged.children[0].id).toBe('rect-A1');
-        expect(merged.children[0].size).toBe('20%');
+        expect(parent.children[0].id).toBe('rect-A1');
+        expect(parent.children[0].size).toBe('20%');
 
-        const inner = merged.children[1];
+        const inner = parent.children[1];
         expect(inner.splitState).toBe('split');
         expect(inner.children[0].id).toBe('rect-A2'); // Content was merged into A2/B1 identity
         expect(inner.children[0].size).toBe('38%');
         expect(inner.children[1].id).toBe('rect-B2');
         expect(inner.children[1].size).toBe('42%');
+        expect(focusTarget.id).toBe('rect-A2');
     });
 
     it('should prioritize initiating node content in merge', () => {
