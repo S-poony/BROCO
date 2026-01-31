@@ -1,6 +1,6 @@
 import { saveState } from '../io/history.js';
 import { state, getCurrentPage } from '../core/state.js';
-import { findNodeById, renderAndRestoreFocus } from '../layout/layout.js';
+import { findNodeById, renderAndRestoreFocus, swapNodesContent } from '../layout/layout.js';
 import { A4_PAPER_ID } from '../core/constants.js';
 import { showConfirm, showAlert } from '../core/utils.js';
 import { toast, ensureArray } from '../core/errorHandler.js';
@@ -332,7 +332,7 @@ function setupDropHandlersForList(importHandler) {
                 removeAsset(assetId);
             } else if (replaceBtn) {
                 const assetId = replaceBtn.dataset.id;
-                import('./assets.js').then(m => m.replaceAsset(assetId));
+                replaceAsset(assetId);
             }
         });
     });
@@ -389,11 +389,9 @@ function handleDropLogic(target) {
 
             if (sourceNode) {
                 // SWAP logic when dragging between rectangles
-                import('../layout/layout.js').then(m => {
-                    m.swapNodesContent(sourceNode, targetNode);
-                    renderAndRestoreFocus(getCurrentPage());
-                    document.dispatchEvent(new CustomEvent('layoutUpdated'));
-                });
+                swapNodesContent(sourceNode, targetNode);
+                renderAndRestoreFocus(getCurrentPage());
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
                 return; // async handling above
             } else {
                 // OVERWRITE logic when dragging from sidebar
