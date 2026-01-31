@@ -78,6 +78,23 @@ function createWindow() {
         return { action: 'deny' };
     });
 
+    // Handle navigation to external sites (prevent internal accidental navigation)
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        const currentUrl = mainWindow.webContents.getURL();
+        if (url === currentUrl) return;
+
+        // Allow navigation to local sources
+        if (url.startsWith('http://localhost') || url.startsWith('file://')) {
+            return;
+        }
+
+        // Everything else: open externally and cancel internal navigation
+        if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
+            event.preventDefault();
+            shell.openExternal(url);
+        }
+    });
+
     // Handle focus/blur to register Alt+Space shortcut only when active
     // This allows us to override the Windows system menu reliably
     mainWindow.on('focus', () => {
@@ -171,6 +188,15 @@ app.whenReady().then(() => {
 
         filePaths.forEach(p => processPath(p));
         return { assets: results, path: filePaths[0] }; // Return assets and the path of the first chosen file
+    });
+
+    ipcMain.handle('app:open-external', async (event, url) => {
+        try {
+            await shell.openExternal(url);
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
     });
 
     // Handle File Save (Overwrite)

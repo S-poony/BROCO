@@ -141,6 +141,18 @@ function setupGlobalHandlers() {
 
     // Inject divider size as CSS variable
     document.documentElement.style.setProperty('--divider-size', `${DIVIDER_SIZE}px`);
+
+    // Global Link Interceptor (for Electron)
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (link && link.href && (link.href.startsWith('http') || link.href.startsWith('mailto:'))) {
+            const isElectron = window.electronAPI && window.electronAPI.isElectron;
+            if (isElectron) {
+                e.preventDefault();
+                window.electronAPI.openExternal(link.href);
+            }
+        }
+    });
 }
 
 /**

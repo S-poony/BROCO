@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     isElectron: true,
     platform: process.platform,
     openAssets: (options) => ipcRenderer.invoke('dialog:openAssets', options),
+    openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
     onLongSplit: (callback) => ipcRenderer.on('shortcut:long-split', () => callback()),
     onNewPage: (callback) => ipcRenderer.on('shortcut:new-page', () => callback()),
     onDuplicatePage: (callback) => ipcRenderer.on('shortcut:duplicate-page', () => callback()),
