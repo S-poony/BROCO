@@ -191,8 +191,8 @@ app.whenReady().then(() => {
     ipcMain.handle('file:save-dialog', async (event, data) => {
         const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
             title: 'Save Layout',
-            defaultPath: `layout-${new Date().toISOString().split('T')[0]}.layout.json`,
-            filters: [{ name: 'Layout JSON', extensions: ['json'] }]
+            defaultPath: `layout-${new Date().toISOString().split('T')[0]}.broco`,
+            filters: [{ name: 'Broco Layout', extensions: ['broco'] }]
         });
 
         if (canceled || !filePath) return { canceled: true };

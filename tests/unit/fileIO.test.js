@@ -116,7 +116,7 @@ describe('fileIO.js', () => {
 
             expect(exportSettings).toHaveBeenCalled();
             expect(mockUrlCreate).toHaveBeenCalled();
-            expect(mockAnchor.download).toMatch(/layout-.*\.layout\.json/);
+            expect(mockAnchor.download).toMatch(/layout-.*\.broco/);
             expect(mockAnchor.click).toHaveBeenCalled();
         });
 

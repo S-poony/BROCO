@@ -69,7 +69,7 @@ export async function saveLayout(options = {}) {
 
         const date = new Date().toISOString().split('T')[0];
         a.href = url;
-        a.download = `layout-${date}.layout.json`;
+        a.download = `layout-${date}.broco`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -155,7 +155,7 @@ export async function openLayout() {
     if (isElectron) {
         const result = await window.electronAPI.openAssets({
             multiSelections: false,
-            filters: [{ name: 'Layout JSON', extensions: ['json'] }]
+            filters: [{ name: 'Broco Layout', extensions: ['broco', 'json'] }]
         });
 
         if (!result || !result.path) return;
@@ -177,7 +177,7 @@ export async function openLayout() {
     // Standard file input for Web
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.broco,.json';
 
     input.onchange = (e) => {
         const file = e.target.files[0];
