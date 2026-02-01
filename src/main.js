@@ -555,6 +555,10 @@ function setupDelegatedHandlers() {
 
     // Global click delegation
     paper.addEventListener('click', (e) => {
+        // Only handle primary button (left click) or synthetic events (which usually have button 0)
+        // This prevents double-triggering when right-click also dispatches a click event.
+        if (e.button !== 0) return;
+
         // Divider Merge (Ctrl + Click)
         const divider = e.target.closest('.divider');
         if (divider && (e.ctrlKey || e.metaKey)) {
@@ -637,6 +641,7 @@ function setupDelegatedHandlers() {
         const rect = e.target.closest('.splittable-rect[data-split-state="unsplit"]');
         if (rect) {
             e.preventDefault();
+
             rect.focus(); // Ensure focus is moved, similar to left-click
             const clickEvent = new MouseEvent('click', {
                 bubbles: true,
