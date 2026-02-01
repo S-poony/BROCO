@@ -24,7 +24,8 @@ export function renderAndRestoreFocus(page, explicitFocusId = null) {
  */
 export function handleSplitClick(event) {
     // If we just finished editing text, clicking elsewhere should only exit edit mode
-    if (window._justFinishedEditing) return;
+    // However, if Alt is held (or Right-Click synthetic event), we definitely want to split.
+    if (window._justFinishedEditing && !event.altKey) return;
 
     // If click was on the remove button, don't do anything here
     if (event.target.closest('.remove-image-btn')) return;

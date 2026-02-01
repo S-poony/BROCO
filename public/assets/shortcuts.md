@@ -49,6 +49,7 @@
 ***
 
 ### Electron App
+_right click does the same as alt + click/space everywhere_
 
 `ctrl + i` = import folder *(when not editing text)*
 `Alt + Space` = long split

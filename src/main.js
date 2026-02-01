@@ -311,20 +311,8 @@ function initialize() {
             rect.focus({ preventScroll: true });
         }
         else if (!rect && lastHoveredRectId) {
-            // We moved out of a rect into something else (divider, margin, etc)
-            // But we only clear if we aren't over a child of the rect either.
-
-            // Wait, mouseover bubbles.
-            // If we hover a button inside the rect, rect is still closest.
-            // If we hover a divider logic:
-
             const isInteractionLayer = target.closest('.divider, .edge-handle, .floating-btn, .image-controls');
             if (isInteractionLayer) {
-                // Keep the current rect active if we are interacting with its controls?
-                // Actually standard behavior is: if over divider, we are not over rect content.
-                // let's clear hover effect on rect just to be precise?
-                // Or keep it to show context?
-                // Let's stick to simple: if closest rect is null, we clear.
             }
 
             if (!rect) {
@@ -627,6 +615,28 @@ function setupDelegatedHandlers() {
 
         // Default layout interaction (Split, Delete Rect, Object Fit)
         handleSplitClick(e);
+    });
+
+    // Right-Click -> Alt+Click (Electron only)
+    paper.addEventListener('contextmenu', (e) => {
+        const isElectron = (window.electronAPI && window.electronAPI.isElectron) || /Electron/i.test(navigator.userAgent);
+        if (!isElectron) return;
+
+        const rect = e.target.closest('.splittable-rect[data-split-state="unsplit"]');
+        if (rect) {
+            e.preventDefault();
+            rect.focus(); // Ensure focus is moved, similar to left-click
+            const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                altKey: true,
+                view: window,
+                clientX: e.clientX,
+                clientY: e.clientY
+            });
+            // Dispatch on original target to preserve behavior for inner elements (text previews, etc.)
+            e.target.dispatchEvent(clickEvent);
+        }
     });
 
     // Focus/Blur delegation for editor
