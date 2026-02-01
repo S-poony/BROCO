@@ -9,6 +9,7 @@ export let state = {
     pages: [], // Array of layout objects
     currentPageIndex: 0,
     hoveredRectId: null,
+    lastFocusedRectId: null,
     nodeMap: new Map(), // O(1) lookup for current page
     isDirty: false,
     currentFilePath: null

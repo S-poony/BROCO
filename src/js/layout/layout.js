@@ -231,10 +231,11 @@ export function handleDividerMerge(dividerElement) {
 
     if (parentNode && isDividerMergeable(parentNode)) {
         saveState();
-        // contentPriority: null means default priority (usually focusing on keeping content)
-        // Check mergeNodesInTree signature: (parentNode, focusedNodeId)
-        // We pass null for focusedNodeId so it decides based on content
-        const merged = mergeNodesInTree(parentNode, null);
+
+        // Refinement: Use the last focused rectangle as the initiator
+        const focusedId = state.lastFocusedRectId;
+
+        const merged = mergeNodesInTree(parentNode, focusedId);
 
         // Full layout update is safer for tree structure changes
         renderAndRestoreFocus(page, merged ? merged.id : parentId);

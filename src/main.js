@@ -407,10 +407,11 @@ function initialize() {
         });
     }
 
-    // Sync lastHoveredRectId when focus changes via keyboard or other means
+    // Sync lastFocusedRectId when focus changes via keyboard or other means
     document.addEventListener('focusin', (e) => {
         if (e.target.classList.contains('splittable-rect')) {
             lastHoveredRectId = e.target.id;
+            state.lastFocusedRectId = e.target.id;
 
             // Update shortcut hints when focus changes (keyboard or direct click)
             requestAnimationFrame(() => {

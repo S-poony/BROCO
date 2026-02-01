@@ -6,17 +6,29 @@ import { state, getCurrentPage } from '../../core/state.js';
  * @param {string} id
  * @returns {Object|null}
  */
+/**
+ * Helper to find node in the layout tree
+ * @param {Object} root
+ * @param {string} id
+ * @returns {Object|null}
+ */
 export function findNodeById(root, id) {
-    // Attempt O(1) lookup first ONLY if we are searching the entire current page
-    if (root === getCurrentPage() && state.nodeMap && state.nodeMap.has(id)) {
-        return state.nodeMap.get(id);
+    // O(1) optimization for current page top-level search
+    if (state.nodeMap && state.nodeMap.has(id)) {
+        const cached = state.nodeMap.get(id);
+        // Verify we are searching the whole page (common) or if this node is the page root
+        const page = getCurrentPage();
+        if (root === page || root.id === page.id) return cached;
     }
 
-    // Fallback to recursive search if map is not ready or root is different
-    if (root.id === id) return root;
-    if (root.children) {
-        for (const child of root.children) {
-            const found = findNodeById(child, id);
+    return _findNodeRecursive(root, id);
+}
+
+function _findNodeRecursive(node, id) {
+    if (node.id === id) return node;
+    if (node.children) {
+        for (let i = 0; i < node.children.length; i++) {
+            const found = _findNodeRecursive(node.children[i], id);
             if (found) return found;
         }
     }
@@ -29,10 +41,17 @@ export function findNodeById(root, id) {
  * @param {string} childId
  * @returns {Object|null}
  */
+/**
+ * Helper to find parent node in the layout tree
+ * @param {Object} root
+ * @param {string} childId
+ * @returns {Object|null}
+ */
 export function findParentNode(root, childId) {
     if (root.children) {
-        if (root.children.some(c => c.id === childId)) return root;
-        for (const child of root.children) {
+        for (let i = 0; i < root.children.length; i++) {
+            const child = root.children[i];
+            if (child.id === childId) return root;
             const found = findParentNode(child, childId);
             if (found) return found;
         }
