@@ -279,6 +279,10 @@ function initialize() {
     setupDelegatedHandlers();
 
     let lastMousePos = { x: 0, y: 0 };
+    window.addEventListener('mousemove', (e) => {
+        lastMousePos.x = e.clientX;
+        lastMousePos.y = e.clientY;
+    }, { passive: true });
 
     /**
      * Updates the hover state based on DOM events rather than coordinates.
@@ -326,8 +330,16 @@ function initialize() {
     // Listen for layout updates to manage focus and reset selection state
     document.addEventListener('layoutUpdated', () => {
         lastHoveredRectId = null;
-        // Hover state will naturally refresh on the next mouse movement, 
-        // avoiding a forced reflow immediately after a render.
+
+        // Feature: Follow-mouse focus (restore hover focus after a DOM re-render)
+        // We use requestAnimationFrame to ensure the DOM is painted and elementFromPoint reflects the new layout.
+        requestAnimationFrame(() => {
+            const target = document.elementFromPoint(lastMousePos.x, lastMousePos.y);
+            const rect = target?.closest('.splittable-rect[data-split-state="unsplit"]');
+            if (rect) {
+                rect.focus({ preventScroll: true });
+            }
+        });
     });
 
     // Handle settings updates that require re-render (breaking circular dependency)
