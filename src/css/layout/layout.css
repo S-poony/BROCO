@@ -205,8 +205,10 @@
 }
 
 /* Priority for hovered or focused rectangles so buttons work over hitboxes */
+/* Optimization: Only bump z-index on hover or when editing. 
+   Simple keyboard focus should NOT bump z-index to avoid layout thrashing. */
 .splittable-rect[data-split-state="unsplit"].is-hovered-active:not(.is-editing),
-.splittable-rect[data-split-state="unsplit"]:focus-within:not(.is-editing) {
+.splittable-rect[data-split-state="unsplit"].is-editing {
     z-index: 60;
 }
 

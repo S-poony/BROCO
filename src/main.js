@@ -281,83 +281,57 @@ function initialize() {
     let lastMousePos = { x: 0, y: 0 };
 
     /**
-     * Updates the hover state and focus based on coordinates
-     * Useful for recapturing hover after re-renders
-     * @param {number} x
-     * @param {number} y
-     * @param {boolean} shouldFocus Default true. If false, only updates hover classes/overlay but doesn't change element focus.
+     * Updates the hover state based on DOM events rather than coordinates.
+     * Use event.target instead of elementFromPoint.
      */
-    const updateHoverAt = (x, y, shouldFocus = true) => {
-        try {
-            const paper = document.getElementById('a4-paper');
-            const isEditingInPaper = document.activeElement &&
-                paper?.contains(document.activeElement) &&
-                (document.activeElement.tagName === 'TEXTAREA' ||
-                    document.activeElement.tagName === 'INPUT' ||
-                    document.activeElement.isContentEditable);
+    const handleMouseOver = (e) => {
+        // Optimization: Skip hover updates during active divider resizing
+        if (state.activeDivider) return;
 
-            if (isEditingInPaper) {
-                return;
-            }
+        const target = e.target;
 
-            const elUnderCursor = document.elementFromPoint(x, y);
-            if (!elUnderCursor) return;
+        // 1. Check if we entered a splittable rect
+        const rect = target.closest('.splittable-rect[data-split-state="unsplit"]');
 
-            if (!paper || !paper.contains(elUnderCursor)) {
-                // If we moved outside paper, clear hover/focus if needed
-                if (lastHoveredRectId) {
-                    document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
-                    lastHoveredRectId = null;
-                    shortcutsOverlay.hide();
-
-                    // Only blur if we currently have a rect focused, AND we aren't about to focus a new one
-                    // Actually, let's NOT blur if we are moving mouse out, keep it focused for keyboard
-                    // if (document.activeElement && document.activeElement.classList.contains('splittable-rect')) {
-                    //     document.activeElement.blur();
-                    // }
-                }
-                return;
-            }
-
-            const rect = elUnderCursor.closest('.splittable-rect[data-split-state="unsplit"]');
-            if (!rect) {
-                // If we are not over a leaf rect, check if we are over a divider or edge handle
-                const isInteractionLayer = elUnderCursor.closest('.divider, .edge-handle');
-                if (!isInteractionLayer) {
-                    document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
-                    lastHoveredRectId = null;
-
-                    // Don't blur when mouse is over a divider/background, keep keyboard focus
-                    // if (document.activeElement && document.activeElement.classList.contains('splittable-rect')) {
-                    //     document.activeElement.blur();
-                    // }
-                }
-                return;
-            }
-
-            // Restore focus follows mouse
-            if (rect && rect.id !== lastHoveredRectId) {
-                lastHoveredRectId = rect.id;
+        if (rect && rect.id !== lastHoveredRectId) {
+            // Clear previous hover
+            if (lastHoveredRectId) {
                 document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
-                rect.classList.add('is-hovered-active');
-
-                requestAnimationFrame(() => {
-                    const node = findNodeById(getCurrentPage(), rect.id);
-                    shortcutsOverlay.update(node);
-                });
-
-                if (shouldFocus) {
-                    rect.focus({ preventScroll: true });
-                }
-                lastHoveredRectId = rect.id;
             }
 
-            // Update shortcut hints
-            // const node = findNodeById(getCurrentPage(), rect.id);
-            // shortcutsOverlay.update(node);
+            lastHoveredRectId = rect.id;
+            rect.classList.add('is-hovered-active');
 
-        } catch (err) {
-            // Silently ignore
+            requestAnimationFrame(() => {
+                const node = findNodeById(getCurrentPage(), rect.id);
+                shortcutsOverlay.update(node);
+            });
+
+            // Re-enable autofocus on hover (safe now due to CSS/JS optimizations)
+            rect.focus({ preventScroll: true });
+        }
+        else if (!rect && lastHoveredRectId) {
+            // We moved out of a rect into something else (divider, margin, etc)
+            // But we only clear if we aren't over a child of the rect either.
+
+            // Wait, mouseover bubbles.
+            // If we hover a button inside the rect, rect is still closest.
+            // If we hover a divider logic:
+
+            const isInteractionLayer = target.closest('.divider, .edge-handle, .floating-btn, .image-controls');
+            if (isInteractionLayer) {
+                // Keep the current rect active if we are interacting with its controls?
+                // Actually standard behavior is: if over divider, we are not over rect content.
+                // let's clear hover effect on rect just to be precise?
+                // Or keep it to show context?
+                // Let's stick to simple: if closest rect is null, we clear.
+            }
+
+            if (!rect) {
+                document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
+                lastHoveredRectId = null;
+                shortcutsOverlay.hide();
+            }
         }
     };
 
@@ -380,15 +354,8 @@ function initialize() {
         }
     });
 
-    // Global click delegation for rectangles in the paper
-
-    document.addEventListener('mousemove', (e) => {
-        // Optimization: Skip hover updates during active divider resizing (dragging assets should still update focus)
-        if (state.activeDivider) return;
-
-        lastMousePos = { x: e.clientX, y: e.clientY };
-        updateHoverAt(e.clientX, e.clientY);
-    });
+    // Use mouseover for lightweight hover detection
+    document.addEventListener('mouseover', handleMouseOver);
 
     // Hide overlay and clear focus when mouse leaves the paper
     const paperContainer = document.querySelector('.workspace-wrapper');
@@ -413,11 +380,14 @@ function initialize() {
             lastHoveredRectId = e.target.id;
             state.lastFocusedRectId = e.target.id;
 
-            // Update shortcut hints when focus changes (keyboard or direct click)
-            requestAnimationFrame(() => {
-                const node = findNodeById(getCurrentPage(), e.target.id);
-                shortcutsOverlay.update(node);
-            });
+            // Optimization: Only update hints if the overlay is actually enabled/visible.
+            // This prevents expensive tree traversals during rapid navigation if the user doesn't even use the hints.
+            if (shortcutsOverlay.isEnabled) {
+                requestAnimationFrame(() => {
+                    const node = findNodeById(getCurrentPage(), e.target.id);
+                    shortcutsOverlay.update(node);
+                });
+            }
         }
     });
 

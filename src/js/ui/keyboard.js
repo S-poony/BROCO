@@ -138,6 +138,21 @@ function handleKeyDown(e) {
     }
 }
 
+// ----------------------------------------------------------------------
+// Layout Cache to prevent Thrashing on Focus (z-index change)
+// ----------------------------------------------------------------------
+let rectBoundsCache = null;
+
+function invalidateLayoutCache() {
+    rectBoundsCache = null;
+}
+
+// Invalidate on layout changes or window resize
+window.addEventListener('resize', invalidateLayoutCache);
+// We also need to hook into the custom layoutUpdated event
+document.addEventListener('layoutUpdated', invalidateLayoutCache);
+
+
 /**
  * Find the closest rectangle in a given direction
  * @param {HTMLElement} current 
@@ -145,13 +160,33 @@ function handleKeyDown(e) {
  * @returns {HTMLElement|null}
  */
 export function getClosestRect(current, direction) {
-    const allRects = Array.from(document.querySelectorAll('.splittable-rect[data-split-state="unsplit"]'));
-    if (allRects.length <= 1) return null;
+    // If cache is missing, rebuild it
+    if (!rectBoundsCache) {
+        const allRects = Array.from(document.querySelectorAll('.splittable-rect[data-split-state="unsplit"]'));
+        if (allRects.length <= 1) return null;
 
-    // Gather all bounds in one pass to minimize layout thrashing
-    const currentRect = current.getBoundingClientRect();
-    const rectBounds = allRects.map(el => ({ el, bounds: el.getBoundingClientRect() }));
+        // Reads: causing layout if dirty, but we cache the result
+        rectBoundsCache = allRects.map(el => ({
+            el,
+            bounds: el.getBoundingClientRect() // Forces reflow only once per layout change
+        }));
+    }
 
+    if (!rectBoundsCache || rectBoundsCache.length === 0) return null;
+
+    // Use cached bounds to find current geometry
+    // Note: 'current' element itself might have updated styles (z-index), but its geometry 
+    // should match the cache unless a layout change happened (which clears cache).
+
+    // Find the cached entry for 'current'
+    // We can't rely on index, we must match element reference
+    const currentEntry = rectBoundsCache.find(entry => entry.el === current);
+
+    // If current element isn't in cache (rare edge case?), fallback to live read or abort
+    // Fallback: just read it live, but use cached for others
+    const currentRect = currentEntry ? currentEntry.bounds : current.getBoundingClientRect();
+
+    // Compute center
     const currentCenter = {
         x: currentRect.left + currentRect.width / 2,
         y: currentRect.top + currentRect.height / 2
@@ -160,7 +195,7 @@ export function getClosestRect(current, direction) {
     let closest = null;
     let minDist = Infinity;
 
-    rectBounds.forEach(({ el, bounds: r }) => {
+    rectBoundsCache.forEach(({ el, bounds: r }) => {
         if (el === current) return;
 
         const center = {
