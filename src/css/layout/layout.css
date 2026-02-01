@@ -141,6 +141,7 @@
 }
 
 @media (max-width: 1024px) {
+
     /*see constants.js for breakpoint*/
     .edge-handle {
         display: none !important;
@@ -207,6 +208,19 @@
 .splittable-rect[data-split-state="unsplit"].is-hovered-active:not(.is-editing),
 .splittable-rect[data-split-state="unsplit"]:focus-within:not(.is-editing) {
     z-index: 60;
+}
+
+/* Scope Highlighting*/
+.splittable-rect[data-split-state="split"]:has(> .vertical-divider:hover) .vertical-divider,
+.is-resizing-scope .vertical-divider {
+    background-color: var(--color-primary-hover, rgb(138, 138, 199)) !important;
+    z-index: 30;
+}
+
+.splittable-rect[data-split-state="split"]:has(> .horizontal-divider:hover) .horizontal-divider,
+.is-resizing-scope .horizontal-divider {
+    background-color: var(--color-primary-hover, rgb(138, 138, 199)) !important;
+    z-index: 30;
 }
 
 /* Visual styling for generated rectangles */

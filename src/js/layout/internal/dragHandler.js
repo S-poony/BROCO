@@ -77,6 +77,9 @@ export function startDrag(event, dividerElement = null) {
     divider.rectAId = rectAId;
     divider.rectBId = rectBId;
 
+    // Added scope highlighting (Phase 3)
+    parent.classList.add('is-resizing-scope');
+
     document.addEventListener('mousemove', onDrag);
     document.addEventListener('mouseup', stopDrag);
     document.addEventListener('touchmove', onDrag, { passive: false });
@@ -240,6 +243,11 @@ export function stopDrag() {
     document.removeEventListener('touchmove', onDrag);
     document.removeEventListener('touchend', stopDrag);
     document.body.classList.remove('no-select');
+
+    // Removed scope highlighting (Phase 3)
+    const parent = document.getElementById(divider.parentId);
+    if (parent) parent.classList.remove('is-resizing-scope');
+
     state.activeDivider = null;
 
     if (pA <= MIN_AREA_PERCENT) {
