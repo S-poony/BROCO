@@ -210,17 +210,34 @@
     z-index: 60;
 }
 
-/* Scope Highlighting*/
+/* Scope Highlighting */
 .splittable-rect[data-split-state="split"]:has(> .vertical-divider:hover) .vertical-divider,
 .is-resizing-scope .vertical-divider {
     background-color: var(--color-primary-hover, rgb(138, 138, 199)) !important;
     z-index: 30;
+    opacity: 0.5;
+    /* Dim dependent dividers */
+}
+
+.vertical-divider:hover,
+.is-resizing-scope .vertical-divider:hover {
+    background-color: var(--color-primary, #4f46e5) !important;
+    opacity: 1 !important;
+    z-index: 40;
 }
 
 .splittable-rect[data-split-state="split"]:has(> .horizontal-divider:hover) .horizontal-divider,
 .is-resizing-scope .horizontal-divider {
     background-color: var(--color-primary-hover, rgb(138, 138, 199)) !important;
     z-index: 30;
+    opacity: 0.5;
+}
+
+.horizontal-divider:hover,
+.is-resizing-scope .horizontal-divider:hover {
+    background-color: var(--color-primary, #4f46e5) !important;
+    opacity: 1 !important;
+    z-index: 40;
 }
 
 /* Visual styling for generated rectangles */
