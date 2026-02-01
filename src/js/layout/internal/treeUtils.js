@@ -95,22 +95,12 @@ export function deleteNodeFromTree(root, nodeId) {
 
 /**
  * Determines if a divider (represented by its parent node) is mergeable.
- * A divider is mergeable if it separates EXACTLY one leaf node from each child subtree
- * along its entire length.
+ * Now permissive to allow multi-node merges.
  * @param {Object} parentNode
  * @returns {boolean}
  */
 export function isDividerMergeable(parentNode) {
-    if (!parentNode || parentNode.splitState !== 'split' || !parentNode.children) return false;
-
-    const [childA, childB] = parentNode.children;
-    const orientation = parentNode.orientation;
-
-    // We check the "trailing" edge of the first child and "leading" edge of the second.
-    const countA = countNodesAlongBoundary(childA, orientation, false); // Trailing edge of Child A
-    const countB = countNodesAlongBoundary(childB, orientation, true);  // Leading edge of Child B
-
-    return countA === 1 && countB === 1;
+    return parentNode && parentNode.splitState === 'split' && parentNode.children && parentNode.children.length === 2;
 }
 
 /**
@@ -137,163 +127,81 @@ function countNodesAlongBoundary(node, splitOrientation, isLeading) {
 }
 
 /**
- * Merges nodes separated by a specific divider using surgical Tree Contraction.
- * Assumes isDividerMergeable(parentNode) is true.
+ * Merges nodes separated by a specific divider using directional expansion.
  * @param {Object} parentNode The parent node of the divider
- * @param {string} focusedNodeId The ID of the node initiating the merge (priority content)
- * @returns {Object} The updated node that replaces parentNode
+ * @param {string} focusedNodeId The ID of the node initiating the merge (expander)
+ * @returns {Object} The node that was expanded or the new parent
  */
 export function mergeNodesInTree(parentNode, focusedNodeId) {
     const [childA, childB] = parentNode.children;
     const orientation = parentNode.orientation;
 
-    // 1. Identify the touching leaf nodes
-    const getTouchingLeaf = (node, splitOrientation, isLeading) => {
-        if (node.splitState === 'unsplit') return node;
-        const targetIndex = isLeading ? 0 : 1;
-        return getTouchingLeaf(node.children[targetIndex], splitOrientation, isLeading);
-    };
+    // 1. Determine direction: which side contains the focused node?
+    // If focusedNodeId is null (e.g. from mouse click), we can default to childA expanding or use context.
+    // For now, if null, we'll try to find any content to preserve, but keyboard always passes it.
+    const isExpanderA = (childA.id === focusedNodeId || (childA.children && findNodeById(childA, focusedNodeId)));
+    const isExpanderB = (childB.id === focusedNodeId || (childB.children && findNodeById(childB, focusedNodeId)));
 
-    const leafA = getTouchingLeaf(childA, orientation, false); // Trailing edge
-    const leafB = getTouchingLeaf(childB, orientation, true);  // Leading edge
-
-    // 2. Combine content - Prioritize the focused node
-    // A node has content if it has any properties other than the structural ones
-    const structuralKeys = ['id', 'splitState', 'children', 'orientation', 'size'];
-    const getContent = (node) => {
-        const content = {};
-        Object.entries(node).forEach(([key, value]) => {
-            if (!structuralKeys.includes(key) && value !== null && value !== undefined) {
-                content[key] = (typeof value === 'object') ? JSON.parse(JSON.stringify(value)) : value;
-            }
-        });
-        return content;
-    };
-
-    const contentA = getContent(leafA);
-    const contentB = getContent(leafB);
-    const hasContentA = Object.keys(contentA).length > 0;
-    const hasContentB = Object.keys(contentB).length > 0;
-
-    let mergedContent = {
-        splitState: 'unsplit',
-        children: null,
-        orientation: null
-    };
-
-    let winnerContent;
-    if (leafA.id === focusedNodeId && hasContentA) {
-        winnerContent = contentA;
-    } else if (leafB.id === focusedNodeId && hasContentB) {
-        winnerContent = contentB;
-    } else {
-        winnerContent = hasContentA ? contentA : contentB;
+    // Fallback if neither (e.g. click on divider with no focus)
+    if (!isExpanderA && !isExpanderB) {
+        // Default to A expanding if it has content, else B
+        // This is a sensible default for mouse-initiated merges
+        return mergeNodesInTree(parentNode, childA.id);
     }
 
-    Object.assign(mergedContent, winnerContent);
+    const expander = isExpanderA ? childA : childB;
+    const neighbor = isExpanderA ? childB : childA;
 
-    // 3. Tree Contraction Logic
-    // Recursive helper to update leaf within a subtree
-    const contract = (node, targetLeafId, newNode) => {
-        if (node.id === targetLeafId) {
-            Object.assign(node, newNode);
-            return node;
-        }
-        if (node.children) {
-            node.children = node.children.map(c => contract(c, targetLeafId, newNode));
-        }
-        return node;
-    };
+    // 2. Determine Neighbor Consumption
+    if (neighbor.splitState === 'split' && neighbor.orientation === orientation) {
+        // Case A: Neighbor split in SAME orientation -> Consume touching sub-child
+        const neighborChildA = neighbor.children[0];
+        const neighborChildB = neighbor.children[1];
 
-    // Update childA and childB structures
-    contract(childA, leafA.id, mergedContent);
-    contract(childB, leafB.id, mergedContent);
+        // If expander is on the left (A), we consume the left part of neighbor (neighborChildA)
+        const consumed = isExpanderA ? neighborChildA : neighborChildB;
+        const remaining = isExpanderA ? neighborChildB : neighborChildA;
 
-    // 4. Update parentNode and Recalculate Sizes
-    const parseSize = (s) => parseFloat(s) || 50;
-    const sizeA = parseSize(childA.size);
-    const sizeB = parseSize(childB.size);
+        // Combine sizes
+        const expanderSize = parseFloat(expander.size) || 50;
+        const neighborSize = parseFloat(neighbor.size) || 50;
+        const consumedRelSize = parseFloat(consumed.size) || 50;
 
-    const isParallelA = childA.splitState === 'split' && childA.orientation === orientation;
-    const isParallelB = childB.splitState === 'split' && childB.orientation === orientation;
+        // The expander now takes its old size + (neighborSize * consumedRelSize / 100)
+        const newExpanderSize = expanderSize + (neighborSize * consumedRelSize / 100);
+        const newRemainingSize = 100 - newExpanderSize;
 
-    if (isParallelA && isParallelB) {
-        // [ [A1|A2] | [B1|B2] ] -> Merge A2 and B1.
-        // Result is [ A1 | [Merged(A2,B1) | B2] ] (nested binary tree)
-        // New structure for parentNode: 
-        // P { split, children: [A1, NewParent { children: [Merged, B2] }] }
+        expander.size = `${newExpanderSize}%`;
+        remaining.size = `${newRemainingSize}%`;
 
-        const factorA = sizeA / 100;
-        const factorB = sizeB / 100;
+        // Update parent's children
+        parentNode.children = isExpanderA ? [expander, remaining] : [remaining, expander];
 
-        // Adjust A1
-        childA.children[0].size = `${parseSize(childA.children[0].size) * factorA}%`;
-
-        // Adjust A2 (it will be merged, it takes sizeA*ratio2 + sizeB*ratio1)
-        const a2Abs = parseSize(childA.children[1].size) * factorA;
-        const b1Abs = parseSize(childB.children[0].size) * factorB;
-        childA.children[1].size = `${a2Abs + b1Abs}%`;
-
-        // Adjust B2
-        childB.children[1].size = `${parseSize(childB.children[1].size) * factorB}%`;
-
-        // We can structure the result as A1 | [Merged | B2]
-        // leafA already shares content with leafB due to earlier contract() calls.
-        // leafA IS childA.children[1].
-        // leafB IS childB.children[0].
-
-        const newInnerParent = {
-            id: `rect-${++state.currentId}`,
-            splitState: 'split',
-            orientation: orientation,
-            size: `${100 - parseSize(childA.children[0].size)}%`,
-            children: [
-                childA.children[1], // The merged node (A2 + B1 content)
-                childB.children[1]  // B2
-            ]
-        };
-
-        parentNode.splitState = 'split';
-        parentNode.children = [
-            childA.children[0], // A1
-            newInnerParent
-        ];
-        return childA.children[1]; // The merged leaf
-    } else if (isParallelA) {
-        // [ [A1|A2] | B ] -> Merge A2 and B
-        const factor = sizeA / 100;
-        childA.children.forEach(c => {
-            const innerSize = parseSize(c.size);
-            const absoluteSize = innerSize * factor;
-            if (c.id === leafA.id || (c.children && findNodeById(c, leafA.id))) {
-                c.size = `${absoluteSize + sizeB}%`;
-            } else {
-                c.size = `${absoluteSize}%`;
-            }
-        });
-        parentNode.splitState = 'split';
-        parentNode.children = childA.children;
-        parentNode.orientation = childA.orientation;
-        return leafA;
-    } else if (isParallelB) {
-        // [ A | [B1|B2] ] -> Merge A and B1
-        const factor = sizeB / 100;
-        childB.children.forEach(c => {
-            const innerSize = parseSize(c.size);
-            const absoluteSize = innerSize * factor;
-            if (c.id === leafB.id || (c.children && findNodeById(c, leafB.id))) {
-                c.size = `${absoluteSize + sizeA}%`;
-            } else {
-                c.size = `${absoluteSize}%`;
-            }
-        });
-        parentNode.splitState = 'split';
-        parentNode.children = childB.children;
-        parentNode.orientation = childB.orientation;
-        return leafB;
-    } else {
-        // Simple case: A | B
-        Object.assign(parentNode, mergedContent);
-        return parentNode;
+        // Return a leaf within the expanded side for focus restoration
+        return findNodeById(expander, focusedNodeId) || expander;
     }
+
+    // Case B: Neighbor is a leaf OR split ORTHOGONALLY -> Consume entirely
+    // Parent becomes the expander (promote expander)
+    const structuralKeys = ['id', 'size'];
+    const newState = {};
+
+    // Collect all properties from expander
+    Object.keys(expander).forEach(key => {
+        if (!structuralKeys.includes(key)) {
+            newState[key] = (typeof expander[key] === 'object' && expander[key] !== null) ?
+                JSON.parse(JSON.stringify(expander[key])) : expander[key];
+        }
+    });
+
+    // Clean up parentNode before assigning new state (preserving ID and Size)
+    Object.keys(parentNode).forEach(key => {
+        if (!structuralKeys.includes(key)) {
+            delete parentNode[key];
+        }
+    });
+
+    Object.assign(parentNode, newState);
+
+    return findNodeById(parentNode, focusedNodeId) || parentNode;
 }

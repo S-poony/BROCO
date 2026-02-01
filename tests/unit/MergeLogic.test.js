@@ -37,7 +37,7 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
         expect(isDividerMergeable(parent)).toBe(true);
     });
 
-    it('should return false for [A | [B / C]] (A touches both B and C)', () => {
+    it('should return true for [A | [B / C]] (multi-node boundary)', () => {
         const parent = {
             splitState: 'split',
             orientation: 'vertical',
@@ -54,14 +54,11 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
                 }
             ]
         };
-        // Divider is vertical. 
-        // Trailing edge of Child 0 (A) is 1 leaf.
-        // Leading edge of Child 1 (BC) is ORTHOGONAL split -> Both B and C touch the divider.
-        // Total 3 leaves touch. -> NOT Mergeable.
-        expect(isDividerMergeable(parent)).toBe(false);
+        // Now permissive
+        expect(isDividerMergeable(parent)).toBe(true);
     });
 
-    it('should return false for [[A/B] | [C/D]] (multi-leaf boundary)', () => {
+    it('should return true for [[A/B] | [C/D]] (multi-leaf boundary)', () => {
         const parent = {
             splitState: 'split',
             orientation: 'vertical',
@@ -86,8 +83,7 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
                 }
             ]
         };
-        // Both sides are orthogonal splits. Each contributes 2 leaves to the boundary.
-        // Total 4 leaves touch. -> NOT Mergeable.
+        expect(isDividerMergeable(parent)).toBe(true);
     });
 
     it('should preserve absolute positions in [A(40) | [B1(30) | B2(70)](60)]', () => {
@@ -110,19 +106,18 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
                 }
             ]
         };
-        // Merge A and B1.
-        // childA is A, childB is BC. orientation is vertical.
-        // leafA is A, leafB is B1.
+        // Merge from A
         const focusTarget = mergeNodesInTree(parent, 'rect-A');
 
-        // parent (P) children are now [Merged(A+B1), B2]
-        // Note: In this specific case, rect-B1 survives and rect-A is removed
+        // parent (P) children are now [A, B2]
+        // A size: 40% + (60% * 30%) = 58%
+        // B2 size: 60% * 70% = 42%
         expect(parent.children[0].size).toBe('58%');
         expect(parent.children[1].size).toBe('42%');
-        expect(focusTarget.id).toBe('rect-B1');
+        expect(focusTarget.id).toBe('rect-A');
     });
 
-    it('should handle Split-Split merges [ [A1|A2] | [B1|B2] ]', () => {
+    it('should handle Split-Split merges [ [A1|A2] | [B1|B2] ] by consuming sub-child', () => {
         const parent = {
             id: 'P',
             splitState: 'split',
@@ -135,8 +130,8 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
                     orientation: 'vertical',
                     size: '40%',
                     children: [
-                        { id: 'rect-A1', splitState: 'unsplit', size: '50%' }, // Abs 20%
-                        { id: 'rect-A2', splitState: 'unsplit', size: '50%' }  // Abs 20%
+                        { id: 'rect-A1', splitState: 'unsplit', size: '50%' },
+                        { id: 'rect-A2', splitState: 'unsplit', size: '50%' }
                     ]
                 },
                 {
@@ -145,30 +140,23 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
                     orientation: 'vertical',
                     size: '60%',
                     children: [
-                        { id: 'rect-B1', splitState: 'unsplit', size: '30%' }, // Abs 18%
-                        { id: 'rect-B2', splitState: 'unsplit', size: '70%' }  // Abs 42%
+                        { id: 'rect-B1', splitState: 'unsplit', size: '30%' },
+                        { id: 'rect-B2', splitState: 'unsplit', size: '70%' }
                     ]
                 }
             ]
         };
-        // Merge A2 and B1.
-        expect(isDividerMergeable(parent)).toBe(true);
+        // Merge from A2 (Left Side) -> Consumes B1 (Right Side's first child)
         const focusTarget = mergeNodesInTree(parent, 'rect-A2');
 
-        // P (parent) should now be A1 | [ Merged | B2 ]
-        // A1 Abs: 20%. New size = 20%
-        // Merged Abs: 20% + 18% = 38%. New size = 38%
-        // B2 Abs: 42%. New size = 42%
+        // P (parent) should now be [A1A2, B2]
+        // A1A2 size: 40% + (60% * 30%) = 40% + 18% = 58%
+        // B2 size: 60% * 70% = 42%
 
-        expect(parent.children[0].id).toBe('rect-A1');
-        expect(parent.children[0].size).toBe('20%');
-
-        const inner = parent.children[1];
-        expect(inner.splitState).toBe('split');
-        expect(inner.children[0].id).toBe('rect-A2'); // Content was merged into A2/B1 identity
-        expect(inner.children[0].size).toBe('38%');
-        expect(inner.children[1].id).toBe('rect-B2');
-        expect(inner.children[1].size).toBe('42%');
+        expect(parent.children[0].id).toBe('A1A2');
+        expect(parent.children[0].size).toBe('58%');
+        expect(parent.children[1].id).toBe('rect-B2');
+        expect(parent.children[1].size).toBe('42%');
         expect(focusTarget.id).toBe('rect-A2');
     });
 
@@ -199,10 +187,10 @@ describe('Advanced Merge Logic (isDividerMergeable)', () => {
                 { id: 'B', splitState: 'unsplit', pizzaType: 'Napoli' }
             ]
         };
-        // Merge from B
+        // Merge from B -> B expands, parent takes B's state
         const merged = mergeNodesInTree(parent, 'B');
         expect(merged.pizzaType).toBe('Napoli');
-        // Structural properties should be clean
-        expect(merged.id).toBeUndefined(); // parentNode's ID is usually preserved or promoted elsewhere, but mergedContent itself has no ID
+        // Structural properties: parent keeps its identity but takes expander's state
+        expect(parent.pizzaType).toBe('Napoli');
     });
 });
