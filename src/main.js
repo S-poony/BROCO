@@ -718,10 +718,15 @@ function setupDelegatedHandlers() {
     });
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkModeAndInitialize);
+if (window.__BROCO_INITIALIZED__) {
+    console.log('BROCO already initialized, skipping duplicate load.');
 } else {
-    checkModeAndInitialize();
+    window.__BROCO_INITIALIZED__ = true;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkModeAndInitialize);
+    } else {
+        checkModeAndInitialize();
+    }
 }
 
 function checkModeAndInitialize() {

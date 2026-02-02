@@ -3,6 +3,7 @@
  * (auto-pairing, list continuation, indentation, etc.)
  */
 export function handleEditorKeydown(e, editor) {
+    if (e._brocoProcessed) return;
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
     const value = editor.value;
@@ -13,6 +14,7 @@ export function handleEditorKeydown(e, editor) {
     // Auto-pairing
     if (pairs[e.key]) {
         e.preventDefault();
+        e._brocoProcessed = true;
         if (e.key === '[' && value[start - 1] === '[') {
             editor.value = value.substring(0, start) + '[' + selection + ']]' + value.substring(end);
             editor.selectionStart = start + 1;
@@ -29,6 +31,7 @@ export function handleEditorKeydown(e, editor) {
     // Tab / Indentation
     if (e.key === 'Tab') {
         e.preventDefault();
+        e._brocoProcessed = true;
         const lineStart = value.lastIndexOf('\n', start - 1) + 1;
         const lineEnd = value.indexOf('\n', start);
         const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
@@ -63,6 +66,7 @@ export function handleEditorKeydown(e, editor) {
         const listMatch = line.match(/^(\s*)([-*+]|(\d+)\.)(\s+)/);
         if (listMatch) {
             e.preventDefault();
+            e._brocoProcessed = true;
             const indent = listMatch[1];
             const marker = listMatch[2];
             const number = listMatch[3];
@@ -88,6 +92,7 @@ export function handleEditorKeydown(e, editor) {
             const contentIndentMatch = line.match(/^(\s+)/);
             if (contentIndentMatch && contentIndentMatch[1].length > 0) {
                 e.preventDefault();
+                e._brocoProcessed = true;
                 const indent = contentIndentMatch[1];
                 const prefix = '\n' + indent;
                 editor.value = value.substring(0, start) + prefix + value.substring(end);
@@ -101,12 +106,14 @@ export function handleEditorKeydown(e, editor) {
     // Escape or Ctrl+K
     if (e.key === 'Escape') {
         e.preventDefault();
+        e._brocoProcessed = true;
         editor.blur();
         return;
     }
 
     if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
+        e._brocoProcessed = true;
         const selected = value.substring(start, end);
         const link = selected ? `[${selected}](url)` : `[link text](url)`;
         editor.setRangeText(link, start, end, 'select');
