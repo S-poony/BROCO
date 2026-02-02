@@ -277,9 +277,6 @@ function initialize() {
         });
     }
 
-    setupShortcutsHandlers();
-    setupDelegatedHandlers();
-
     let lastMousePos = { x: 0, y: 0 };
     window.addEventListener('mousemove', (e) => {
         lastMousePos.x = e.clientX;
