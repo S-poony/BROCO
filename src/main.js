@@ -497,6 +497,7 @@ function setupDelegatedHandlers() {
 
     // mousedown for dividers and edge handles
     paper.addEventListener('mousedown', (e) => {
+        if (e._brocoProcessed) return;
         const divider = e.target.closest('.divider');
         if (divider) {
             // Feature: Ctrl + Click to merge
@@ -557,6 +558,8 @@ function setupDelegatedHandlers() {
 
     // Global click delegation
     paper.addEventListener('click', (e) => {
+        if (e._brocoProcessed) return;
+
         // Only handle primary button (left click) or synthetic events (which usually have button 0)
         // This prevents double-triggering when right-click also dispatches a click event.
         if (e.button !== 0) return;
@@ -564,6 +567,7 @@ function setupDelegatedHandlers() {
         // Divider Merge (Ctrl + Click)
         const divider = e.target.closest('.divider');
         if (divider && (e.ctrlKey || e.metaKey)) {
+            e._brocoProcessed = true;
             handleDividerMerge(divider);
             e.stopPropagation();
             return;
