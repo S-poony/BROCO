@@ -1,0 +1,23 @@
+/* Global Tooltip Styles */
+
+#global-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(17, 24, 39, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: var(--z-tooltip, 150);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+    white-space: nowrap;
+}
+
+#global-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}

@@ -24,6 +24,7 @@ import { setupPlatformAdapters } from './js/core/platform.js';
 import { showUnsavedChangesModal } from './js/core/utils.js';
 import { handleEditorKeydown } from './js/ui/editor.js';
 import { initializeExportMode } from './js/io/export.js';
+import { tooltipManager } from './js/ui/TooltipManager.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {

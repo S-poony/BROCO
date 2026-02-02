@@ -68,6 +68,7 @@ function renderSplitNode(container, node, options) {
     container.removeAttribute('tabindex');
     container.removeAttribute('role');
     container.removeAttribute('aria-label');
+    container.removeAttribute('data-tooltip');
 
     const rectA = createDOMRect(node.children[0], node.orientation);
     const rectB = createDOMRect(node.children[1], node.orientation);
@@ -94,6 +95,12 @@ function renderLeafNode(container, node, options) {
             ? 'Content region. Click to split, Enter/Type to edit.'
             : 'Empty region. Click to split, Enter/Type to write.';
         container.setAttribute('aria-label', label);
+
+        if (hasContent) {
+            container.setAttribute('data-tooltip', 'Shift + Click to split');
+        } else {
+            container.removeAttribute('data-tooltip');
+        }
     }
 
     if (node.image) {
