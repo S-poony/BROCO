@@ -2,12 +2,10 @@ import { undo, redo, saveState } from './js/io/history.js';
 
 import { handleSplitClick, createTextInRect, renderAndRestoreFocus } from './js/layout/layout.js';
 import { setupAssetHandlers, setupDropHandlers } from './js/assets/assets.js';
-import { setupExportHandlers } from './js/io/export.js';
 import { renderPageList } from './js/layout/pages.js';
 import { state, getCurrentPage, addPage, duplicatePage } from './js/core/state.js';
 import { renderLayout } from './js/layout/renderer.js';
 import { marked } from 'marked';
-import { loadSettings, applySettings } from './js/ui/settings.js';
 import { assetManager } from './js/assets/AssetManager.js';
 import { getSettings } from './js/ui/settings.js';
 import DOMPurify from 'dompurify';
@@ -24,6 +22,8 @@ import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag, handleDivi
 import { dragDropService } from './js/ui/DragDropService.js';
 import { setupPlatformAdapters } from './js/core/platform.js';
 import { showUnsavedChangesModal } from './js/core/utils.js';
+import { handleEditorKeydown } from './js/ui/editor.js';
+import { initializeExportMode } from './js/io/export.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -212,12 +212,13 @@ function initialize() {
     setupPlatformAdapters();
     setupAssetHandlers();
     setupDropHandlers();
-    setupExportHandlers();
     setupGlobalHandlers();
     setupSettingsHandlers();
     setupFileIOHandlers();
     loadShortcuts();
     setupPageHandlers();
+    setupShortcutsHandlers();
+    setupDelegatedHandlers();
     setupKeyboardNavigation();
 
     // UI Updates for Dirty State and File Path
@@ -717,123 +718,6 @@ function setupDelegatedHandlers() {
     });
 }
 
-function handleEditorKeydown(e, editor) {
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const value = editor.value;
-
-    const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '*': '*', '_': '_', '`': '`' };
-    const selection = value.substring(start, end);
-
-    // Auto-pairing
-    if (pairs[e.key]) {
-        e.preventDefault();
-        if (e.key === '[' && value[start - 1] === '[') {
-            editor.value = value.substring(0, start) + '[' + selection + ']]' + value.substring(end);
-            editor.selectionStart = start + 1;
-            editor.selectionEnd = start + 1 + selection.length;
-        } else {
-            editor.value = value.substring(0, start) + e.key + selection + pairs[e.key] + value.substring(end);
-            editor.selectionStart = start + 1;
-            editor.selectionEnd = start + 1 + selection.length;
-        }
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        return;
-    }
-
-    // Tab / Indentation
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
-        const lineEnd = value.indexOf('\n', start);
-        const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
-        const listMatch = line.match(/^(\s*)([-*+]|\d+\.)(\s+.*)?$/);
-
-        if (listMatch) {
-            if (!e.shiftKey) {
-                // Indent
-                const newLine = listMatch[1] + '  ' + listMatch[2] + (listMatch[3] || '');
-                editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
-                editor.selectionStart = editor.selectionEnd = start + 2;
-            } else if (listMatch[1].length >= 2) {
-                // Outdent
-                const newLine = listMatch[1].substring(2) + listMatch[2] + (listMatch[3] || '');
-                editor.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
-                editor.selectionStart = editor.selectionEnd = Math.max(lineStart, start - 2);
-            }
-        } else {
-            // General tab
-            const before = value.substring(0, start);
-            const after = value.substring(end);
-            editor.value = before + '  ' + after;
-            editor.selectionStart = editor.selectionEnd = start + 2;
-        }
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        return;
-    }
-
-    // Auto-list on Enter
-    if (e.key === 'Enter') {
-        const line = value.substring(0, start).split('\n').pop();
-        const listMatch = line.match(/^(\s*)([-*+]|(\d+)\.)(\s+)/);
-        if (listMatch) {
-            e.preventDefault();
-            const indent = listMatch[1];
-            const marker = listMatch[2];
-            const number = listMatch[3];
-            const space = listMatch[4];
-
-            if (line.trim() === marker) {
-                // End list if empty marker
-                const lineStart = start - line.length;
-                editor.value = value.substring(0, lineStart) + '\n' + value.substring(end);
-                editor.selectionStart = editor.selectionEnd = lineStart + 1;
-            } else {
-                // Continue list
-                let nextMarker = marker;
-                if (number) nextMarker = (parseInt(number, 10) + 1) + '.';
-                const prefix = '\n' + indent + nextMarker + space;
-                editor.value = value.substring(0, start) + prefix + value.substring(end);
-                editor.selectionStart = editor.selectionEnd = start + prefix.length;
-            }
-            editor.dispatchEvent(new Event('input', { bubbles: true }));
-            return;
-        } else {
-            // Preserve indentation for non-list lines
-            const contentIndentMatch = line.match(/^(\s+)/);
-            if (contentIndentMatch && contentIndentMatch[1].length > 0) {
-                e.preventDefault();
-                const indent = contentIndentMatch[1];
-                const prefix = '\n' + indent;
-                editor.value = value.substring(0, start) + prefix + value.substring(end);
-                editor.selectionStart = editor.selectionEnd = start + prefix.length;
-                editor.dispatchEvent(new Event('input', { bubbles: true }));
-                return;
-            }
-        }
-    }
-
-    // Escape or Ctrl+K
-    if (e.key === 'Escape') {
-        e.preventDefault();
-        editor.blur();
-        return;
-    }
-
-    if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        const selected = value.substring(start, end);
-        const link = selected ? `[${selected}](url)` : `[link text](url)`;
-        editor.setRangeText(link, start, end, 'select');
-        if (selected) {
-            editor.selectionStart = start + selected.length + 3;
-            editor.selectionEnd = editor.selectionStart + 3;
-        }
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-}
-
-
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', checkModeAndInitialize);
 } else {
@@ -849,192 +733,4 @@ function checkModeAndInitialize() {
     } else {
         initialize();
     }
-}
-
-async function initializeExportMode() {
-    // Specialized initialization for off-screen rendering
-    document.body.innerHTML = '';
-    document.body.style.background = 'transparent';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    // Allow scrolling/growing for multi-page PDF
-    document.body.style.overflow = 'visible';
-
-    // Create the paper container
-    const paper = document.createElement('div');
-    paper.id = 'export-root';
-    // Ensure it fills the window for capture or flows for PDF
-    paper.style.margin = '0';
-    paper.style.padding = '0';
-    paper.style.width = '100%';
-    paper.style.minHeight = '100vh';
-    paper.style.display = 'flex';
-    paper.style.flexDirection = 'column';
-
-    document.body.appendChild(paper);
-
-    // Initial ready signal to main process
-    const urlParams = new URLSearchParams(window.location.search);
-    const requestId = urlParams.get('rid');
-    if (window.electronAPI && window.electronAPI.sendReadyToRender) {
-        window.electronAPI.sendReadyToRender(requestId);
-    }
-
-    // Listen for content to render
-    if (window.electronAPI && window.electronAPI.onRenderContent) {
-        window.electronAPI.onRenderContent(async (data) => {
-            const { requestId, pageLayout, pageLayouts, width, height, settings, assets } = data;
-            try {
-                // Clear existing content for window reuse case
-                paper.innerHTML = '';
-
-                // 1. Apply Settings (Restores CSS variables for borders, colors, fonts)
-                if (settings) {
-                    loadSettings(settings);
-                    // Force apply just in case
-                    applySettings();
-                }
-
-                // 2. Hydrate Assets (Restores images)
-                if (assets && Array.isArray(assets)) {
-                    // Clear existing (though should be empty)
-                    assetManager.dispose();
-                    assets.forEach(asset => {
-                        // Direct hydration since we trust the source
-                        assetManager.addAsset(asset);
-                    });
-                }
-
-                const layouts = pageLayouts || [pageLayout];
-
-                // Render each page
-                for (let i = 0; i < layouts.length; i++) {
-                    const layout = layouts[i];
-
-                    // Create a wrapper for the page
-                    // This wrapper MUST act as the 'a4-paper' for layout.css styles to apply
-                    const pageWrapper = document.createElement('div');
-                    pageWrapper.className = 'a4-paper is-exporting';
-                    pageWrapper.id = `export-page-${i}`;
-
-                    // Set explicit dimensions for CSS variables to pick up
-                    pageWrapper.style.width = width + 'px';
-                    pageWrapper.style.height = height + 'px';
-                    pageWrapper.style.setProperty('--paper-current-width', `${width}px`);
-                    pageWrapper.style.setProperty('--paper-current-height', `${height}px`);
-
-                    // Ensure basic positioning
-                    pageWrapper.style.position = 'relative';
-                    pageWrapper.style.margin = '0'; // No auto margin during export
-                    pageWrapper.style.boxShadow = 'none'; // Optional: remove shadow for clean export
-
-                    if (i < layouts.length - 1) {
-                        pageWrapper.style.breakAfter = 'page'; // Standard
-                        pageWrapper.style.pageBreakAfter = 'always'; // Legacy
-                    }
-
-                    paper.appendChild(pageWrapper);
-
-                    // Render the layout into the wrapper
-                    await renderLayout(pageWrapper, layout, {
-                        useHighResImages: true,
-                        hideControls: true,
-                        pageNumber: i + 1
-                    });
-                }
-                // Wait for all images
-                await waitForImages(paper);
-                await document.fonts.ready;
-
-                // Extract links for Flipbook if needed
-                const allLinks = [];
-                // We need to query wrappers we created
-                const wrappers = paper.querySelectorAll('.a4-paper'); // Changed selector to matches class
-                wrappers.forEach((wrapper, index) => {
-                    const links = extractLinksForExport(wrapper);
-                    allLinks.push(links);
-                });
-
-                // Signal completion with requestId
-                window.electronAPI.sendRenderComplete({ requestId, links: allLinks });
-            } catch (err) {
-                console.error('Export render failed:', err);
-                window.electronAPI.sendRenderComplete({ requestId, error: err.message });
-            }
-        });
-    }
-}
-
-function extractLinksForExport(container) {
-    const links = [];
-    const containerRect = container.getBoundingClientRect();
-    const anchorElements = container.querySelectorAll('a');
-
-    anchorElements.forEach(a => {
-        const href = a.getAttribute('href') || '';
-        const rects = a.getClientRects();
-
-        for (let i = 0; i < rects.length; i++) {
-            const r = rects[i];
-
-            // Convert to percentages relative to paper container
-            const x = ((r.left - containerRect.left) / containerRect.width) * 100;
-            const y = ((r.top - containerRect.top) / containerRect.height) * 100;
-            const w = (r.width / containerRect.width) * 100;
-            const h = (r.height / containerRect.height) * 100;
-
-            const linkData = {
-                title: a.textContent.trim(),
-                rect: { x, y, width: w, height: h }
-            };
-
-            if (href.startsWith('#page=')) {
-                linkData.type = 'internal';
-                linkData.targetPage = parseInt(href.replace('#page=', ''));
-            } else if (href.startsWith('http') || href.startsWith('mailto:')) {
-                linkData.type = 'external';
-                linkData.url = href;
-            } else {
-                linkData.type = 'external';
-                linkData.url = href;
-            }
-
-            links.push(linkData);
-        }
-    });
-
-    return links;
-}
-
-function waitForImages(container) {
-    const promises = [];
-    const elements = container.querySelectorAll('*');
-    for (let el of elements) {
-        const style = window.getComputedStyle(el);
-        const bg = style.backgroundImage;
-        if (bg && bg !== 'none') {
-            const match = bg.match(/url\(['"]?(.*?)['"]?\)/);
-            if (match && match[1]) {
-                promises.push(new Promise((resolve) => {
-                    const img = new Image();
-                    img.src = match[1];
-                    if (img.complete) resolve();
-                    else {
-                        img.onload = resolve;
-                        img.onerror = resolve;
-                    }
-                }));
-            }
-        }
-        if (el.tagName === 'IMG' && el.src) {
-            promises.push(new Promise((resolve) => {
-                if (el.complete) resolve();
-                else {
-                    el.onload = resolve;
-                    el.onerror = resolve;
-                }
-            }));
-        }
-    }
-    return Promise.all(promises);
 }
