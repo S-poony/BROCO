@@ -273,9 +273,9 @@
 /* Image removal button styles moved to floating-buttons.css */
 
 
-/* Ctrl key held style */
-.ctrl-pressed .splittable-rect {
-    cursor: cell !important;
+/* Ctrl key held style: focused rectangle turns red */
+.ctrl-pressed .splittable-rect:focus {
+    background-color: var(--color-delete) !important;
 }
 
 /* Page numbering */
