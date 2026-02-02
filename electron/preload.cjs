@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onOpenFile: (callback) => ipcRenderer.on('file:open', (event, path) => callback(path)),
     onRequestClose: (callback) => ipcRenderer.on('app:request-close', () => callback()),
     forceClose: () => ipcRenderer.send('app:force-close'),
+    openDevTools: () => ipcRenderer.invoke('app:open-devtools'),
 
     // Export APIs
     renderExport: (options) => ipcRenderer.invoke('render-export', options),

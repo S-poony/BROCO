@@ -207,6 +207,12 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('app:open-devtools', () => {
+        if (mainWindow) {
+            mainWindow.webContents.openDevTools();
+        }
+    });
+
     // Handle File Save (Overwrite)
     ipcMain.handle('file:save', async (event, data, filePath) => {
         try {

@@ -52,6 +52,20 @@ export function showToast(message, type = 'info', duration = DEFAULT_DURATION) {
     closeBtn.setAttribute('aria-label', 'Dismiss');
     closeBtn.onclick = () => removeToast(toast);
 
+    if (type === 'error') {
+        toast.style.cursor = 'pointer';
+        toast.title = 'Click to open developer tools for debugging';
+        toast.onclick = (e) => {
+            // Only trigger if we didn't click the close button
+            if (!e.target.closest('.toast-close')) {
+                if (window.electronAPI && window.electronAPI.openDevTools) {
+                    window.electronAPI.openDevTools();
+                }
+                removeToast(toast);
+            }
+        };
+    }
+
     toast.appendChild(icon);
     toast.appendChild(text);
     toast.appendChild(closeBtn);
