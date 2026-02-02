@@ -334,6 +334,10 @@ function initialize() {
         // Feature: Follow-mouse focus (restore hover focus after a DOM re-render)
         // We use requestAnimationFrame to ensure the DOM is painted and elementFromPoint reflects the new layout.
         requestAnimationFrame(() => {
+            // BUG FIX: Don't steal focus if we are currently editing text!
+            // Otherwise, every keystroke triggers an input event -> layoutUpdated -> focus theft -> exit edit mode.
+            if (document.activeElement?.classList.contains('text-editor')) return;
+
             const target = document.elementFromPoint(lastMousePos.x, lastMousePos.y);
             const rect = target?.closest('.splittable-rect[data-split-state="unsplit"]');
             if (rect) {
@@ -416,12 +420,6 @@ function initialize() {
     if (firstRect) {
         firstRect.focus();
     }
-
-    // Listen for settings and layout updates to re-scale
-    document.addEventListener('settingsUpdated', () => {
-    });
-    document.addEventListener('layoutUpdated', () => {
-    });
 }
 
 async function loadShortcuts() {
