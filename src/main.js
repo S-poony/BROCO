@@ -293,6 +293,9 @@ function initialize() {
         // Optimization: Skip hover updates during active divider resizing
         if (state.activeDivider) return;
 
+        // BUG FIX: Don't steal focus if we are currently editing text
+        if (document.activeElement?.classList.contains('text-editor')) return;
+
         const target = e.target;
 
         // 1. Check if we entered a splittable rect
