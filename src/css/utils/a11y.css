@@ -3,7 +3,7 @@
 /* 1. Focus Visibility */
 /* Replace default outline with visible custom focus ring for keyboard users */
 :focus-visible {
-    outline: 2px solid #4f46e5;
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
@@ -31,7 +31,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    box-shadow: inset 0 0 0 4px #4f46e5;
+    box-shadow: inset 0 0 0 4px var(--color-primary);
     z-index: 100;
     pointer-events: none;
 }

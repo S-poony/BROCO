@@ -153,7 +153,8 @@
 }
 
 .edge-handle:hover {
-    background-color: rgba(79, 70, 229, 0.2);
+    background-color: var(--color-primary);
+    opacity: 0.5;
     transition: background-color 0.2s;
     /* Variable: primary with opacity? Hard to do with hex var. Keeping hardcoded or define transparent variable. */
 }
@@ -217,7 +218,7 @@
 .is-resizing-scope .vertical-divider {
     background-color: var(--color-primary-hover, rgb(138, 138, 199)) !important;
     z-index: 30;
-    opacity: 0.5;
+    opacity: 0.9;
     /* Dim dependent dividers */
 }
 
