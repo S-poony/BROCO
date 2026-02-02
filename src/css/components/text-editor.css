@@ -192,14 +192,21 @@
 
 .markdown-content ul,
 .markdown-content ol {
-    margin: calc(var(--text-font-size-proportional) * 0.25) 0 calc(var(--text-font-size-proportional) * 0.5) 0;
+    margin: calc(var(--text-font-size-proportional) * 0.2) 0;
     padding-left: calc(var(--text-font-size-proportional) * 2.5);
     white-space: normal;
 }
 
+/* Remove margins and padding-reset for nested lists to prevent extra gaps */
+.markdown-content li>ul,
+.markdown-content li>ol {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 .markdown-content li {
     margin: calc(var(--text-font-size-proportional) * 0.1) 0;
-    white-space: pre-wrap;
+    white-space: normal;
 }
 
 .markdown-content code {
