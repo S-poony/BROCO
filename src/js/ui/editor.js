@@ -62,8 +62,11 @@ export function handleEditorKeydown(e, editor) {
 
     // Auto-list on Enter
     if (e.key === 'Enter') {
-        const line = value.substring(0, start).split('\n').pop();
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        const lineEnd = value.indexOf('\n', start);
+        const line = value.substring(lineStart, start);
         const listMatch = line.match(/^(\s*)([-*+]|(\d+)\.)(\s+)/);
+
         if (listMatch) {
             e.preventDefault();
             e._brocoProcessed = true;
@@ -72,18 +75,29 @@ export function handleEditorKeydown(e, editor) {
             const number = listMatch[3];
             const space = listMatch[4];
 
-            if (line.trim() === marker) {
-                // End list if empty marker
-                const lineStart = start - line.length;
-                editor.value = value.substring(0, lineStart) + '\n' + value.substring(end);
-                editor.selectionStart = editor.selectionEnd = lineStart + 1;
+            if (line.trim() === marker.trim()) {
+                // Empty list item: Move up the hierarchy
+                if (indent.length >= 2) {
+                    // Outdent on SAME line (no gap)
+                    const newIndent = indent.substring(2);
+                    const before = value.substring(0, lineStart);
+                    const after = value.substring(start);
+                    editor.value = before + newIndent + marker + space + after;
+                    const newPos = lineStart + newIndent.length + marker.length + space.length;
+                    editor.setSelectionRange(newPos, newPos);
+                } else {
+                    // At root: End list
+                    const before = value.substring(0, lineStart);
+                    const after = value.substring(start);
+                    editor.value = before + '\n' + after;
+                    editor.setSelectionRange(lineStart + 1, lineStart + 1);
+                }
             } else {
-                // Continue list
+                // Content item: Continue list
                 let nextMarker = marker;
                 if (number) nextMarker = (parseInt(number, 10) + 1) + '.';
                 const prefix = '\n' + indent + nextMarker + space;
-                editor.value = value.substring(0, start) + prefix + value.substring(end);
-                editor.selectionStart = editor.selectionEnd = start + prefix.length;
+                editor.setRangeText(prefix, start, start, 'end');
             }
             editor.dispatchEvent(new Event('input', { bubbles: true }));
             return;
@@ -95,8 +109,7 @@ export function handleEditorKeydown(e, editor) {
                 e._brocoProcessed = true;
                 const indent = contentIndentMatch[1];
                 const prefix = '\n' + indent;
-                editor.value = value.substring(0, start) + prefix + value.substring(end);
-                editor.selectionStart = editor.selectionEnd = start + prefix.length;
+                editor.setRangeText(prefix, start, start, 'end');
                 editor.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
