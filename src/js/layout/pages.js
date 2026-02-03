@@ -194,38 +194,60 @@ function handlePageDropLogic(target) {
 
 function renderMiniLayout(container, node) {
     container.innerHTML = '';
-    container.style.backgroundColor = '#fff'; // Default background
+    container.style.backgroundColor = '#fff';
 
-    // Recursive function similar to renderer.js but for simple boxes
+    function createMiniRect(childNode) {
+        const div = document.createElement('div');
+        div.className = 'mini-rect';
+        div.style.backgroundColor = '#fff';
+        div.style.position = 'relative';
+        div.style.minWidth = '0';
+        div.style.minHeight = '0';
+
+        if (childNode.size) {
+            const growValue = parseFloat(childNode.size);
+            div.style.flex = `${growValue} 1 0px`;
+        } else {
+            div.style.flex = '1 1 0px';
+        }
+        return div;
+    }
+
+    function createMiniDivider(orientation) {
+        const divider = document.createElement('div');
+        divider.className = 'mini-divider';
+        divider.style.flex = '0 0 var(--mini-divider-width, 1px)';
+        divider.style.backgroundColor = 'var(--color-border, #d1d5db)';
+        if (orientation === 'vertical') {
+            divider.style.width = 'var(--mini-divider-width, 1px)';
+            divider.style.height = '100%';
+        } else {
+            divider.style.width = '100%';
+            divider.style.height = 'var(--mini-divider-width, 1px)';
+        }
+        return divider;
+    }
+
     function buildMiniRecursive(node, domNode) {
-        if (node.splitState === 'split') {
+        if (node.splitState === 'split' && node.children && node.children.length >= 2) {
             domNode.style.display = 'flex';
             domNode.style.flexDirection = node.orientation === 'vertical' ? 'row' : 'column';
-            domNode.style.gap = '2.5px';
-            domNode.style.backgroundColor = '#d1d5db'; // Same as main layout border/divider color
 
-            node.children.forEach(child => {
-                const childDiv = document.createElement('div');
-                childDiv.className = 'mini-rect';
-                childDiv.style.backgroundColor = '#fff';
-                childDiv.style.position = 'relative';
-                childDiv.style.minWidth = '0';
-                childDiv.style.minHeight = '0';
+            const childA = node.children[0];
+            const childB = node.children[1];
 
-                if (child.size) {
-                    // Extract numeric value from "50%" or similar
-                    const growValue = parseFloat(child.size);
-                    childDiv.style.flex = `${growValue} 1 0px`;
-                } else {
-                    childDiv.style.flex = '1 1 0px';
-                }
+            const divA = createMiniRect(childA);
+            const divider = createMiniDivider(node.orientation);
+            const divB = createMiniRect(childB);
 
-                buildMiniRecursive(child, childDiv);
-                domNode.appendChild(childDiv);
-            });
+            domNode.appendChild(divA);
+            domNode.appendChild(divider);
+            domNode.appendChild(divB);
+
+            buildMiniRecursive(childA, divA);
+            buildMiniRecursive(childB, divB);
         } else {
-            // Leaf
-            domNode.style.backgroundColor = '#fff';
+            // Leaf rendering...
             if (node.image) {
                 domNode.style.backgroundColor = '#e0e7ff'; // Indicate image presence
                 domNode.innerHTML = '<span aria-hidden="true">🖼️</span>';
@@ -234,12 +256,14 @@ function renderMiniLayout(container, node) {
                 domNode.style.justifyContent = 'center';
                 domNode.style.alignItems = 'center';
             } else if (node.text !== null && node.text !== undefined) {
-                domNode.style.backgroundColor = '#fef3c7'; // Indicate text presence (amber-100)
+                domNode.style.backgroundColor = '#fef3c7'; // Indicate text presence
                 domNode.innerHTML = '<span aria-hidden="true">📝</span>';
                 domNode.style.fontSize = '11px';
                 domNode.style.display = 'flex';
                 domNode.style.justifyContent = 'center';
                 domNode.style.alignItems = 'center';
+            } else {
+                domNode.style.backgroundColor = '#fff';
             }
         }
     }
