@@ -31,6 +31,8 @@ export function handleSplitClick(event) {
     if (event.target.closest('.remove-image-btn')) return;
 
     const rectElement = event.target.closest('.splittable-rect');
+    if (!rectElement) return;
+
     const node = findNodeByIdInternal(getCurrentPage(), rectElement.id);
     if (!node || node.splitState === 'split') return;
 

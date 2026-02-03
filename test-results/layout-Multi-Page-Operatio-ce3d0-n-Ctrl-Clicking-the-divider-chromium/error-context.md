@@ -8,7 +8,8 @@
     - generic [ref=e5]:
       - generic [ref=e6]:
         - button "Save Layout" [ref=e7] [cursor=pointer]:
-          - generic [ref=e9]: Save
+          - generic [ref=e9]: Save new layout
+          - text: "*"
         - button "Open Layout" [ref=e10] [cursor=pointer]:
           - generic [ref=e12]: Open
         - link "Download Desktop App" [ref=e14] [cursor=pointer]:
@@ -29,11 +30,9 @@
     - main "Layout Canvas" [ref=e43]:
       - generic [ref=e44] [cursor=pointer]:
         - button "Empty region. Click to split, Enter/Type to write." [active] [ref=e45]:
-          - generic: Click to split / Type to write
           - button "Import image" [ref=e47]:
             - img [ref=e48]
-        - button "Empty region. Click to split, Enter/Type to write." [ref=e51]:
-          - generic: Click to split / Type to write
+        - button "Empty region. Click to split, Enter/Type to write." [ref=e51]
     - complementary [ref=e57]:
       - generic [ref=e58]:
         - button "Import" [ref=e59] [cursor=pointer]: Import
@@ -45,4 +44,5 @@
       - separator [ref=e67]
       - button "Export Layout" [ref=e68] [cursor=pointer]
       - separator [ref=e69]
+  - tooltip "Click to split, type to write"
 ```
