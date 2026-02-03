@@ -16,7 +16,6 @@ import { setupPageHandlers } from './js/layout/pages.js';
 import { setupFileIOHandlers, saveLayout, saveLayoutAs, openLayout } from './js/io/fileIO.js';
 import { importImageToNode, handleTouchStart, handleTouchMove, handleTouchEnd } from './js/assets/assets.js';
 import { setupKeyboardNavigation } from './js/ui/keyboard.js';
-import { shortcutsOverlay } from './js/ui/ShortcutsOverlay.js';
 import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag, handleDividerMerge } from './js/layout/layout.js';
 
 import { dragDropService } from './js/ui/DragDropService.js';
@@ -308,10 +307,6 @@ function initialize() {
             lastHoveredRectId = rect.id;
             rect.classList.add('is-hovered-active');
 
-            requestAnimationFrame(() => {
-                const node = findNodeById(getCurrentPage(), rect.id);
-                shortcutsOverlay.update(node);
-            });
 
             // Re-enable autofocus on hover (safe now due to CSS/JS optimizations)
             rect.focus({ preventScroll: true });
@@ -324,7 +319,6 @@ function initialize() {
             if (!rect) {
                 document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
                 lastHoveredRectId = null;
-                shortcutsOverlay.hide();
             }
         }
     };
@@ -368,7 +362,6 @@ function initialize() {
     if (paperContainer) {
         paperContainer.setAttribute('tabindex', '-1'); // Allow clearing focus by clicking background
         paperContainer.addEventListener('mouseleave', () => {
-            shortcutsOverlay.hide();
             document.querySelectorAll('.is-hovered-active').forEach(el => el.classList.remove('is-hovered-active'));
             lastHoveredRectId = null;
 
@@ -388,12 +381,6 @@ function initialize() {
 
             // Optimization: Only update hints if the overlay is actually enabled/visible.
             // This prevents expensive tree traversals during rapid navigation if the user doesn't even use the hints.
-            if (shortcutsOverlay.isEnabled) {
-                requestAnimationFrame(() => {
-                    const node = findNodeById(getCurrentPage(), e.target.id);
-                    shortcutsOverlay.update(node);
-                });
-            }
         }
     });
 
@@ -407,7 +394,6 @@ function initialize() {
                 const paper = document.getElementById('a4-paper');
                 const mouseOverPaper = paper && paper.matches(':hover');
                 if (!mouseOverPaper) {
-                    shortcutsOverlay.hide();
                     lastHoveredRectId = null;
                 }
             }
@@ -457,13 +443,11 @@ function setupShortcutsHandlers() {
     const closeShortcuts = () => {
         shortcutsContainer.classList.remove('active');
         shortcutsBtn.classList.remove('active');
-        shortcutsOverlay.setEnabled(false);
     };
 
     const openShortcuts = () => {
         shortcutsContainer.classList.add('active');
         shortcutsBtn.classList.add('active');
-        shortcutsOverlay.setEnabled(true);
     };
 
     const toggleShortcuts = () => {
