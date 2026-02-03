@@ -257,5 +257,8 @@ export function stopDrag() {
     } else if (pB <= MIN_AREA_PERCENT) {
         const modifiedParent = deleteNodeFromTree(getCurrentPage(), divider.rectBId);
         if (modifiedParent) renderAndRestoreFocus(getCurrentPage(), modifiedParent.id);
+    } else {
+        // Just resized - ensure sidebar thumbnails update to show new proportions
+        document.dispatchEvent(new CustomEvent('layoutUpdated'));
     }
 }
