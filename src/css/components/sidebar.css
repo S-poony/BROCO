@@ -1,8 +1,8 @@
 .sidebar {
     position: relative;
     width: var(--sidebar-width, 280px);
-    background: var(--color-bg-white, white);
-    border: 1px solid var(--color-border, #d1d5db);
+    background: var(--color-ui-white);
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     padding: 1rem;
     display: flex;
@@ -35,7 +35,7 @@
 
 .view-mode-toggle {
     display: flex;
-    background: var(--color-bg-light, #f3f4f6);
+    background: var(--color-ui-medium);
     border-radius: 0.25rem;
     padding: 2px;
     gap: 2px;
@@ -60,7 +60,7 @@
 }
 
 .view-btn.active {
-    background: white;
+    background: var(--color-ui-white);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     opacity: 1;
 }
@@ -110,12 +110,12 @@
 .shortcuts-content h3 {
     margin-top: 1.25rem;
     font-size: 1.125rem;
-    color: var(--color-text-heading, #111827);
+    color: var(--color-text-title);
     margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border-bottom: 1px solid var(--color-border-light, #e5e7eb);
+    border-bottom: 1px solid var(--color-ui-hover);
     padding-bottom: 0.25rem;
 }
 
@@ -124,7 +124,7 @@
     font-size: 1rem;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
-    color: var(--color-text-main, #374151);
+    color: var(--color-text-body);
 }
 
 .shortcuts-content h2:first-child,
@@ -145,11 +145,11 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: var(--color-bg-light, #f9fafb);
+    background: var(--color-ui-base);
     border-radius: 0.5rem;
     cursor: pointer;
     font-weight: 600;
-    color: var(--color-text-main, #374151);
+    color: var(--color-text-body);
     list-style: none;
     user-select: none;
     transition: background-color 0.2s;
@@ -160,18 +160,18 @@
 }
 
 .shortcuts-dropdown summary:hover {
-    background: var(--color-border-light, #f3f4f6);
+    background: var(--color-ui-medium);
 }
 
 .shortcuts-dropdown[open] {
-    background: var(--color-bg-white, #ffffff);
-    border-color: var(--color-border-light, #e5e7eb);
+    background: var(--color-ui-white);
+    border-color: var(--color-ui-hover);
     box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
 .shortcuts-dropdown[open] summary {
-    background: var(--color-bg-white, #ffffff);
-    border-bottom: 1px solid var(--color-border-light, #f3f4f6);
+    background: var(--color-ui-white);
+    border-bottom: 1px solid var(--color-ui-medium);
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -195,7 +195,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-subtle, #9ca3af);
+    color: var(--color-text-dimmed);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -216,8 +216,8 @@
 
 .shortcuts-content strong,
 .shortcuts-content code {
-    color: var(--color-text-heading, #111827);
-    background: var(--color-bg-light, #f3f4f6);
+    color: var(--color-text-title);
+    background: var(--color-ui-medium);
     padding: 2px 4px;
     border-radius: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;

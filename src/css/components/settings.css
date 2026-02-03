@@ -20,8 +20,8 @@
     #shortcuts-container {
         position: relative;
         width: 320px;
-        background: var(--color-bg-white, white);
-        border: 1px solid var(--color-border, #d1d5db);
+        background: var(--color-ui-white);
+        border: 1px solid var(--color-border);
         border-radius: 0.5rem;
         padding: 1.25rem;
         flex-direction: column;
@@ -76,7 +76,7 @@
 
     #settings-container .settings-content,
     #shortcuts-container .shortcuts-panel-content {
-        background: var(--color-bg-white, white);
+        background: var(--color-ui-white);
         padding: 2rem;
         border-radius: 1.5rem;
         box-shadow: var(--shadow-paper, 0 25px 50px -12px rgba(0, 0, 0, 0.25));
@@ -107,7 +107,7 @@ body:not(.is-electron) .electron-only {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--color-text-heading, #111827);
+    color: var(--color-text-title);
 }
 
 #settings-close-x,
@@ -115,7 +115,7 @@ body:not(.is-electron) .electron-only {
     background: none;
     border: none;
     padding: 0.25rem;
-    color: var(--color-text-subtle, #9ca3af);
+    color: var(--color-text-dimmed);
     cursor: pointer;
     border-radius: 0.375rem;
     transition: all 0.2s;
@@ -126,8 +126,8 @@ body:not(.is-electron) .electron-only {
 
 #settings-close-x:hover,
 #shortcuts-close-x:hover {
-    background: var(--color-bg-light, #f3f4f6);
-    color: var(--color-text-main, #374151);
+    background: var(--color-ui-medium);
+    color: var(--color-text-body);
 }
 
 .settings-content,
@@ -166,7 +166,7 @@ details.settings-section {
 }
 
 details.settings-section[open] {
-    border-color: var(--color-border-light, #e5e7eb);
+    border-color: var(--color-ui-hover);
 }
 
 summary.settings-section-title {
@@ -178,7 +178,7 @@ summary.settings-section-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--color-text-main, #374151);
+    color: var(--color-text-body);
     cursor: pointer;
     list-style: none;
     /* Remove default triangle */
@@ -202,7 +202,7 @@ summary.settings-section-title::-webkit-details-marker {
 }
 
 details[open] .settings-content-body {
-    border-top-color: var(--color-bg-light, #f3f4f6);
+    border-top-color: var(--color-ui-medium);
     padding-top: 1.25rem;
 }
 
@@ -236,7 +236,7 @@ summary.settings-section-title .icon {
     display: block;
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-main, #374151);
+    color: var(--color-text-body);
     margin-bottom: 0.5rem;
 }
 
@@ -250,7 +250,7 @@ summary.settings-section-title .icon {
 .settings-label-row label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-main, #374151);
+    color: var(--color-text-body);
 }
 
 .settings-value {
@@ -267,11 +267,11 @@ summary.settings-section-title .icon {
 .settings-select {
     width: 100%;
     padding: 0.625rem 0.75rem;
-    border: 1px solid var(--color-border, #d1d5db);
+    border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     font-size: 0.875rem;
-    color: var(--color-text-main, #374151);
-    background-color: var(--color-bg-white, white);
+    color: var(--color-text-body);
+    background-color: var(--color-ui-white);
     cursor: pointer;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -336,7 +336,7 @@ summary.settings-section-title .icon {
 .settings-slider {
     width: 100%;
     height: 6px;
-    background: var(--color-border-light, #e5e7eb);
+    background: var(--color-ui-hover);
     border-radius: 3px;
     appearance: none;
     cursor: pointer;
@@ -376,7 +376,7 @@ summary.settings-section-title .icon {
 
 .settings-help {
     font-size: 0.75rem;
-    color: var(--color-text-subtle, #6b7280);
+    color: var(--color-text-soft);
     margin-top: 0.5rem;
     line-height: 1.4;
     font-style: italic;
@@ -393,7 +393,7 @@ summary.settings-section-title .icon {
     height: 28px;
     border-radius: 50%;
     cursor: pointer;
-    border: 2px solid var(--color-border-light, #e5e7eb);
+    border: 2px solid var(--color-ui-hover);
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     padding: 0;
@@ -403,7 +403,7 @@ summary.settings-section-title .icon {
 .color-swatch:hover {
     transform: scale(1.2);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: var(--color-border, #d1d5db);
+    border-color: var(--color-border);
     z-index: 1;
 }
 
@@ -421,13 +421,13 @@ summary.settings-section-title .icon {
     transform: translate(-50%, -50%);
     width: 6px;
     height: 6px;
-    background: var(--color-bg-white, white);
+    background: var(--color-ui-white);
     border-radius: 50%;
 }
 
 /* For light colors, use a dark dot */
 .color-swatch.active.light-color::after {
-    background: var(--color-text-main, #374151);
+    background: var(--color-text-body);
 }
 
 .custom-color-row {
@@ -441,13 +441,13 @@ summary.settings-section-title .icon {
     align-items: center;
     gap: 0.5rem;
     padding: 0.4rem 0.75rem;
-    background: var(--color-bg-white, white);
-    border: 1px solid var(--color-border, #d1d5db);
+    background: var(--color-ui-white);
+    border: 1px solid var(--color-border);
     border-radius: 2rem;
     cursor: pointer;
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--color-text-muted, #4b5563);
+    color: var(--color-text-soft);
     transition: all 0.2s;
 }
 
@@ -481,7 +481,7 @@ summary.settings-section-title .icon {
 .color-value-text {
     font-size: 0.75rem;
     font-family: 'JetBrains Mono', 'Courier New', monospace;
-    color: var(--color-text-subtle, #9ca3af);
+    color: var(--color-text-dimmed);
     text-transform: uppercase;
 }
 
@@ -522,7 +522,7 @@ summary.settings-section-title .icon {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--color-border, #d1d5db);
+    background-color: var(--color-border);
     transition: 0.3s;
     border-radius: 26px;
 }
@@ -558,7 +558,7 @@ summary.settings-section-title .icon {
 .bg-preview {
     width: 100%;
     height: 80px;
-    background-color: var(--color-bg-light, #f3f4f6);
+    background-color: var(--color-ui-medium);
     background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
         linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
         linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
@@ -570,11 +570,11 @@ summary.settings-section-title .icon {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    border: 1px solid var(--color-border-light, #e5e7eb);
+    border: 1px solid var(--color-ui-hover);
 }
 
 .bg-preview span {
-    color: var(--color-text-subtle, #9ca3af);
+    color: var(--color-text-dimmed);
     font-size: 0.875rem;
 }
 
