@@ -4,6 +4,26 @@ import { saveState } from '../../io/history.js';
 import { findNodeById, findParentNode, countParallelLeaves } from './treeUtils.js';
 
 /**
+ * Recursively collects all node sizes from a tree.
+ * @param {Object} node 
+ * @param {Set<number>} sizes 
+ */
+function collectAllNodeSizes(node, sizes = new Set()) {
+    if (node.size) {
+        const val = parseFloat(node.size);
+        if (!isNaN(val)) {
+            sizes.add(val);
+        }
+    }
+    if (node.children) {
+        for (const child of node.children) {
+            collectAllNodeSizes(child, sizes);
+        }
+    }
+    return sizes;
+}
+
+/**
  * Snaps the divider adjacent to the focused rectangle in the given direction.
  * This function handles both calculating snap points and updating state.
  * @param {HTMLElement} focusedRect 
@@ -127,17 +147,20 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
     // 1. Dynamic Snap Points (Leaf Count) -> Standard
     const totalCount = countParallelLeaves(nodeA, targetDividerOrientation) + countParallelLeaves(nodeB, targetDividerOrientation);
     if (totalCount > 1) {
-        // Base 50%
         addStandard(50);
-
-        // Dynamic fractions
         for (let i = 1; i < totalCount; i++) {
             addStandard((i / totalCount) * 100);
         }
     } else {
-        // Fallback
         addStandard(50);
     }
+
+    // 1b. Node Size Matching (Page-wide) -> Standard
+    const allSizes = collectAllNodeSizes(page);
+    allSizes.forEach(s => {
+        addStandard(s);
+        addStandard(100 - s);
+    });
 
     // 2. Recursive Gap Subdivision -> Standard
     const MIN_GAP_FOR_RECURSION = 10;
@@ -219,9 +242,12 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
  * Useful for both onDrag and snapDivider logic.
  */
 export function calculateDynamicSnaps(divider, orientation) {
-    const dynamicSnaps = [50];
-    const parentNode = findNodeById(getCurrentPage(), divider.getAttribute('data-parent-id'));
+    const dynamicSnaps = new Set([50]);
+    const page = getCurrentPage();
+    const parentNodeId = divider.getAttribute('data-parent-id');
+    const parentNode = findNodeById(page, parentNodeId);
 
+    // 1. Existing Leaf-count fractions
     if (parentNode) {
         const nodeA = findNodeById(parentNode, divider.getAttribute('data-rect-a-id'));
         const nodeB = findNodeById(parentNode, divider.getAttribute('data-rect-b-id'));
@@ -233,10 +259,18 @@ export function calculateDynamicSnaps(divider, orientation) {
 
             if (totalCount > 1) {
                 for (let i = 1; i < totalCount; i++) {
-                    dynamicSnaps.push((i / totalCount) * 100);
+                    dynamicSnaps.add((i / totalCount) * 100);
                 }
             }
         }
     }
-    return [...new Set(dynamicSnaps)];
+
+    // 2. Page-wide Node Size Matching
+    const allSizes = collectAllNodeSizes(page);
+    allSizes.forEach(s => {
+        dynamicSnaps.add(s);
+        dynamicSnaps.add(100 - s);
+    });
+
+    return Array.from(dynamicSnaps);
 }
