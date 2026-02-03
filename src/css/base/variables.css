@@ -1,7 +1,7 @@
 :root {
     /* Colors */
     --color-primary: hsl(224, 30%, 60%);
-    --color-primary-hover: hsl(224, 40%, 40%);
+    --color-primary-hover: hsl(224, 40%, 50%);
 
     /* UI Palette */
     --color-ui-white: #ffffff;

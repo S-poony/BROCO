@@ -83,6 +83,7 @@
 .remove-text-btn {
     top: var(--btn-offset);
     right: var(--btn-offset);
+    color: var(--color-primary);
 }
 
 /* Top-Right: Align/Edit Button (offset to the left of remove) */

@@ -218,7 +218,7 @@
 .is-resizing-scope .vertical-divider {
     background-color: var(--color-primary-hover, rgb(138, 138, 199)) !important;
     z-index: 30;
-    opacity: 0.9;
+    opacity: 0.5;
     /* Dim dependent dividers */
 }
 
