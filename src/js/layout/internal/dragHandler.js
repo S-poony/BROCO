@@ -114,8 +114,8 @@ export function startEdgeDrag(event, edge) {
         children: []
     };
 
-    // Start with minimum 2% size to prevent accidental tiny splits on mobile
-    const MIN_EDGE_SIZE = 2;
+    // MINIMUM EDGE SIZE creates a new rect that doesn't have 0 area, avoids bugs on mobile but the app isnt mobile anymore
+    const MIN_EDGE_SIZE = 0;
     const newRect = {
         id: `rect-${++state.currentId}`,
         splitState: 'unsplit',

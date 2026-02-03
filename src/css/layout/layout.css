@@ -138,6 +138,7 @@
     z-index: 70;
     /* over images (1) and active rects (60), but under sidebars/overlays */
     background-color: transparent;
+    border-radius: 100%;
 }
 
 @media (max-width: 1024px) {

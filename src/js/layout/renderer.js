@@ -367,6 +367,7 @@ function addEdgeHandles(container) {
     edges.forEach(edge => {
         const handle = document.createElement('div');
         handle.className = `edge-handle edge-${edge}`;
+        handle.setAttribute('data-tooltip', 'Drag to create a new rectangle');
         // Edge dragging handled by delegation
         container.appendChild(handle);
     });
