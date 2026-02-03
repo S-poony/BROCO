@@ -27,10 +27,11 @@ import { tooltipManager } from './js/ui/TooltipManager.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
-        // Ctrl Key for Cursor (only if Shift is not held)
-        if (e.ctrlKey && !e.shiftKey) {
+        // Ctrl Key for Cursor (only if Shift and Alt are not held)
+        // This ensures AltGr (Ctrl+Alt) doesn't trigger the red 'delete' highlight
+        if (e.ctrlKey && !e.shiftKey && !e.altKey) {
             document.body.classList.add('ctrl-pressed');
-        } else if (e.shiftKey) {
+        } else {
             document.body.classList.remove('ctrl-pressed');
         }
 
@@ -125,9 +126,9 @@ function setupGlobalHandlers() {
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.key === 'Control' || e.key === 'Shift') {
+        if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'AltGraph') {
             // Update cursor based on final state of modifiers
-            if (e.ctrlKey && !e.shiftKey) {
+            if (e.ctrlKey && !e.shiftKey && !e.altKey) {
                 document.body.classList.add('ctrl-pressed');
             } else {
                 document.body.classList.remove('ctrl-pressed');
