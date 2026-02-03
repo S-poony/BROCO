@@ -12,6 +12,7 @@
     margin: 0;
     overflow: hidden;
     max-width: 100%;
+    user-select: none;
 }
 
 /* File Actions - Toolbar Row */
