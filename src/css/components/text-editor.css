@@ -1,39 +1,5 @@
 /* Text Editor Styles */
 
-.text-prompt {
-    position: absolute;
-    top: calc(var(--paper-scale-ref) * 0.01);
-    left: calc(var(--paper-scale-ref) * 0.01);
-    right: calc(var(--paper-scale-ref) * 0.01);
-    max-width: calc(100% - var(--paper-scale-ref) * 0.02);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    color: var(--color-text-subtle, #9ca3af);
-    font-size: var(--text-font-size-proportional, 0.75rem);
-    opacity: 0;
-    transition: opacity 0.2s;
-    user-select: none;
-    pointer-events: none;
-    line-height: 1.4;
-}
-
-/* Remove hover effects on the prompt itself, relies on parent hover */
-.text-prompt:hover {
-    color: var(--color-text-subtle, #9ca3af);
-    background: transparent;
-    box-shadow: none;
-}
-
-.text-prompt::before {
-    content: none;
-}
-
-.splittable-rect:hover .text-prompt,
-.splittable-rect:focus-within .text-prompt {
-    opacity: 1;
-}
 
 .text-editor-container {
     width: 100%;

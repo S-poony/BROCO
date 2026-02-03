@@ -211,15 +211,12 @@ function renderLeafNode(container, node, options) {
     } else if (node.text !== null && node.text !== undefined) {
         renderTextContent(container, node, false, options);
     } else {
-        // Empty rectangle - show hover prompt
+        // Empty rectangle - show hover prompt via tooltip
         container.innerHTML = '';
         container.style.position = 'relative';
 
         if (!options.hideControls) {
-            const prompt = document.createElement('div');
-            prompt.className = 'text-prompt';
-            prompt.textContent = 'Click to split / Type to write';
-            container.appendChild(prompt);
+            container.setAttribute('data-tooltip', 'Click to split, type to write');
 
             const emptyNodeControls = document.createElement('div');
             emptyNodeControls.className = 'empty-node-controls';
@@ -234,12 +231,6 @@ function renderLeafNode(container, node, options) {
             importBtn.setAttribute('aria-label', 'Import image');
             emptyNodeControls.appendChild(importBtn);
             container.appendChild(emptyNodeControls);
-
-            // Event delegation will handle click
-
-            // Allow click to bubble to parent for splitting (handled in main.js -> handleSplitClick)
-            // We only intercept keys to start writing
-            // Event delegation will handle keyboard entry to start writing
         }
     }
 }
