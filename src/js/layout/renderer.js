@@ -170,7 +170,7 @@ function renderLeafNode(container, node, options) {
                     const flipBtn = document.createElement('button');
                     flipBtn.id = `flip-btn-${node.id}`;
                     flipBtn.className = 'flip-image-btn';
-                    flipBtn.title = 'Flip Image';
+                    flipBtn.setAttribute('data-tooltip', 'Flip Image');
                     flipBtn.innerHTML = `<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
 <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M2 18.1136V5.88638C2 4.18423 2 3.33316 2.54242 3.05402C3.08484 2.77488 3.77738 3.26956 5.16247 4.25891L6.74371 5.38837C7.35957 5.82827 7.6675 6.04822 7.83375 6.37127C8 6.69432 8 7.07274 8 7.82957V16.1704C8 16.9273 8 17.3057 7.83375 17.6287C7.6675 17.9518 7.35957 18.1717 6.74372 18.6116L5.16248 19.7411C3.77738 20.7304 3.08484 21.2251 2.54242 20.946C2 20.6668 2 19.8158 2 18.1136Z" fill="currentColor"/>
@@ -186,7 +186,7 @@ function renderLeafNode(container, node, options) {
 
                     const removeBtn = document.createElement('button');
                     removeBtn.className = 'remove-image-btn';
-                    removeBtn.title = 'Remove image';
+                    removeBtn.setAttribute('data-tooltip', 'Remove image');
                     removeBtn.innerHTML = '<span class="icon icon-delete" aria-hidden="true"></span>';
                     removeBtn.setAttribute('aria-label', 'Remove image');
                     removeBtn.addEventListener('click', (e) => {
@@ -226,7 +226,7 @@ function renderLeafNode(container, node, options) {
 
             const importBtn = document.createElement('button');
             importBtn.className = 'import-image-btn';
-            importBtn.title = 'Import Image';
+            importBtn.setAttribute('data-tooltip', 'Import Image');
             importBtn.innerHTML = `
 <svg width="20px" height="20px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M1 1H15V15H1V1ZM6 9L8 11L13 6V13H3V12L6 9ZM6.5 7C7.32843 7 8 6.32843 8 5.5C8 4.67157 7.32843 4 6.5 4C5.67157 4 5 4.67157 5 5.5C5 6.32843 5.67157 7 6.5 7Z" fill="currentColor"/>
@@ -298,7 +298,7 @@ function renderTextContent(container, node, startInEditMode = false, options = {
         const alignBtn = document.createElement('button');
         alignBtn.id = `align-btn-${node.id}`;
         alignBtn.className = `align-text-btn`;
-        alignBtn.title = isCentered ? 'Align Left' : 'Align Center';
+        alignBtn.setAttribute('data-tooltip', isCentered ? 'Align Left' : 'Align Center');
 
         const leftIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 4C2.44772 4 2 4.44772 2 5V5.5C2 6.05228 2.44772 6.5 3 6.5H21C21.5523 6.5 22 6.05228 22 5.5V5C22 4.44772 21.5523 4 21 4H3Z" fill="currentColor"/><path d="M3 13C2.44772 13 2 13.4477 2 14V14.5C2 15.0523 2.44772 15.5 3 15.5H21C21.5523 15.5 22 15.0523 22 14.5V14C22 13.4477 21.5523 13 21 13H3Z" fill="currentColor"/><path d="M2 9.5C2 8.94772 2.44772 8.5 3 8.5H15C15.5523 8.5 16 8.94772 16 9.5V10C16 10.5523 15.5523 11 15 11H3C2.44772 11 2 10.5523 2 10V9.5Z" fill="currentColor"/><path d="M3 17.5C2.44772 17.5 2 17.9477 2 18.5V19C2 19.5523 2.44772 20 3 20H15C15.5523 20 16 19.5523 16 19V18.5C16 17.9477 15.5523 17.5 15 17.5H3Z" fill="currentColor"/></svg>`;
         const centerIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 4C2.44772 4 2 4.44772 2 5V5.5C2 6.05228 2.44772 6.5 3 6.5H21C21.5523 6.5 22 6.05228 22 5.5V5C22 4.44772 21.5523 4 21 4H3Z" fill="currentColor"/><path d="M3 13C2.44772 13 2 13.4477 2 14V14.5C2 15.0523 2.44772 15.5 3 15.5H21C21.5523 15.5 22 15.0523 22 14.5V14C22 13.4477 21.5523 13 21 13H3Z" fill="currentColor"/><path d="M5 9.5C5 8.94772 5.44772 8.5 6 8.5H18C18.5523 8.5 19 8.94772 19 9.5V10C19 10.5523 18.5523 11 18 11H6C5.44772 11 5 10.5523 5 10V9.5Z" fill="currentColor"/><path d="M6 17.5C5.44772 17.5 5 17.9477 5 18.5V19C5 19.5523 5.44772 20 6 20H18C18.5523 20 19 19.5523 19 19V18.5C19 17.9477 18.5523 17.5 18 17.5H6Z" fill="currentColor"/></svg>`;
@@ -311,7 +311,7 @@ function renderTextContent(container, node, startInEditMode = false, options = {
         const removeBtn = document.createElement('button');
         removeBtn.id = `remove-text-btn-${node.id}`;
         removeBtn.className = 'remove-text-btn';
-        removeBtn.title = 'Remove text';
+        removeBtn.setAttribute('data-tooltip', 'Remove text');
         removeBtn.setAttribute('aria-label', 'Remove text');
         removeBtn.innerHTML = '<span class="icon icon-delete" aria-hidden="true"></span>';
         // Remove text handled by delegation
