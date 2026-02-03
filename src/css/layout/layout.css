@@ -252,6 +252,17 @@
     font-weight: 500;
     cursor: pointer;
     position: relative;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.rectangle-base.is-editing {
+    user-select: text;
+}
+
+.splittable-rect img {
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 .rectangle-base::after {

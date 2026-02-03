@@ -137,6 +137,7 @@ function renderLeafNode(container, node, options) {
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = node.image.fit || 'cover';
+                img.draggable = false;
 
                 if (node.image.flip) {
                     img.style.transform = 'scaleX(-1)';
