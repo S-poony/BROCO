@@ -6,12 +6,16 @@
 `ctrl + z` = undo
 `ctrl + y` = redo
 `ctrl + shift + z` = redo
-`tab / shift + tab` = navigation
+`tab / shift + tab` = navigation (*app*)
 `arrows` = navigation (*layout*)
 `shift + arrows` = move content
 `alt + arrows` = move divider (*grows the rectangle in the direction of the arrow*)
-`ctrl + arrows` = merge rectangle with neighbor (*deletes divider if it separates only two rectangles*)
-`enter` = select
+`ctrl + arrows` = merge selected rectangle with neighbour
+
+*the following also work with images*
+`ctrl + c` = copy
+`ctrl + v` = paste
+`ctrl + x` = cut
 
 ### Divider
 
