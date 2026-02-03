@@ -182,13 +182,13 @@ test.describe('Multi-Page Operations', () => {
 
         const divider = page.locator('.divider');
         await expect(divider).toBeVisible();
-        await expect(page.locator('.splittable-rect')).toHaveCount(2);
+        await expect(page.locator('.splittable-rect[data-split-state="unsplit"]')).toHaveCount(2);
 
         // 2. Ctrl + Click on divider
         await divider.click({ modifiers: ['Control'], force: true });
 
         // 3. Verify Merge
-        await expect(page.locator('.splittable-rect')).toHaveCount(1);
+        await expect(page.locator('.splittable-rect[data-split-state="unsplit"]')).toHaveCount(1);
         await expect(page.locator('#rect-1')).toHaveAttribute('data-split-state', 'unsplit');
     });
 });
