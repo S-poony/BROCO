@@ -195,7 +195,8 @@ function onDrag(event) {
         // 2. Proportional Snapping (using cache)
         if (snappedCenter === null && state.cachedSnapPoints) {
             for (const snapPoint of state.cachedSnapPoints) {
-                const targetCenter = state.parentOrigin + (snapPoint / 100) * state.parentFullSize;
+                // targetCenter = start of first rect + (percentage of combined rect sizes) + half of divider
+                const targetCenter = state.contentOrigin + (snapPoint / 100) * state.availableSpace + state.dividerSize / 2;
                 if (Math.abs(projectedCenter - targetCenter) < SNAP_THRESHOLD) {
                     snappedCenter = targetCenter;
                     break;
