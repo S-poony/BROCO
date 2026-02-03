@@ -1,5 +1,5 @@
 import { state, addPage, duplicatePage, getCurrentPage } from '../core/state.js';
-import { handleSplitClick, createTextInRect, findNodeById, swapNodesContent, renderAndRestoreFocus, snapDivider, findMergeableParent, mergeNodes } from '../layout/layout.js';
+import { handleSplitClick, createTextInRect, findNodeById, swapNodesContent, renderAndRestoreFocus, snapDivider, findMergeableParent, mergeNodes, copyNodeContent, cutNodeContent, pasteNodeContent } from '../layout/layout.js';
 import { undo, redo, saveState } from '../io/history.js';
 import { renderLayout } from '../layout/renderer.js';
 import { renderPageList } from '../layout/pages.js';
@@ -91,6 +91,28 @@ function handleKeyDown(e) {
         });
         focused.dispatchEvent(clickEvent);
         return;
+    }
+
+    // Handle clipboard operations
+    if (e.ctrlKey) {
+        if (e.key === 'c' || e.key === 'C') {
+            e.preventDefault();
+            e.stopPropagation();
+            copyNodeContent(focused.id);
+            return;
+        }
+        if (e.key === 'x' || e.key === 'X') {
+            e.preventDefault();
+            e.stopPropagation();
+            cutNodeContent(focused.id);
+            return;
+        }
+        if (e.key === 'v' || e.key === 'V') {
+            e.preventDefault();
+            e.stopPropagation();
+            pasteNodeContent(focused.id);
+            return;
+        }
     }
 
     switch (e.key) {

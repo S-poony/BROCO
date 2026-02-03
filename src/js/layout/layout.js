@@ -8,6 +8,7 @@ import { findNodeById as findNodeByIdInternal, findParentNode as findParentNodeI
 import { snapDivider as snapDividerInternal } from './internal/snapping.js';
 import { renderAndRestoreFocus as renderAndRestoreFocusInternal } from './internal/focusManager.js';
 import * as dragInternal from './internal/dragHandler.js';
+import { toast, withErrorHandling } from '../core/errorHandler.js';
 
 // Re-export tree utils for other modules
 export { findNodeByIdInternal as findNodeById, findParentNodeInternal as findParentNode };
@@ -245,3 +246,161 @@ export function handleDividerMerge(dividerElement) {
     }
 }
 
+// ----------------------------------------------------------------------
+// Clipboard Operations
+// ----------------------------------------------------------------------
+
+/**
+ * Copy content of a specific node to system clipboard
+ * @param {string} nodeId 
+ */
+export async function copyNodeContent(nodeId) {
+    await withErrorHandling(async () => {
+        const node = findNodeByIdInternal(getCurrentPage(), nodeId);
+        if (!node) throw new Error('Node not found');
+
+        const content = {};
+        let hasContent = false;
+
+        if (node.image) {
+            content.image = node.image;
+            hasContent = true;
+        }
+        if (node.text !== null && node.text !== undefined) {
+            content.text = node.text;
+            content.textAlign = node.textAlign;
+            hasContent = true;
+        }
+
+        if (!hasContent) {
+            toast.info('No content to copy');
+            return;
+        }
+
+        // Add metadata for validation
+        const clipboardData = {
+            type: 'broco-content',
+            timestamp: Date.now(),
+            data: content
+        };
+
+        await navigator.clipboard.writeText(JSON.stringify(clipboardData));
+        toast.success('Content copied');
+    }, 'Failed to copy content');
+}
+
+/**
+ * Cut content of a specific node
+ * @param {string} nodeId 
+ */
+export async function cutNodeContent(nodeId) {
+    await withErrorHandling(async () => {
+        const node = findNodeByIdInternal(getCurrentPage(), nodeId);
+        if (!node) throw new Error('Node not found');
+
+        // Reuse copy logic (but we can't reuse function easily due to async/toast flow, so we duplicate the copy part for atomicity)
+        // OR just call it:
+
+        // 1. Copy
+        const content = {};
+        let hasContent = false;
+        if (node.image) {
+            content.image = node.image;
+            hasContent = true;
+        }
+        if (node.text !== null && node.text !== undefined) {
+            content.text = node.text;
+            content.textAlign = node.textAlign;
+            hasContent = true;
+        }
+
+        if (!hasContent) {
+            toast.info('No content to cut');
+            return;
+        }
+
+        const clipboardData = {
+            type: 'broco-content',
+            timestamp: Date.now(),
+            data: content
+        };
+
+        await navigator.clipboard.writeText(JSON.stringify(clipboardData));
+
+        // 2. Clear content
+        saveState();
+        node.image = null;
+        node.text = null;
+        node.textAlign = null;
+
+        renderAndRestoreFocus(getCurrentPage(), nodeId);
+        toast.success('Content cut');
+
+    }, 'Failed to cut content');
+}
+
+/**
+ * Paste content into a specific node
+ * @param {string} nodeId 
+ */
+export async function pasteNodeContent(nodeId) {
+    await withErrorHandling(async () => {
+        const node = findNodeByIdInternal(getCurrentPage(), nodeId);
+        if (!node) throw new Error('Node not found');
+        if (node.splitState === 'split') return; // Can't paste into container
+
+        const text = await navigator.clipboard.readText();
+        if (!text) return;
+
+        let parsed = null;
+        try {
+            parsed = JSON.parse(text);
+        } catch (e) {
+            // Not JSON, treat as raw text?
+            // Decision: For now, if it's not our JSON, we COULD paste as text content.
+            // Let's support raw text pasting as a nice-to-have fallback.
+            saveState();
+            node.text = text;
+            node.image = null; // Overwrite image if pasting text
+            node.textAlign = node.textAlign || 'center';
+            renderAndRestoreFocus(getCurrentPage(), nodeId);
+            toast.success('Text pasted');
+            return;
+        }
+
+        // Validate "broco-content"
+        if (parsed && parsed.type === 'broco-content' && parsed.data) {
+            saveState();
+            const data = parsed.data;
+
+            // Apply content
+            if (data.image) {
+                node.image = { ...data.image };
+            } else {
+                node.image = null;
+            }
+
+            if (data.text !== undefined) {
+                node.text = data.text;
+                node.textAlign = data.textAlign || 'center';
+            } else {
+                // If the copied node had image only, maybe we shouldn't clear text?
+                // Logic: Copy triggers a full state capture. Paste should replicate that state.
+                // So if source had no text, target should have no text.
+                node.text = null;
+                node.textAlign = null;
+            }
+
+            renderAndRestoreFocus(getCurrentPage(), nodeId);
+            toast.success('Content pasted');
+        } else {
+            // JSON but not ours? Treat as text.
+            saveState();
+            node.text = text;
+            node.image = null;
+            node.textAlign = node.textAlign || 'center'; // Default if not present
+            renderAndRestoreFocus(getCurrentPage(), nodeId);
+            toast.success('Text pasted');
+        }
+    }, 'Failed to paste content');
+}
