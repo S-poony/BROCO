@@ -143,12 +143,15 @@ describe('Editor Keydown Handler', () => {
 
     describe('Error Handling', () => {
         it('triggers toast on unexpected error', () => {
-            // Force a definitive throw by making editor.value null
-            mockEditor.value = null;
+            // Mock console.error to keep test output clean
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+            // Force a definitive throw by passing null as the editor
             const event = createEvent('(');
-            handleEditorKeydown(event, mockEditor);
+            handleEditorKeydown(event, null);
 
             expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('failed'));
+            consoleSpy.mockRestore();
         });
     });
 });

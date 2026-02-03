@@ -10,7 +10,7 @@ export function handleEditorKeydown(e, editor) {
     try {
         const start = editor.selectionStart;
         const end = editor.selectionEnd;
-        const value = editor.value;
+        const value = editor.value || '';
 
         const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '*': '*', '_': '_', '`': '`' };
         const selection = value.substring(start, end);
