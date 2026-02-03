@@ -28,7 +28,8 @@ const defaultSettings = {
         showBorders: true
     },
     electron: {
-        useFileReferences: false
+        useFileReferences: false,
+        enableTooltips: true
     }
 };
 
@@ -325,6 +326,9 @@ function syncFormWithSettings() {
     // Electron
     const useFileRefsToggle = document.getElementById('setting-electron-usereferences');
     if (useFileRefsToggle) useFileRefsToggle.checked = settings.electron.useFileReferences;
+
+    const showTooltipsToggle = document.getElementById('setting-show-tooltips');
+    if (showTooltipsToggle) showTooltipsToggle.checked = settings.electron.enableTooltips;
 }
 
 /**
@@ -507,5 +511,10 @@ function setupElectronControls() {
     const useFileRefsToggle = document.getElementById('setting-electron-usereferences');
     useFileRefsToggle?.addEventListener('change', (e) => {
         updateSetting('electron', 'useFileReferences', e.target.checked);
+    });
+
+    const showTooltipsToggle = document.getElementById('setting-show-tooltips');
+    showTooltipsToggle?.addEventListener('change', (e) => {
+        updateSetting('electron', 'enableTooltips', e.target.checked);
     });
 }

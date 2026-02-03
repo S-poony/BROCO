@@ -1,3 +1,5 @@
+import { getSettings } from './settings.js';
+
 /**
  * Tooltip Manager
  * Manages a single global tooltip element for the application.
@@ -51,6 +53,9 @@ export class TooltipManager {
     }
 
     show(target, text) {
+        const settings = getSettings();
+        if (!settings.electron.enableTooltips) return;
+
         this.element.textContent = text;
         this.element.classList.add('visible');
         this.isVisible = true;
