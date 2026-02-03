@@ -356,13 +356,11 @@ export async function pasteNodeContent(nodeId) {
         try {
             parsed = JSON.parse(text);
         } catch (e) {
-            // Not JSON, treat as raw text?
-            // Decision: For now, if it's not our JSON, we COULD paste as text content.
-            // Let's support raw text pasting as a nice-to-have fallback.
+            // Not JSON, treat as raw text
             saveState();
             node.text = text;
             node.image = null; // Overwrite image if pasting text
-            node.textAlign = node.textAlign || 'center';
+            // Preserve existing alignment if it exists, otherwise leave as default (left)
             renderAndRestoreFocus(getCurrentPage(), nodeId);
             toast.success('Text pasted');
             return;
@@ -382,11 +380,9 @@ export async function pasteNodeContent(nodeId) {
 
             if (data.text !== undefined) {
                 node.text = data.text;
-                node.textAlign = data.textAlign || 'center';
+                node.textAlign = data.textAlign;
             } else {
-                // If the copied node had image only, maybe we shouldn't clear text?
-                // Logic: Copy triggers a full state capture. Paste should replicate that state.
-                // So if source had no text, target should have no text.
+                // If the copied node had image only, we clear text
                 node.text = null;
                 node.textAlign = null;
             }
@@ -398,7 +394,7 @@ export async function pasteNodeContent(nodeId) {
             saveState();
             node.text = text;
             node.image = null;
-            node.textAlign = node.textAlign || 'center'; // Default if not present
+            // Preserve existing alignment
             renderAndRestoreFocus(getCurrentPage(), nodeId);
             toast.success('Text pasted');
         }
