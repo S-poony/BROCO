@@ -1,4 +1,4 @@
-import { state, getCurrentPage } from '../../core/state.js';
+import { state, getCurrentPage, updateLayout } from '../../core/state.js';
 import { saveState } from '../../io/history.js';
 import { SNAP_THRESHOLD, MIN_AREA_PERCENT, LAPTOP_BREAKPOINT } from '../../core/constants.js';
 import { renderLayout } from '../renderer.js';
@@ -134,7 +134,7 @@ export function startEdgeDrag(event, edge) {
         newRoot.children = [oldLayoutNode, newRect];
     }
 
-    state.pages[state.currentPageIndex] = newRoot;
+    updateLayout(newRoot);
 
     // We need a specific render call here
     const a4 = document.getElementById('a4-paper');
