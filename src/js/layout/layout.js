@@ -280,7 +280,6 @@ export async function copyNodeContent(nodeId) {
         // Add metadata for validation
         const clipboardData = {
             type: 'broco-content',
-            timestamp: Date.now(),
             data: content
         };
 
@@ -321,7 +320,6 @@ export async function cutNodeContent(nodeId) {
 
         const clipboardData = {
             type: 'broco-content',
-            timestamp: Date.now(),
             data: content
         };
 
