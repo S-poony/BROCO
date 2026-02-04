@@ -22,33 +22,58 @@ export class TooltipManager {
 
     setupEventListeners() {
         document.addEventListener('mouseover', (e) => {
-            const target = e.target.closest('[data-tooltip]');
-            if (target) {
+            // Priority 1: Elements with explicit data-tooltip
+            // Priority 2: Dividers (dynamic)
+            let target = e.target.closest('[data-tooltip]');
+            let text = target ? target.getAttribute('data-tooltip') : null;
+
+            if (!target) {
+                const divider = e.target.closest('.divider');
+                if (divider) {
+                    target = divider;
+                    text = 'Hold Shift to snap';
+                }
+            }
+
+            if (target && text) {
                 // DON'T show tooltip if the rectangle is being edited
                 if (target.classList.contains('is-editing') || target.closest('.is-editing')) {
                     return;
                 }
-                this.show(target, target.getAttribute('data-tooltip'));
+                // DON'T show tooltip if we are currently dragging (indicated by no-select)
+                if (document.body.classList.contains('no-select')) {
+                    return;
+                }
+
+                this.show(target, text);
             }
         });
 
         document.addEventListener('mouseout', (e) => {
-            const target = e.target.closest('[data-tooltip]');
-            if (target) {
+            // Handle both data-tooltip and divider targets
+            if (e.target.closest('[data-tooltip], .divider')) {
                 this.hide();
             }
         });
 
         document.addEventListener('mousemove', (e) => {
             if (this.isVisible) {
-                const target = e.target.closest('[data-tooltip]');
-                // Hide if we're no longer over a tooltip-enabled element or if we've entered edit mode
-                if (!target || target.classList.contains('is-editing') || target.closest('.is-editing')) {
+                const target = e.target.closest('[data-tooltip], .divider');
+                // Hide if we're no longer over a tooltip-enabled element, if we've entered edit mode, or if a drag started
+                if (!target ||
+                    target.classList.contains('is-editing') ||
+                    target.closest('.is-editing') ||
+                    document.body.classList.contains('no-select')) {
                     this.hide();
                 } else {
                     this.updatePosition(e.clientX, e.clientY);
                 }
             }
+        });
+
+        // Hide tooltip immediately when starting to drag/click
+        document.addEventListener('mousedown', () => {
+            this.hide();
         });
     }
 
