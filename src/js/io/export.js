@@ -224,18 +224,23 @@ export function setupExportHandlers() {
     const downloadCloseBtn = document.getElementById('download-app-close');
 
     exportBtn.addEventListener('click', () => {
-        // Check if running in Electron (using the API we exposed)
-        if (!window.electronAPI) {
-            if (downloadModal) {
-                downloadModal.classList.add('active');
-            } else {
-                alert('Please download the desktop app to export. Visit https://github.com/S-poony/BROCO/releases');
+        try {
+            // Check if running in Electron (using the API we exposed)
+            if (!window.electronAPI) {
+                if (downloadModal) {
+                    downloadModal.classList.add('active');
+                } else {
+                    toast.error('Export is only available in the desktop app. Please download it from GitHub.');
+                }
+                return;
             }
-            return;
-        }
 
-        modal.classList.add('active');
-        updateDimensions();
+            modal.classList.add('active');
+            updateDimensions();
+        } catch (error) {
+            console.error('Failed to open export modal:', error);
+            toast.error('Failed to open export options. Please refresh and try again.');
+        }
     });
 
     // Download Modal Handlers
@@ -264,37 +269,39 @@ export function setupExportHandlers() {
     });
 
     confirmBtn?.addEventListener('click', async () => {
-        const formatSelect = document.getElementById('export-format-select');
-        const format = formatSelect.value;
-        const qualityMultiplier = parseInt(qualitySlider.value) / 100;
-
-        confirmBtn.disabled = true;
-        const originalText = confirmBtn.textContent;
-        confirmBtn.textContent = 'Generating...';
-
         try {
+            const formatSelect = document.getElementById('export-format-select');
+            const format = formatSelect.value;
+            const qualityMultiplier = parseInt(qualitySlider.value) / 100;
+
+            confirmBtn.disabled = true;
+            const originalText = confirmBtn.textContent;
+            confirmBtn.textContent = 'Generating...';
+
             await performExport(format, qualityMultiplier);
         } catch (error) {
             console.error('Export failed:', error);
-            showAlert('Export failed. Please try again.', 'Error');
+            toast.error(`Export failed: ${error.message}`);
         } finally {
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = originalText;
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Export'; // Reset to default text, checking variable scope
+            }
             modal.classList.remove('active');
         }
     });
 
     if (publishConfirmBtn) {
         publishConfirmBtn.addEventListener('click', async () => {
-            const qualityMultiplier = parseInt(qualitySlider.value) / 100;
-            publishConfirmBtn.disabled = true;
-            publishConfirmBtn.textContent = 'Publishing...';
-
             try {
+                const qualityMultiplier = parseInt(qualitySlider.value) / 100;
+                publishConfirmBtn.disabled = true;
+                publishConfirmBtn.textContent = 'Publishing...';
+
                 await performPublishFlipbook(qualityMultiplier);
             } catch (error) {
                 console.error('Publish failed:', error);
-                showAlert('Publishing failed. Please try again.', 'Error');
+                toast.error(`Publishing failed: ${error.message}`);
             } finally {
                 publishConfirmBtn.disabled = false;
                 publishConfirmBtn.textContent = 'Publish Flipbook';
@@ -318,6 +325,12 @@ async function performExport(format, qualityMultiplier) {
     const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
     const width = Math.round(layoutWidth * qualityMultiplier);
     const height = Math.round(layoutHeight * qualityMultiplier);
+
+    if (!state.pages || state.pages.length === 0) {
+        if (loadingOverlay) loadingOverlay.classList.remove('active');
+        toast.error('No pages to export.');
+        return;
+    }
 
     const isSingleImageExport = (format === 'png' || format === 'jpeg') && state.pages.length === 1;
     const zip = (format === 'png' || format === 'jpeg') && state.pages.length > 1 ? new JSZip() : null;
@@ -379,6 +392,10 @@ async function performExport(format, qualityMultiplier) {
                 downloadBlob(content, `layout-export-${timestamp}.zip`);
             }
         }
+    } catch (error) {
+        console.error('Export operation failed:', error);
+        toast.error(`Export failed: ${error.message}`);
+        throw error; // Re-throw to let caller know failure occurred
     } finally {
         if (loadingOverlay) loadingOverlay.classList.remove('active');
     }
@@ -476,6 +493,10 @@ async function performPublishFlipbook(qualityMultiplier) {
             window.open(result.url, '_blank');
             window._pendingSuccessUrl = result.url;
         }
+    } catch (error) {
+        console.error('Publishing step failed:', error);
+        toast.error(error.message || 'Failed to publish flipbook.');
+        throw error;
     } finally {
         if (loadingOverlay) loadingOverlay.classList.remove('active');
 
