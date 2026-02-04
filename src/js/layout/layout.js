@@ -24,9 +24,13 @@ export function renderAndRestoreFocus(page, explicitFocusId = null) {
  * Main click handler for splitting nodes
  */
 export function handleSplitClick(event) {
-    // If we just finished editing text, clicking elsewhere should only exit edit mode
-    // However, if Alt is held (or Right-Click synthetic event), we definitely want to split.
-    if (window._justFinishedEditing && !event.altKey) return;
+    // If we just finished editing text, clicking elsewhere should only exit edit mode.
+    // We consume this click entirely regardless of Alt key to ensure a clean exit.
+    if (window._justFinishedEditing) return;
+
+    // Direct check: if any rect is currently in edit mode, don't split.
+    // This handles cases where focusout might be delayed or processed after the click delegation.
+    if (document.querySelector('.is-editing')) return;
 
     // If click was on the remove button, don't do anything here
     if (event.target.closest('.remove-image-btn')) return;
