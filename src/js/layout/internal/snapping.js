@@ -16,23 +16,21 @@ export const SNAP_TYPES = {
 };
 
 /**
- * Recursively collects all node sizes from a tree.
- * @param {Object} node 
- * @param {Set<number>} sizes 
+ * Collects physical dimensions (width and height) of all leaf nodes on the page.
+ * @returns {number[]}
  */
-function collectAllNodeSizes(node, sizes = new Set()) {
-    if (node.size) {
-        const val = parseFloat(node.size);
-        if (!isNaN(val)) {
-            sizes.add(val);
+function collectAllLeafDimensions() {
+    const dims = new Set();
+    const rects = document.querySelectorAll('.splittable-rect');
+    rects.forEach(el => {
+        // Only consider leaf nodes (no nested rectangles)
+        if (!el.querySelector('.splittable-rect')) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 1) dims.add(Math.round(r.width * 10) / 10);
+            if (r.height > 1) dims.add(Math.round(r.height * 10) / 10);
         }
-    }
-    if (node.children) {
-        for (const child of node.children) {
-            collectAllNodeSizes(child, sizes);
-        }
-    }
-    return sizes;
+    });
+    return Array.from(dims);
 }
 
 /**
@@ -146,13 +144,6 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
         addStandard(50, SNAP_TYPES.GRID);
     }
 
-    // 1b. Node Size Matching
-    const allSizes = collectAllNodeSizes(page);
-    allSizes.forEach(s => {
-        addStandard(s, SNAP_TYPES.SIZE_MATCH);
-        addStandard(100 - s, SNAP_TYPES.SIZE_MATCH);
-    });
-
     // 2. Recursive Gap Subdivision
     const MIN_GAP_FOR_RECURSION = 10;
     const remainingForward = 100 - currentPct;
@@ -164,14 +155,11 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
         SNAP_POINTS.forEach(p => addStandard(remainingBackward * p / 100, SNAP_TYPES.SUBDIVISION));
     }
 
-    // 3. Global Alignment Snaps
-    const otherDividers = Array.from(document.querySelectorAll(`.divider[data-orientation="${targetDividerOrientation}"]`));
+    // 3. Physical Context for Priority Snaps (Size Match & Global Alignment)
     const parentEl = document.getElementById(targetParent.id) || document.getElementById('a4-paper');
-
     if (parentEl) {
         const parentRect = parentEl.getBoundingClientRect();
         const parentStyle = window.getComputedStyle(parentEl);
-
         const movingDivider = document.querySelector(`.divider[data-parent-id="${targetParent.id}"][data-rect-a-id="${nodeA.id}"]`);
         const movingDivSize = movingDivider ? (targetDividerOrientation === 'vertical' ? movingDivider.offsetWidth : movingDivider.offsetHeight) : 0;
 
@@ -183,16 +171,23 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
         const availableFlexSpace = parentSize - startBorder - endBorder - movingDivSize;
 
         if (availableFlexSpace > 0) {
+            // 3a. Global Alignment Snaps
+            const otherDividers = Array.from(document.querySelectorAll(`.divider[data-orientation="${targetDividerOrientation}"]`));
             otherDividers.forEach(div => {
                 if (div === movingDivider) return;
                 const divRect = div.getBoundingClientRect();
                 const divCenter = (targetDividerOrientation === 'vertical' ? divRect.left + divRect.width / 2 : divRect.top + divRect.height / 2);
-
                 const relCenter = divCenter - parentStart;
                 const flexPos = relCenter - startBorder - (movingDivSize / 2);
-                const relPct = (flexPos / availableFlexSpace) * 100;
+                addPriority((flexPos / availableFlexSpace) * 100, SNAP_TYPES.GLOBAL);
+            });
 
-                addPriority(relPct, SNAP_TYPES.GLOBAL);
+            // 3b. Size Match Snaps (Matched physical dimensions)
+            const physicalDims = collectAllLeafDimensions();
+            physicalDims.forEach(dim => {
+                const relPct = (dim / availableFlexSpace) * 100;
+                addPriority(relPct, SNAP_TYPES.SIZE_MATCH);
+                addPriority(100 - relPct, SNAP_TYPES.SIZE_MATCH);
             });
         }
     }
@@ -262,12 +257,27 @@ export function calculateDynamicSnaps(divider, orientation) {
         dynamicSnaps.push({ value: 50, type: SNAP_TYPES.GRID });
     }
 
-    // 2. Page-wide Node Size Matching
-    const allSizes = collectAllNodeSizes(page);
-    allSizes.forEach(s => {
-        dynamicSnaps.push({ value: s, type: SNAP_TYPES.SIZE_MATCH });
-        dynamicSnaps.push({ value: 100 - s, type: SNAP_TYPES.SIZE_MATCH });
-    });
+    // 2. Physical Size Match Logic
+    const parentEl = divider.parentElement;
+    if (parentEl) {
+        const parentRect = parentEl.getBoundingClientRect();
+        const parentStyle = window.getComputedStyle(parentEl);
+        const movingDivSize = (orientation === 'vertical' ? divider.offsetWidth : divider.offsetHeight);
+        const parentSize = (orientation === 'vertical' ? parentRect.width : parentRect.height);
+        const startBorder = (orientation === 'vertical' ? parseFloat(parentStyle.borderLeftWidth) : parseFloat(parentStyle.borderTopWidth)) || 0;
+        const endBorder = (orientation === 'vertical' ? parseFloat(parentStyle.borderRightWidth) : parseFloat(parentStyle.borderBottomWidth)) || 0;
+
+        const availableFlexSpace = parentSize - startBorder - endBorder - movingDivSize;
+
+        if (availableFlexSpace > 0) {
+            const physicalDims = collectAllLeafDimensions();
+            physicalDims.forEach(dim => {
+                const relPct = parseFloat(((dim / availableFlexSpace) * 100).toFixed(2));
+                dynamicSnaps.push({ value: relPct, type: SNAP_TYPES.SIZE_MATCH });
+                dynamicSnaps.push({ value: parseFloat((100 - relPct).toFixed(2)), type: SNAP_TYPES.SIZE_MATCH });
+            });
+        }
+    }
 
     return dynamicSnaps;
 }
