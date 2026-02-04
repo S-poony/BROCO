@@ -61,6 +61,12 @@ export async function initializeExportMode() {
                     });
                 }
 
+                // Inject dynamic page size CSS for PDF export
+                // This corresponds to preferCSSPageSize: true in Electron
+                const pageStyle = document.createElement('style');
+                pageStyle.innerHTML = `@page { size: ${width}px ${height}px; margin: 0; }`;
+                document.head.appendChild(pageStyle);
+
                 const layouts = pageLayouts || [pageLayout];
 
                 // Render each page

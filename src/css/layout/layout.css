@@ -23,6 +23,8 @@
         --p-width: var(--paper-current-width, 1000px);
         --p-height: var(--paper-current-height, 1414px);
         --paper-scale-ref: max(var(--p-width), var(--p-height));
+        overflow: hidden !important;
+        /* Prevent content spillover causing blank pages */
     }
 
     --divider-thickness: round(calc(var(--paper-scale-ref) * var(--divider-ratio)), 1px);

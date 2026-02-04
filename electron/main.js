@@ -379,17 +379,9 @@ app.whenReady().then(() => {
             // Capture logic
             let buffer;
             if (format === 'pdf') {
-                // Chromium printToPDF works best with dimensions in microns (1 inch = 25400 microns)
-                // Assuming 96 DPI for the input pixel values
-                const micronMult = 25400 / 96;
                 buffer = await win.webContents.printToPDF({
                     printBackground: true,
-                    landscape: width > height,
-                    pageSize: {
-                        width: Math.floor(width * micronMult),
-                        height: Math.floor(height * micronMult)
-                    },
-                    margins: { top: 0, bottom: 0, left: 0, right: 0 }
+                    preferCSSPageSize: true
                 });
             } else {
                 // Ensure paint is done (OSR can be tricky). 
