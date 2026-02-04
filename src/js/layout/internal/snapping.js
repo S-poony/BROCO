@@ -182,12 +182,12 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
                 addPriority((flexPos / availableFlexSpace) * 100, SNAP_TYPES.GLOBAL);
             });
 
-            // 3b. Size Match Snaps (Matched physical dimensions)
+            // 3b. Size Match Snaps (Matched physical dimensions) - Standard priority
             const physicalDims = collectAllLeafDimensions();
             physicalDims.forEach(dim => {
                 const relPct = (dim / availableFlexSpace) * 100;
-                addPriority(relPct, SNAP_TYPES.SIZE_MATCH);
-                addPriority(100 - relPct, SNAP_TYPES.SIZE_MATCH);
+                addStandard(relPct, SNAP_TYPES.SIZE_MATCH);
+                addStandard(100 - relPct, SNAP_TYPES.SIZE_MATCH);
             });
         }
     }
@@ -257,7 +257,7 @@ export function calculateDynamicSnaps(divider, orientation) {
         dynamicSnaps.push({ value: 50, type: SNAP_TYPES.GRID });
     }
 
-    // 2. Physical Size Match Logic
+    // 2. Physical Size Match Logic (Added AFTER grid points to give grid precedence)
     const parentEl = divider.parentElement;
     if (parentEl) {
         const parentRect = parentEl.getBoundingClientRect();
