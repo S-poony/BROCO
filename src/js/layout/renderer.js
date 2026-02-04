@@ -52,12 +52,15 @@ function renderNodeRecursive(element, node, options) {
     // Clear previous state
     element.innerHTML = '';
     // Use classList.add to preserve classes from createDOMRect or other sources
-    element.classList.add('splittable-rect', 'rectangle-base', 'flex', 'items-start', 'justify-start');
+    element.classList.add('splittable-rect', 'rectangle-base', 'flex');
     element.style.position = '';
 
     if (node.splitState === 'split') {
+        // For split nodes, we want children to stretch (default flex behavior)
         renderSplitNode(element, node, options);
     } else {
+        // For leaf nodes, we anchor content to top-left to avoid shifting on font resize
+        element.classList.add('items-start', 'justify-start');
         renderLeafNode(element, node, options);
     }
 }
