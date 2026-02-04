@@ -7,15 +7,16 @@ describe('findNextSnapPoint', () => {
 
     it('should select the closest standard candidate if it is far enough', () => {
         const current = 50;
-        const candidates = [60];
+        const candidates = [{ value: 60, type: 'test' }];
         const priority = [];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowRight');
-        expect(result).toBe(60);
+        expect(result.value).toBe(60);
+        expect(result.type).toBe('test');
     });
 
     it('should skip standard candidate if it is too close (< 1.2)', () => {
         const current = 50;
-        const candidates = [51]; // diff 1.0
+        const candidates = [{ value: 51, type: 'test' }]; // diff 1.0
         const priority = [];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowRight');
         // Should find nothing or a fallback if provided? Function returns targetPct or null/undefined
@@ -25,17 +26,19 @@ describe('findNextSnapPoint', () => {
     it('should select priority candidate even if it is very close', () => {
         const current = 50;
         const candidates = [];
-        const priority = [50.5]; // diff 0.5
+        const priority = [{ value: 50.5, type: 'priority' }]; // diff 0.5
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowRight');
-        expect(result).toBe(50.5);
+        expect(result.value).toBe(50.5);
+        expect(result.type).toBe('priority');
     });
 
     it('should prefer priority candidate over standard candidate if priority is closer and valid', () => {
         const current = 50;
-        const candidates = [60];
-        const priority = [55];
+        const candidates = [{ value: 60, type: 'standard' }];
+        const priority = [{ value: 55, type: 'priority' }];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowRight');
-        expect(result).toBe(55);
+        expect(result.value).toBe(55);
+        expect(result.type).toBe('priority');
     });
 
     it('should ignore priority candidate if it is BEHIND the direction', () => {
@@ -48,10 +51,10 @@ describe('findNextSnapPoint', () => {
 
     it('should handle ArrowLeft (reverse direction)', () => {
         const current = 50;
-        const candidates = [40];
+        const candidates = [{ value: 40, type: 'test' }];
         const priority = [];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowLeft');
-        expect(result).toBe(40);
+        expect(result.value).toBe(40);
     });
 
     it('should skip standard candidate too close in reverse direction', () => {
@@ -65,29 +68,25 @@ describe('findNextSnapPoint', () => {
     it('should select priority candidate close in reverse direction', () => {
         const current = 50;
         const candidates = [];
-        const priority = [49.5];
+        const priority = [{ value: 49.5, type: 'priority' }];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowLeft');
-        expect(result).toBe(49.5);
+        expect(result.value).toBe(49.5);
     });
 
     it('should correctly prioritize closer valid snap point among mixed types', () => {
         const current = 50;
-        // Standard at 55 (valid, diff 5)
-        // Priority at 52 (valid, diff 2) - Closer!
-        const candidates = [55];
-        const priority = [52];
+        const candidates = [{ value: 55, type: 'standard' }];
+        const priority = [{ value: 52, type: 'priority' }];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowRight');
-        expect(result).toBe(52);
+        expect(result.value).toBe(52);
     });
 
     it('should correctly prioritize closer valid snap point among mixed types (case 2)', () => {
         const current = 50;
-        // Standard at 52 (valid, diff 2) - Closer!
-        // Priority at 55 (valid, diff 5)
-        const candidates = [52];
-        const priority = [55];
+        const candidates = [{ value: 52, type: 'standard' }];
+        const priority = [{ value: 55, type: 'priority' }];
         const result = findNextSnapPoint(current, candidates, priority, 'ArrowRight');
-        expect(result).toBe(52);
+        expect(result.value).toBe(52);
     });
 
     it('should respect boundaries (1 and 99)', () => {

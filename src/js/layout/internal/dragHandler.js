@@ -5,6 +5,8 @@ import { renderLayout } from '../renderer.js';
 import { findNodeById, deleteNodeFromTree } from './treeUtils.js';
 import { calculateDynamicSnaps } from './snapping.js';
 import { renderAndRestoreFocus } from './focusManager.js';
+import { toast } from '../../core/errorHandler.js';
+import { SNAP_TYPES } from './snapping.js';
 
 /**
  * Starts the drag operation for a divider
@@ -64,7 +66,7 @@ export function startDrag(event, dividerElement = null) {
             if (other === divider) continue;
             const otherRect = other.getBoundingClientRect();
             const center = (orientation === 'vertical' ? otherRect.left + otherRect.width / 2 : otherRect.top + otherRect.height / 2);
-            state.cachedDividers.push(center);
+            state.cachedDividers.push({ center, type: SNAP_TYPES.GLOBAL });
         }
     }
 
@@ -181,12 +183,16 @@ function onDrag(event) {
     if (event.shiftKey) {
         const projectedCenter = state.contentOrigin + newSizeA + state.dividerSize / 2;
         let snappedCenter = null;
+        let snapType = null;
+        let snapId = null; // Unique ID to identify this specific snap point
 
         // 1. Divider Alignment Snapping (using cache)
         if (state.cachedDividers) {
-            for (const otherCenter of state.cachedDividers) {
-                if (Math.abs(projectedCenter - otherCenter) < SNAP_THRESHOLD) {
-                    snappedCenter = otherCenter;
+            for (const item of state.cachedDividers) {
+                if (Math.abs(projectedCenter - item.center) < SNAP_THRESHOLD) {
+                    snappedCenter = item.center;
+                    snapType = item.type;
+                    snapId = `divider-${item.center}`;
                     break;
                 }
             }
@@ -194,11 +200,13 @@ function onDrag(event) {
 
         // 2. Proportional Snapping (using cache)
         if (snappedCenter === null && state.cachedSnapPoints) {
-            for (const snapPoint of state.cachedSnapPoints) {
+            for (const item of state.cachedSnapPoints) {
                 // targetCenter = start of first rect + (percentage of combined rect sizes) + half of divider
-                const targetCenter = state.contentOrigin + (snapPoint / 100) * state.availableSpace + state.dividerSize / 2;
+                const targetCenter = state.contentOrigin + (item.value / 100) * state.availableSpace + state.dividerSize / 2;
                 if (Math.abs(projectedCenter - targetCenter) < SNAP_THRESHOLD) {
                     snappedCenter = targetCenter;
+                    snapType = item.type;
+                    snapId = `prop-${item.value}`;
                     break;
                 }
             }
@@ -207,7 +215,18 @@ function onDrag(event) {
         if (snappedCenter !== null) {
             newSizeA = snappedCenter - state.contentOrigin - state.dividerSize / 2;
             newSizeB = state.availableSpace - newSizeA;
+
+            // Trigger toast ONLY if we just hit this snap point
+            if (state.lastSnapId !== snapId) {
+                toast.info(`Snapped: ${snapType}`, 1000);
+                state.lastSnapId = snapId;
+            }
+        } else {
+            // Reset snap tracking if not snapped
+            state.lastSnapId = null;
         }
+    } else {
+        state.lastSnapId = null;
     }
 
     rectA.style.flexGrow = newSizeA;

@@ -2,6 +2,18 @@ import { SNAP_POINTS, SNAP_THRESHOLD, MIN_AREA_PERCENT } from '../../core/consta
 import { state, getCurrentPage } from '../../core/state.js';
 import { saveState } from '../../io/history.js';
 import { findNodeById, findParentNode, countParallelLeaves } from './treeUtils.js';
+import { toast } from '../../core/errorHandler.js';
+
+/**
+ * Snap point category labels
+ */
+export const SNAP_TYPES = {
+    GRID: 'Grid Alignment',
+    SIZE_MATCH: 'Size Match',
+    SUBDIVISION: 'Proportional',
+    GLOBAL: 'Global Alignment',
+    BOUNDARY: 'Edge Limit'
+};
 
 /**
  * Recursively collects all node sizes from a tree.
@@ -24,20 +36,12 @@ function collectAllNodeSizes(node, sizes = new Set()) {
 }
 
 /**
- * Snaps the divider adjacent to the focused rectangle in the given direction.
- * This function handles both calculating snap points and updating state.
- * @param {HTMLElement} focusedRect 
- * @param {string} direction 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight'
- * @param {Function} deleteCallback (node) => void
- * @param {Function} renderCallback (page, focusId) => void
- */
-/**
  * Pure function to find the next snap point.
  * @param {number} currentPct Current percentage (0-100)
- * @param {number[]} candidates Standard candidates (subject to MIN_JUMP)
- * @param {number[]} priorityCandidates Priority candidates (subject to EPSILON, e.g. global alignment)
+ * @param {Array<{value: number, type: string}>} candidates Standard candidates
+ * @param {Array<{value: number, type: string}>} priorityCandidates Priority candidates
  * @param {string} direction 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight'
- * @returns {number|undefined} The best snap point or undefined if none found
+ * @returns {{value: number, type: string}|undefined} The best snap point or undefined if none found
  */
 export function findNextSnapPoint(currentPct, candidates, priorityCandidates, direction) {
     const MIN_JUMP = 1.2;
@@ -45,47 +49,39 @@ export function findNextSnapPoint(currentPct, candidates, priorityCandidates, di
     const isForward = (direction === 'ArrowRight' || direction === 'ArrowDown');
 
     let bestPoint = undefined;
+    let bestType = undefined;
     let minDiff = Infinity;
 
     // Helper to process a list with a specific threshold
     const processCandidates = (list, threshold) => {
-        list.forEach(pt => {
+        list.forEach(item => {
+            const pt = item.value;
             const diff = pt - currentPct;
 
-            // Check direction and threshold
-            // Forward: diff must be positive (pt > current)
-            // Backward: diff must be negative (pt < current)
             if (isForward) {
-                if (diff >= threshold) { // Must be at least threshold away
+                if (diff >= threshold) {
                     if (diff < minDiff) {
                         minDiff = diff;
                         bestPoint = pt;
+                        bestType = item.type;
                     }
                 }
             } else {
-                if (diff <= -threshold) { // Must be at least threshold away (negative)
-                    // We want the point closest to current, so largest negative diff (closest to 0)
-                    // e.g. current=50, pt=40 (diff=-10), pt=45 (diff=-5). We want 45.
-                    // Math.abs(diff) < minDiff
+                if (diff <= -threshold) {
                     if (Math.abs(diff) < minDiff) {
                         minDiff = Math.abs(diff);
                         bestPoint = pt;
+                        bestType = item.type;
                     }
                 }
             }
         });
     };
 
-    // 1. Process standard candidates with MIN_JUMP
     processCandidates(candidates, MIN_JUMP);
-
-    // 2. Process priority candidates with EPSILON (overrides if better/closer is found)
-    // Note: Since we want the *closest* valid point, we just run this update.
-    // If a priority point is closer than the best standard point found so far, it will take over
-    // because minDiff will be smaller.
     processCandidates(priorityCandidates, EPSILON);
 
-    return bestPoint;
+    return bestPoint !== undefined ? { value: bestPoint, type: bestType } : undefined;
 }
 
 export function snapDivider(focusedRect, direction, deleteCallback, renderCallback) {
@@ -94,8 +90,6 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
     let targetParent = null;
     let targetDividerOrientation = (direction === 'ArrowLeft' || direction === 'ArrowRight') ? 'vertical' : 'horizontal';
 
-    // Find the first ancestor that is split in the relevant orientation
-    // AND where the current node (or its branch) is adjacent to the divider in that direction
     let searchNodeId = currentNodeId;
     while (searchNodeId) {
         const parent = findParentNode(page, searchNodeId);
@@ -119,63 +113,60 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
 
     if (!targetParent) return;
 
-    // We found a divider to move!
     const nodeA = targetParent.children[0];
     const nodeB = targetParent.children[1];
 
-    // Get current percentage of nodeA
     const currentPct = parseFloat(nodeA.size);
     if (isNaN(currentPct)) return;
 
-    // Use Sets to organize candidates
-    const standardCandidates = new Set();
-    const priorityCandidates = new Set();
+    // Candidates are now objects with metadata
+    const standardCandidates = [];
+    const priorityCandidates = [];
 
-    const addStandard = (val) => {
+    const addStandard = (val, type) => {
         if (val >= 1 && val <= 99) {
-            standardCandidates.add(Math.round(val * 10) / 10);
+            standardCandidates.push({ value: Math.round(val * 10) / 10, type });
         }
     };
 
-    const addPriority = (val) => {
+    const addPriority = (val, type) => {
         if (val >= 1 && val <= 99) {
-            // Keep higher precision for priority alignment
-            priorityCandidates.add(parseFloat(val.toFixed(2)));
+            priorityCandidates.push({ value: parseFloat(val.toFixed(2)), type });
         }
     };
 
-    // 1. Dynamic Snap Points (Leaf Count) -> Standard
+    // 1. Grid Alignment (Leaf Count)
     const totalCount = countParallelLeaves(nodeA, targetDividerOrientation) + countParallelLeaves(nodeB, targetDividerOrientation);
     if (totalCount > 1) {
-        addStandard(50);
+        addStandard(50, SNAP_TYPES.GRID);
         for (let i = 1; i < totalCount; i++) {
-            addStandard((i / totalCount) * 100);
+            addStandard((i / totalCount) * 100, SNAP_TYPES.GRID);
         }
     } else {
-        addStandard(50);
+        addStandard(50, SNAP_TYPES.GRID);
     }
 
-    // 1b. Node Size Matching (Page-wide) -> Standard
+    // 1b. Node Size Matching
     const allSizes = collectAllNodeSizes(page);
     allSizes.forEach(s => {
-        addStandard(s);
-        addStandard(100 - s);
+        addStandard(s, SNAP_TYPES.SIZE_MATCH);
+        addStandard(100 - s, SNAP_TYPES.SIZE_MATCH);
     });
 
-    // 2. Recursive Gap Subdivision -> Standard
+    // 2. Recursive Gap Subdivision
     const MIN_GAP_FOR_RECURSION = 10;
     const remainingForward = 100 - currentPct;
     if (remainingForward > MIN_GAP_FOR_RECURSION) {
-        SNAP_POINTS.forEach(p => addStandard(currentPct + (remainingForward * p / 100)));
+        SNAP_POINTS.forEach(p => addStandard(currentPct + (remainingForward * p / 100), SNAP_TYPES.SUBDIVISION));
     }
     const remainingBackward = currentPct;
     if (remainingBackward > MIN_GAP_FOR_RECURSION) {
-        SNAP_POINTS.forEach(p => addStandard(remainingBackward * p / 100));
+        SNAP_POINTS.forEach(p => addStandard(remainingBackward * p / 100, SNAP_TYPES.SUBDIVISION));
     }
 
-    // 3. Global Alignment Snaps -> Priority
+    // 3. Global Alignment Snaps
     const otherDividers = Array.from(document.querySelectorAll(`.divider[data-orientation="${targetDividerOrientation}"]`));
-    const parentEl = document.getElementById(targetParent.id) || document.getElementById('a4-paper'); // Hardcoded ID fallback
+    const parentEl = document.getElementById(targetParent.id) || document.getElementById('a4-paper');
 
     if (parentEl) {
         const parentRect = parentEl.getBoundingClientRect();
@@ -201,29 +192,32 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
                 const flexPos = relCenter - startBorder - (movingDivSize / 2);
                 const relPct = (flexPos / availableFlexSpace) * 100;
 
-                addPriority(relPct);
+                addPriority(relPct, SNAP_TYPES.GLOBAL);
             });
         }
     }
 
-    // Convert sets to arrays
-    const candidatesArr = Array.from(standardCandidates);
-    const priorityArr = Array.from(priorityCandidates);
+    let snapResult = findNextSnapPoint(currentPct, standardCandidates, priorityCandidates, direction);
+    let targetPct = snapResult ? snapResult.value : undefined;
+    let snapType = snapResult ? snapResult.type : undefined;
 
-    let targetPct = findNextSnapPoint(currentPct, candidatesArr, priorityArr, direction);
-
-    // Fallbacks for boundaries if no snap point found (mimicking original behavior)
-    // Original: if (targetPct === undefined && currentPct < 99) targetPct = 99;
+    // Fallbacks
     if (targetPct === undefined) {
         if ((direction === 'ArrowRight' || direction === 'ArrowDown') && currentPct < 99) {
             targetPct = 99;
+            snapType = SNAP_TYPES.BOUNDARY;
         } else if ((direction === 'ArrowLeft' || direction === 'ArrowUp') && currentPct > 1) {
             targetPct = 1;
+            snapType = SNAP_TYPES.BOUNDARY;
         }
     }
 
     if (targetPct !== undefined && targetPct !== null) {
         saveState();
+
+        if (snapType) {
+            toast.info(`Snapped: ${snapType}`, 1500);
+        }
 
         if (targetPct <= MIN_AREA_PERCENT) {
             deleteCallback(document.getElementById(nodeA.id));
@@ -242,7 +236,7 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
  * Useful for both onDrag and snapDivider logic.
  */
 export function calculateDynamicSnaps(divider, orientation) {
-    const dynamicSnaps = new Set([50]);
+    const dynamicSnaps = [];
     const page = getCurrentPage();
     const parentNodeId = divider.getAttribute('data-parent-id');
     const parentNode = findNodeById(page, parentNodeId);
@@ -257,20 +251,23 @@ export function calculateDynamicSnaps(divider, orientation) {
             const rightCount = countParallelLeaves(nodeB, orientation);
             const totalCount = leftCount + rightCount;
 
+            dynamicSnaps.push({ value: 50, type: SNAP_TYPES.GRID });
             if (totalCount > 1) {
                 for (let i = 1; i < totalCount; i++) {
-                    dynamicSnaps.add((i / totalCount) * 100);
+                    dynamicSnaps.push({ value: (i / totalCount) * 100, type: SNAP_TYPES.GRID });
                 }
             }
         }
+    } else {
+        dynamicSnaps.push({ value: 50, type: SNAP_TYPES.GRID });
     }
 
     // 2. Page-wide Node Size Matching
     const allSizes = collectAllNodeSizes(page);
     allSizes.forEach(s => {
-        dynamicSnaps.add(s);
-        dynamicSnaps.add(100 - s);
+        dynamicSnaps.push({ value: s, type: SNAP_TYPES.SIZE_MATCH });
+        dynamicSnaps.push({ value: 100 - s, type: SNAP_TYPES.SIZE_MATCH });
     });
 
-    return Array.from(dynamicSnaps);
+    return dynamicSnaps;
 }
