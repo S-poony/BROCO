@@ -16,18 +16,28 @@ export const SNAP_TYPES = {
 };
 
 /**
- * Collects physical dimensions (width and height) of all leaf nodes on the page.
+ * Collects physical dimensions (width and height) of all leaf nodes within the main paper.
+ * @param {string} excludeRootId - Optional ID of a branch to ignore (e.g. the one being resized)
  * @returns {number[]}
  */
-function collectAllLeafDimensions() {
+function collectAllLeafDimensions(excludeRootId = null) {
     const dims = new Set();
-    const rects = document.querySelectorAll('.splittable-rect');
+    const paper = document.getElementById('a4-paper');
+    if (!paper) return [];
+
+    const rects = paper.querySelectorAll('.splittable-rect');
     rects.forEach(el => {
-        // Only consider leaf nodes (no nested rectangles)
+        // 1. Only consider leaf nodes (no nested rectangles)
         if (!el.querySelector('.splittable-rect')) {
+            // 2. Exclude the current resizing branch to avoid "snapping to yourself"
+            if (excludeRootId && (el.id === excludeRootId || el.closest(`#${excludeRootId}`))) {
+                return;
+            }
+
             const r = el.getBoundingClientRect();
-            if (r.width > 1) dims.add(Math.round(r.width * 10) / 10);
-            if (r.height > 1) dims.add(Math.round(r.height * 10) / 10);
+            // 3. Round to 1 decimal place and ensure it's a meaningful size
+            if (r.width > 5) dims.add(Math.round(r.width * 10) / 10);
+            if (r.height > 5) dims.add(Math.round(r.height * 10) / 10);
         }
     });
     return Array.from(dims);
@@ -183,7 +193,7 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
             });
 
             // 3b. Size Match Snaps (Matched physical dimensions) - Standard priority
-            const physicalDims = collectAllLeafDimensions();
+            const physicalDims = collectAllLeafDimensions(targetParent.id);
             physicalDims.forEach(dim => {
                 const relPct = (dim / availableFlexSpace) * 100;
                 addStandard(relPct, SNAP_TYPES.SIZE_MATCH);
@@ -270,7 +280,7 @@ export function calculateDynamicSnaps(divider, orientation) {
         const availableFlexSpace = parentSize - startBorder - endBorder - movingDivSize;
 
         if (availableFlexSpace > 0) {
-            const physicalDims = collectAllLeafDimensions();
+            const physicalDims = collectAllLeafDimensions(divider.getAttribute('data-parent-id'));
             physicalDims.forEach(dim => {
                 const relPct = parseFloat(((dim / availableFlexSpace) * 100).toFixed(2));
                 dynamicSnaps.push({ value: relPct, type: SNAP_TYPES.SIZE_MATCH });
