@@ -1,193 +1,16 @@
+// This file is not used anymore, it is here for reference
+
 import JSZip from 'jszip';
 import { assetManager } from '../assets/AssetManager.js';
-import { renderLayout } from '../layout/renderer.js';
-import { loadSettings, applySettings, calculatePaperDimensions, getSettings } from '../ui/settings.js';
+import { A4_PAPER_ID } from '../core/constants.js';
 import { state } from '../core/state.js';
-import { showPublishSuccess, showAlert } from '../core/utils.js';
+import { renderLayout } from '../layout/renderer.js';
+import { showAlert, showPublishSuccess } from '../core/utils.js';
 import { toast } from '../core/errorHandler.js';
+import { calculatePaperDimensions, getSettings } from '../ui/settings.js';
 
 const FLIPBOOK_API_ENDPOINT = 'https://content.lojkine.art/api/flipbook';
 
-/**
- * Specialized initialization for off-screen rendering (Export mode)
- */
-export async function initializeExportMode() {
-    // Specialized initialization for off-screen rendering
-    document.body.innerHTML = '';
-    document.body.style.background = 'transparent';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    // Allow scrolling/growing for multi-page PDF
-    document.body.style.overflow = 'visible';
-
-    // Create the paper container
-    const paper = document.createElement('div');
-    paper.id = 'export-root';
-    paper.style.margin = '0';
-    paper.style.padding = '0';
-    paper.style.width = '100%';
-    paper.style.minHeight = '100vh';
-    paper.style.display = 'flex';
-    paper.style.flexDirection = 'column';
-
-    document.body.appendChild(paper);
-
-    // Initial ready signal to main process
-    const urlParams = new URLSearchParams(window.location.search);
-    const requestId = urlParams.get('rid');
-    if (window.electronAPI && window.electronAPI.sendReadyToRender) {
-        window.electronAPI.sendReadyToRender(requestId);
-    }
-
-    // Listen for content to render
-    if (window.electronAPI && window.electronAPI.onRenderContent) {
-        window.electronAPI.onRenderContent(async (data) => {
-            const { requestId, pageLayout, pageLayouts, width, height, settings, assets } = data;
-            try {
-                // Clear existing content for window reuse case
-                paper.innerHTML = '';
-
-                // 1. Apply Settings
-                if (settings) {
-                    loadSettings(settings);
-                    applySettings();
-                }
-
-                // 2. Hydrate Assets
-                if (assets && Array.isArray(assets)) {
-                    assetManager.dispose();
-                    assets.forEach(asset => {
-                        assetManager.addAsset(asset);
-                    });
-                }
-
-                const layouts = pageLayouts || [pageLayout];
-
-                // Render each page
-                for (let i = 0; i < layouts.length; i++) {
-                    const layout = layouts[i];
-                    const pageWrapper = document.createElement('div');
-                    pageWrapper.className = 'a4-paper is-exporting';
-                    pageWrapper.id = `export-page-${i}`;
-
-                    // Set explicit dimensions
-                    pageWrapper.style.width = width + 'px';
-                    pageWrapper.style.height = height + 'px';
-                    pageWrapper.style.setProperty('--paper-current-width', `${width}px`);
-                    pageWrapper.style.setProperty('--paper-current-height', `${height}px`);
-                    // Specifically set the ratio to ensure aspect-ratio CSS rule works correctly
-                    pageWrapper.style.setProperty('--ratio', `${width / height}`);
-
-                    pageWrapper.style.position = 'relative';
-                    pageWrapper.style.margin = '0';
-                    pageWrapper.style.boxShadow = 'none';
-
-                    if (i < layouts.length - 1) {
-                        pageWrapper.style.breakAfter = 'page';
-                        pageWrapper.style.pageBreakAfter = 'always';
-                    }
-
-                    paper.appendChild(pageWrapper);
-
-                    await renderLayout(pageWrapper, layout, {
-                        useHighResImages: true,
-                        hideControls: true,
-                        pageNumber: i + 1
-                    });
-                }
-
-                await waitForImages(paper);
-                await document.fonts.ready;
-
-                // Extract links for Flipbook if needed
-                const allLinks = [];
-                const wrappers = paper.querySelectorAll('.a4-paper');
-                wrappers.forEach((wrapper) => {
-                    const links = extractLinksForExport(wrapper);
-                    allLinks.push(links);
-                });
-
-                window.electronAPI.sendRenderComplete({ requestId, links: allLinks });
-            } catch (err) {
-                console.error('Export render failed:', err);
-                window.electronAPI.sendRenderComplete({ requestId, error: err.message });
-            }
-        });
-    }
-}
-
-export function extractLinksForExport(container) {
-    const links = [];
-    const containerRect = container.getBoundingClientRect();
-    const anchorElements = container.querySelectorAll('a');
-
-    anchorElements.forEach(a => {
-        const href = a.getAttribute('href') || '';
-        const rects = a.getClientRects();
-
-        for (let i = 0; i < rects.length; i++) {
-            const r = rects[i];
-            const x = ((r.left - containerRect.left) / containerRect.width) * 100;
-            const y = ((r.top - containerRect.top) / containerRect.height) * 100;
-            const w = (r.width / containerRect.width) * 100;
-            const h = (r.height / containerRect.height) * 100;
-
-            const linkData = {
-                title: a.textContent.trim(),
-                rect: { x, y, width: w, height: h }
-            };
-
-            if (href.startsWith('#page=')) {
-                linkData.type = 'internal';
-                linkData.targetPage = parseInt(href.replace('#page=', ''));
-            } else {
-                linkData.type = 'external';
-                linkData.url = href;
-            }
-            links.push(linkData);
-        }
-    });
-
-    return links;
-}
-
-export function waitForImages(container) {
-    const promises = [];
-    const elements = container.querySelectorAll('*');
-    for (let el of elements) {
-        const style = window.getComputedStyle(el);
-        const bg = style.backgroundImage;
-        if (bg && bg !== 'none') {
-            const match = bg.match(/url\(['"]?(.*?)['"]?\)/);
-            if (match && match[1]) {
-                promises.push(new Promise((resolve) => {
-                    const img = new Image();
-                    img.src = match[1];
-                    if (img.complete) resolve();
-                    else {
-                        img.onload = resolve;
-                        img.onerror = resolve;
-                    }
-                }));
-            }
-        }
-        if (el.tagName === 'IMG' && el.src) {
-            promises.push(new Promise((resolve) => {
-                if (el.complete) resolve();
-                else {
-                    el.onload = resolve;
-                    el.onerror = resolve;
-                }
-            }));
-        }
-    }
-    return Promise.all(promises);
-}
-
-/**
- * Sets up the export UI handlers for the main application
- * LOGIC RESTORED FROM oldExport.js
- */
 export function setupExportHandlers() {
     const exportBtn = document.getElementById('export-layout-btn');
     const modal = document.getElementById('export-modal');
@@ -202,16 +25,16 @@ export function setupExportHandlers() {
 
     function updateDimensions() {
         const quality = parseInt(qualitySlider.value);
-        if (qualityValue) qualityValue.textContent = `${quality}%`;
+        qualityValue.textContent = `${quality}%`;
         const multiplier = quality / 100;
 
         const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
         const width = Math.round(layoutWidth * multiplier);
         const height = Math.round(layoutHeight * multiplier);
-        if (dimensionsText) dimensionsText.textContent = `${width} x ${height} px`;
+        dimensionsText.textContent = `${width} x ${height} px`;
     }
 
-    qualitySlider?.addEventListener('input', updateDimensions);
+    qualitySlider.addEventListener('input', updateDimensions);
     updateDimensions(); // Initial call
 
     const downloadModal = document.getElementById('download-app-modal');
@@ -247,7 +70,7 @@ export function setupExportHandlers() {
     }
 
     // Close button (x) or Footer Close
-    cancelBtn?.addEventListener('click', () => {
+    cancelBtn.addEventListener('click', () => {
         modal.classList.remove('active');
     });
 
@@ -257,7 +80,8 @@ export function setupExportHandlers() {
         }
     });
 
-    confirmBtn?.addEventListener('click', async () => {
+    confirmBtn.addEventListener('click', async () => {
+        // Dropdown value now
         const formatSelect = document.getElementById('export-format-select');
         const format = formatSelect.value;
         const qualityMultiplier = parseInt(qualitySlider.value) / 100;
@@ -306,7 +130,7 @@ async function performExport(format, qualityMultiplier) {
     if (loadingOverlay) {
         loadingOverlay.classList.add('active');
         const formatText = format.toUpperCase();
-        if (loadingStatus) loadingStatus.textContent = `Generating ${formatText === 'JPEG' ? 'JPG' : formatText}...`;
+        loadingStatus.textContent = `Generating ${formatText === 'JPEG' ? 'JPG' : formatText}...`;
     }
 
     const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
@@ -320,6 +144,7 @@ async function performExport(format, qualityMultiplier) {
         if (format === 'pdf') {
             if (progressText) progressText.textContent = 'Rendering PDF...';
 
+            // For PDF, we render all pages at once
             const result = await window.electronAPI.renderExport({
                 pageLayouts: state.pages,
                 width,
@@ -331,6 +156,7 @@ async function performExport(format, qualityMultiplier) {
 
             if (result.error) throw new Error(result.error);
 
+            // Result data is a Buffer (Uint8Array)
             const blob = new Blob([result.data], { type: 'application/pdf' });
             const timestamp = new Date().getTime();
             downloadBlob(blob, `layout-export-${timestamp}.pdf`);
@@ -347,9 +173,9 @@ async function performExport(format, qualityMultiplier) {
                     pageLayout,
                     width,
                     height,
-                    format: format,
-                    settings: getSettings(),
-                    assets: assetManager.getAssets()
+                    format: format, // 'png' or 'jpeg'
+                    settings: getSettings(), // Pass current settings (colors, borders)
+                    assets: assetManager.getAssets() // Pass all current assets
                 });
 
                 if (result.error) throw new Error(result.error);
@@ -385,7 +211,7 @@ async function performPublishFlipbook(qualityMultiplier) {
 
     if (loadingOverlay) {
         loadingOverlay.classList.add('active');
-        if (loadingStatus) loadingStatus.textContent = 'Publishing Flipbook...';
+        loadingStatus.textContent = 'Publishing Flipbook...';
     }
 
     const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
@@ -393,7 +219,7 @@ async function performPublishFlipbook(qualityMultiplier) {
     const height = Math.round(layoutHeight * qualityMultiplier);
 
     const apiPages = [];
-    const bookmarks = extractBookmarksForApi(state.pages);
+    const bookmarks = extractBookmarksForApi(state.pages); // Keep existing local extraction for bookmarks
 
     try {
         for (let i = 0; i < state.pages.length; i++) {
@@ -403,6 +229,7 @@ async function performPublishFlipbook(qualityMultiplier) {
 
             const pageLayout = state.pages[i];
 
+            // Render as JPEG
             const result = await window.electronAPI.renderExport({
                 pageLayout,
                 width,
@@ -414,16 +241,22 @@ async function performPublishFlipbook(qualityMultiplier) {
 
             if (result.error) throw new Error(result.error);
 
+            // Convert buffer to base64 for upload
+            // We can use FileReader or a simple function
             const blob = new Blob([result.data], { type: 'image/jpeg' });
             const base64Data = await blobToBase64(blob);
 
+            // result.links contains the links extracted from the offscreen window
+            // Since we render one page at a time here, result.links should be an array of links for this page.
+            // Wait, src/main.js returns { links: allLinks } where allLinks is array of array of links.
+            // Since we passed single pageLayout, result.links[0] should be the links for this page.
             let links = [];
             if (result.links && result.links.length > 0) {
                 links = result.links[0];
             }
 
             apiPages.push({
-                imageData: base64Data,
+                imageData: base64Data, // Data URL
                 width,
                 height,
                 links
@@ -432,6 +265,7 @@ async function performPublishFlipbook(qualityMultiplier) {
 
         if (progressText) progressText.textContent = 'Uploading to server...';
 
+        // Add timeout for network request (30 seconds)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -461,18 +295,23 @@ async function performPublishFlipbook(qualityMultiplier) {
             try {
                 const error = await response.json();
                 errorMessage = error.error || errorMessage;
-            } catch { /* ignore */ }
+            } catch {
+                // Response wasn't JSON
+            }
             throw new Error(errorMessage);
         }
 
         const result = await response.json();
         if (result.url) {
+            // Requirement 1: Open in new tab automatically
             window.open(result.url, '_blank');
+            // We'll show the success modal AFTER the loading overlay is cleared in finally
             window._pendingSuccessUrl = result.url;
         }
     } finally {
         if (loadingOverlay) loadingOverlay.classList.remove('active');
 
+        // If we have a pending success URL, show the modal now that the loading screen is gone
         if (window._pendingSuccessUrl) {
             const url = window._pendingSuccessUrl;
             delete window._pendingSuccessUrl;
@@ -497,7 +336,9 @@ function extractBookmarksForApi(pages) {
 
 function extractHeadingsFromNode(node) {
     const headings = [];
+
     if (node.text) {
+        // Extract headings from Markdown using regex
         const lines = node.text.split('\n');
         lines.forEach(line => {
             const match = line.match(/^(#{1,6})\s+(.+)$/);
@@ -509,11 +350,13 @@ function extractHeadingsFromNode(node) {
             }
         });
     }
+
     if (node.children) {
         node.children.forEach(child => {
             headings.push(...extractHeadingsFromNode(child));
         });
     }
+
     return headings;
 }
 

@@ -1,10 +1,21 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+    // Mock Electron API for testing in standard browser
+    await page.addInitScript(() => {
+        window.electronAPI = {
+            isElectron: true,
+            renderExport: async () => ({ success: true, data: new Uint8Array([1, 2, 3]) }),
+            saveFileDialog: async () => ({ success: true }),
+        };
+    });
+});
+
 test('export layout modal opens and triggers download', async ({ page }) => {
     await page.goto('/');
 
     // 1. Check if the page loads
-    await expect(page.locator('h1')).toContainText('Interactive Document Layout');
+    await expect(page).toHaveTitle(/BROCO/);
 
     // 2. Open Export Modal
     const exportBtn = page.locator('#export-layout-btn');
@@ -15,6 +26,7 @@ test('export layout modal opens and triggers download', async ({ page }) => {
 
     // 3. Confirm Export (Download)
     const confirmBtn = page.locator('#confirm-export');
+    await page.locator('#export-format-select').selectOption('png');
 
     // Prepare to catch the download event
     const downloadPromise = page.waitForEvent('download');
@@ -35,7 +47,7 @@ test('export format selection works', async ({ page }) => {
     await page.locator('#export-layout-btn').click();
 
     // Select JPEG
-    await page.locator('input[value="jpeg"]').click();
+    await page.locator('#export-format-select').selectOption('jpeg');
 
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#confirm-export').click();

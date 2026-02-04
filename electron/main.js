@@ -379,15 +379,22 @@ app.whenReady().then(() => {
             // Capture logic
             let buffer;
             if (format === 'pdf') {
+                // Chromium printToPDF works best with dimensions in microns (1 inch = 25400 microns)
+                // Assuming 96 DPI for the input pixel values
+                const micronMult = 25400 / 96;
                 buffer = await win.webContents.printToPDF({
                     printBackground: true,
                     landscape: width > height,
-                    pageSize: { width: width / 96, height: height / 96, unit: 'in' },
+                    pageSize: {
+                        width: Math.floor(width * micronMult),
+                        height: Math.floor(height * micronMult)
+                    },
                     margins: { top: 0, bottom: 0, left: 0, right: 0 }
                 });
             } else {
-                // Ensure paint is done (OSR can be tricky)
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Ensure paint is done (OSR can be tricky). 
+                // Increased wait to ensure high-res images and complex layouts are fully painted.
+                await new Promise(resolve => setTimeout(resolve, 500));
                 const image = await win.webContents.capturePage();
                 buffer = (format === 'jpeg' || format === 'jpg') ? image.toJPEG(90) : image.toPNG();
             }

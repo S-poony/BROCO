@@ -22,7 +22,7 @@ import { dragDropService } from './js/ui/DragDropService.js';
 import { setupPlatformAdapters } from './js/core/platform.js';
 import { showUnsavedChangesModal } from './js/core/utils.js';
 import { handleEditorKeydown } from './js/ui/editor.js';
-import { initializeExportMode } from './js/io/export.js';
+import { initializeExportMode, setupExportHandlers } from './js/io/export.js';
 import { tooltipManager } from './js/ui/TooltipManager.js';
 
 function setupGlobalHandlers() {
@@ -221,6 +221,7 @@ function initialize() {
     setupShortcutsHandlers();
     setupDelegatedHandlers();
     setupKeyboardNavigation();
+    setupExportHandlers();
 
     // UI Updates for Dirty State and File Path
     const saveBtn = document.getElementById('save-layout-btn');
