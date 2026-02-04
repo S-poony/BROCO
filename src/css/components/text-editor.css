@@ -7,6 +7,10 @@
     position: relative;
     overflow: hidden;
     /* Hide container-level scrollbars in layout mode */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
 }
 
 /* Allow container scroll only when editing if needed */
@@ -41,7 +45,7 @@
 .text-editor {
     width: 100%;
     min-height: 100%;
-    padding: 0.75em;
+    padding: var(--content-padding-proportional, 0.75em);
     border: none;
     outline: none;
     font-family: var(--text-font-family, inherit);
@@ -78,7 +82,7 @@
 .markdown-content {
     width: 100%;
     height: 100%;
-    padding: 0.75em;
+    padding: var(--content-padding-proportional, 0.75em);
     overflow: hidden;
     /* Hide scrollbars and prevent tab focus in layout mode */
     box-sizing: border-box;
@@ -108,6 +112,11 @@
 /* Ensure consistent line height during export to prevent overlapping */
 .export-container .markdown-content * {
     line-height: 1.6 !important;
+}
+
+/* Anchor first element to the top by removing its top margin */
+.markdown-content>*:first-child {
+    margin-top: 0 !important;
 }
 
 .markdown-content h1 {

@@ -1,6 +1,7 @@
 :root {
     --divider-ratio: 0.005;
     --show-borders: 1;
+    --content-padding-ratio: 0.015;
 }
 
 .a4-paper {
@@ -36,6 +37,7 @@
     --divider-hit-thickness: max(12px, var(--divider-thickness));
     --layout-border-actual: calc(var(--show-borders) * var(--divider-thickness));
     --text-font-size-proportional: calc(var(--paper-scale-ref) * var(--text-ratio, 0.02));
+    --content-padding-proportional: calc(var(--paper-scale-ref) * var(--content-padding-ratio, 0.015));
 
     /* Responsive Scaling: Fit container with 20px margin on all sides */
     width: var(--p-width);

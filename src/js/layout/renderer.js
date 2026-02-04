@@ -52,7 +52,7 @@ function renderNodeRecursive(element, node, options) {
     // Clear previous state
     element.innerHTML = '';
     // Use classList.add to preserve classes from createDOMRect or other sources
-    element.classList.add('splittable-rect', 'rectangle-base', 'flex', 'items-center', 'justify-center');
+    element.classList.add('splittable-rect', 'rectangle-base', 'flex', 'items-start', 'justify-start');
     element.style.position = '';
 
     if (node.splitState === 'split') {
@@ -329,7 +329,7 @@ function renderTextContent(container, node, startInEditMode = false, options = {
 function createDOMRect(node, parentOrientation) {
     const div = document.createElement('div');
     div.id = node.id;
-    div.className = 'splittable-rect rectangle-base flex items-center justify-center';
+    div.className = 'splittable-rect rectangle-base flex items-start justify-start';
 
     if (node.size) {
         div.style.flexGrow = node.size.replace('%', '');
