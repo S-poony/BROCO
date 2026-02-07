@@ -99,13 +99,13 @@ function createWindow() {
     // This allows us to override the Windows system menu reliably
     mainWindow.on('focus', () => {
         globalShortcut.register('Alt+Space', () => {
-            if (mainWindow) mainWindow.webContents.send('shortcut:long-split');
+            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('shortcut:long-split');
         });
         globalShortcut.register('CommandOrControl+S', () => {
-            if (mainWindow) mainWindow.webContents.send('shortcut:save-layout');
+            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('shortcut:save-layout');
         });
         globalShortcut.register('CommandOrControl+Shift+S', () => {
-            if (mainWindow) mainWindow.webContents.send('shortcut:save-layout-as');
+            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('shortcut:save-layout-as');
         });
     });
 
