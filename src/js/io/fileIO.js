@@ -46,48 +46,70 @@ export async function saveLayout(options = {}) {
     const data = prepareSaveData();
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
-    if (isElectron && state.currentFilePath) {
-        // Overwrite existing file
-        const result = await window.electronAPI.saveFile(data, state.currentFilePath);
-        if (result.success) {
-            setDirty(false);
-            toast.success('Layout saved');
-            if (options.closeAfterSave) window.close();
-            return true;
+    const settings = exportSettings();
+    const useFileReferences = settings.electron?.useFileReferences;
+    const successMessage = useFileReferences ? 'Saved layout as reference file' : 'Saved layout as embedded file';
+
+    // Show loading for embedded saves (can be slow)
+    const loadingOverlay = document.getElementById('export-loading');
+    const loadingStatus = document.getElementById('loading-status');
+    const loadingProgress = document.getElementById('loading-progress');
+
+    if (!useFileReferences && loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
+        if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
+        // Allow UI to update
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    try {
+        if (isElectron && state.currentFilePath) {
+            // Overwrite existing file
+            const result = await window.electronAPI.saveFile(data, state.currentFilePath);
+            if (result.success) {
+                setDirty(false);
+                toast.success(successMessage);
+                if (options.closeAfterSave) window.close();
+                return true;
+            } else {
+                toast.error(`Failed to save: ${result.error}`);
+                return false;
+            }
+        } else if (isElectron) {
+            // Save As... (Electron)
+            const result = await window.electronAPI.saveFileDialog(data);
+            if (result.success && result.path) {
+                setCurrentFilePath(result.path);
+                setDirty(false);
+                toast.success(successMessage);
+                if (options.closeAfterSave) window.close();
+                return true;
+            } else if (result.error) {
+                toast.error(`Failed to save: ${result.error}`);
+                return false;
+            }
         } else {
-            toast.error(`Failed to save: ${result.error}`);
-            return false;
-        }
-    } else if (isElectron) {
-        // Save As... (Electron)
-        const result = await window.electronAPI.saveFileDialog(data);
-        if (result.success && result.path) {
-            setCurrentFilePath(result.path);
+            // Web Save (Download)
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+
+            const date = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `layout-${date}.broco`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
             setDirty(false);
-            toast.success('Layout saved');
-            if (options.closeAfterSave) window.close();
+            toast.success('Layout download started');
             return true;
-        } else if (result.error) {
-            toast.error(`Failed to save: ${result.error}`);
-            return false;
         }
-    } else {
-        // Web Save (Download)
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-
-        const date = new Date().toISOString().split('T')[0];
-        a.href = url;
-        a.download = `layout-${date}.broco`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        setDirty(false);
-        toast.success('Layout download started');
-        return true;
+    } finally {
+        if (loadingOverlay) loadingOverlay.classList.remove('active');
     }
 }
 
@@ -98,12 +120,16 @@ export async function saveLayoutAs() {
     const data = prepareSaveData();
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
+    const settings = exportSettings();
+    const useFileReferences = settings.electron?.useFileReferences;
+    const successMessage = useFileReferences ? 'Saved layout as reference file' : 'Saved layout as embedded file';
+
     if (isElectron) {
         const result = await window.electronAPI.saveFileDialog(data);
         if (result.success && result.path) {
             setCurrentFilePath(result.path);
             setDirty(false);
-            toast.success('Layout saved as new file');
+            toast.success(successMessage);
         } else if (result.error) {
             toast.error(`Failed to save: ${result.error}`);
         }
