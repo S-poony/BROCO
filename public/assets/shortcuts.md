@@ -1,5 +1,5 @@
 ## Shortcuts and controls
-*all shortcuts using a mouseclick can be replaced with a space press*
+*all shortcuts using a left or right click can be replaced with a space press in addition of the modifiers*
 
 ### Global
 
@@ -34,7 +34,7 @@
 ### Rectangle with content
 
 `ctrl + click` = delete content
-`shift + click` = split to Target A *(left or top)*
+`shift + click` or `middle click` = split to Target A *(left or top)*
 `ctrl + shift + click` = split to Target B *(right or bottom)*
 `Alt + click` = long split
 `ctrl + shift + alt + click` = long split to target B
