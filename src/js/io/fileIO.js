@@ -12,18 +12,28 @@ import { exportSettings, loadSettings } from '../ui/settings.js';
  * Prepares the layout data for saving
  */
 function prepareSaveData() {
+    const settings = exportSettings();
+    const useFileReferences = settings.electron?.useFileReferences;
+
     return {
         version: '1.0',
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
         currentId: state.currentId,
-        assets: assetManager.getAssets().map(asset => ({
-            ...asset,
-            // Strip image data if it's a reference to keep JSON tiny
-            fullResData: asset.isReference ? null : asset.fullResData,
-            lowResData: asset.isReference ? null : asset.lowResData
-        })),
-        settings: exportSettings()
+        assets: assetManager.getAssets().map(asset => {
+            // If the global setting is ON and we have a path, force reference mode.
+            // Also keep as reference if it already was one (we might not have the full data in memory to embed it).
+            const shouldBeReference = (useFileReferences && asset.absolutePath) || asset.isReference;
+
+            return {
+                ...asset,
+                isReference: !!shouldBeReference,
+                // Strip image data if it's a reference to keep JSON tiny
+                fullResData: shouldBeReference ? null : asset.fullResData,
+                lowResData: shouldBeReference ? null : asset.lowResData
+            };
+        }),
+        settings: settings
     };
 }
 
