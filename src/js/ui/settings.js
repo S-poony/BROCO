@@ -29,7 +29,8 @@ const defaultSettings = {
     },
     electron: {
         useFileReferences: false,
-        enableTooltips: true
+        enableTooltips: true,
+        showSnapToasts: true
     }
 };
 
@@ -329,6 +330,9 @@ function syncFormWithSettings() {
 
     const showTooltipsToggle = document.getElementById('setting-show-tooltips');
     if (showTooltipsToggle) showTooltipsToggle.checked = settings.electron.enableTooltips;
+
+    const showSnapToastsToggle = document.getElementById('setting-show-snap-toasts');
+    if (showSnapToastsToggle) showSnapToastsToggle.checked = settings.electron.showSnapToasts;
 }
 
 /**
@@ -516,5 +520,10 @@ function setupElectronControls() {
     const showTooltipsToggle = document.getElementById('setting-show-tooltips');
     showTooltipsToggle?.addEventListener('change', (e) => {
         updateSetting('electron', 'enableTooltips', e.target.checked);
+    });
+
+    const showSnapToastsToggle = document.getElementById('setting-show-snap-toasts');
+    showSnapToastsToggle?.addEventListener('change', (e) => {
+        updateSetting('electron', 'showSnapToasts', e.target.checked);
     });
 }

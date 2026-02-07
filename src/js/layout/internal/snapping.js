@@ -3,6 +3,7 @@ import { state, getCurrentPage } from '../../core/state.js';
 import { saveState } from '../../io/history.js';
 import { findNodeById, findParentNode, countParallelLeaves } from './treeUtils.js';
 import { toast } from '../../core/errorHandler.js';
+import { getSettings } from '../../ui/settings.js';
 
 /**
  * Snap point category labels
@@ -220,7 +221,7 @@ export function snapDivider(focusedRect, direction, deleteCallback, renderCallba
     if (targetPct !== undefined && targetPct !== null) {
         saveState();
 
-        if (snapType) {
+        if (snapType && getSettings().electron.showSnapToasts) {
             toast.info(`Snapped: ${snapType}`, 1500);
         }
 
