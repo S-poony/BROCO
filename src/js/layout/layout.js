@@ -57,15 +57,15 @@ export function handleSplitClick(event) {
     }
 
     // Toggle object-fit if clicking image
-    if (node.image && !event.shiftKey && !event.altKey) {
+    if (node.image && !event.shiftKey && !event.altKey && event.button !== 1) {
         saveState();
         node.image.fit = node.image.fit === 'cover' ? 'contain' : 'cover';
         renderAndRestoreFocus(getCurrentPage(), rectElement.id);
         return;
     }
 
-    // Don't split if clicking text without modifiers
-    if ((node.text !== null && node.text !== undefined) && !event.shiftKey && !event.altKey) return;
+    // Don't split if clicking text without modifiers (unless Middle Click)
+    if ((node.text !== null && node.text !== undefined) && !event.shiftKey && !event.altKey && event.button !== 1) return;
 
     // Split logic
     saveState();

@@ -481,6 +481,12 @@ function setupDelegatedHandlers() {
 
     // mousedown for dividers and edge handles
     paper.addEventListener('mousedown', (e) => {
+        // Prevent Middle Click Autoscroll
+        if (e.button === 1) {
+            e.preventDefault();
+            return;
+        }
+
         if (e._brocoProcessed) return;
         const divider = e.target.closest('.divider');
         if (divider) {
@@ -621,6 +627,14 @@ function setupDelegatedHandlers() {
 
         // Default layout interaction (Split, Delete Rect, Object Fit)
         handleSplitClick(e);
+    });
+
+    // Middle Click (AuxClick) -> Split
+    paper.addEventListener('auxclick', (e) => {
+        if (e.button === 1) {
+            e.preventDefault();
+            handleSplitClick(e);
+        }
     });
 
     // Right-Click -> Alt+Click (Electron only)
