@@ -1,7 +1,7 @@
 {
   "name": "broco",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Beautiful Rows and Columns is an app to layout text and images fast",
   "author": "lojkine.art",
   "type": "module",
