@@ -43,31 +43,35 @@ function prepareSaveData() {
  * @param {Object} options Optional. { closeAfterSave: boolean }
  */
 export async function saveLayout(options = {}) {
-    const data = prepareSaveData();
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
-
     const settings = exportSettings();
     const useFileReferences = settings.electron?.useFileReferences;
     const successMessage = useFileReferences ? 'Saved layout as reference file' : 'Saved layout as embedded file';
 
-    // Show loading for embedded saves (can be slow)
     const loadingOverlay = document.getElementById('export-loading');
     const loadingStatus = document.getElementById('loading-status');
     const loadingProgress = document.getElementById('loading-progress');
 
-    if (!useFileReferences && loadingOverlay) {
-        loadingOverlay.classList.add('active');
-        if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
-        if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
-        // Allow UI to update
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        await new Promise(resolve => setTimeout(resolve, 50));
-    }
+    const showLoading = async () => {
+        if (!useFileReferences && loadingOverlay) {
+            loadingOverlay.classList.add('active');
+            if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
+            if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
+            // Allow UI to update
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+    };
 
     try {
         if (isElectron && state.currentFilePath) {
-            // Overwrite existing file
+            // Case 1: Overwrite existing file
+            // Show loading immediately
+            await showLoading();
+
+            const data = prepareSaveData();
             const result = await window.electronAPI.saveFile(data, state.currentFilePath);
+
             if (result.success) {
                 setDirty(false);
                 toast.success(successMessage);
@@ -77,21 +81,38 @@ export async function saveLayout(options = {}) {
                 toast.error(`Failed to save: ${result.error}`);
                 return false;
             }
+
         } else if (isElectron) {
-            // Save As... (Electron)
-            const result = await window.electronAPI.saveFileDialog(data);
-            if (result.success && result.path) {
-                setCurrentFilePath(result.path);
+            // Case 2: Save As (First time save)
+            // Step 1: Get Path (Instant)
+            const date = new Date().toISOString().split('T')[0];
+            const defaultName = `layout-${date}.broco`;
+            const dialogResult = await window.electronAPI.showSaveDialog(defaultName);
+
+            if (dialogResult.canceled || !dialogResult.path) return false;
+            const filePath = dialogResult.path;
+
+            // Step 2: Show loading
+            await showLoading();
+
+            // Step 3: Prepare & Save
+            const data = prepareSaveData();
+            const result = await window.electronAPI.saveFile(data, filePath);
+
+            if (result.success) {
+                setCurrentFilePath(filePath);
                 setDirty(false);
                 toast.success(successMessage);
                 if (options.closeAfterSave) window.close();
                 return true;
-            } else if (result.error) {
+            } else {
                 toast.error(`Failed to save: ${result.error}`);
                 return false;
             }
+
         } else {
-            // Web Save (Download)
+            // Case 3: Web Save (Download)
+            const data = prepareSaveData();
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -125,14 +146,45 @@ export async function saveLayoutAs() {
     const successMessage = useFileReferences ? 'Saved layout as reference file' : 'Saved layout as embedded file';
 
     if (isElectron) {
-        const result = await window.electronAPI.saveFileDialog(data);
-        if (result.success && result.path) {
-            setCurrentFilePath(result.path);
-            setDirty(false);
-            toast.success(successMessage);
-        } else if (result.error) {
-            toast.error(`Failed to save: ${result.error}`);
+        // Step 1: Get Path (Instant)
+        const date = new Date().toISOString().split('T')[0];
+        const defaultName = `layout-${date}.broco`;
+        const dialogResult = await window.electronAPI.showSaveDialog(defaultName);
+
+        if (dialogResult.canceled || !dialogResult.path) return;
+
+        const filePath = dialogResult.path;
+
+        // Step 2: Show Loading for heavy saves
+        const loadingOverlay = document.getElementById('export-loading');
+        const loadingStatus = document.getElementById('loading-status');
+        const loadingProgress = document.getElementById('loading-progress');
+
+        if (!useFileReferences && loadingOverlay) {
+            loadingOverlay.classList.add('active');
+            if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
+            if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
+            // Allow UI to update
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
+
+        try {
+            // Step 3: Prepare Data (Heavy) & Write
+            const data = prepareSaveData();
+            const result = await window.electronAPI.saveFile(data, filePath);
+
+            if (result.success) {
+                setCurrentFilePath(filePath);
+                setDirty(false);
+                toast.success(successMessage);
+            } else {
+                toast.error(`Failed to save: ${result.error}`);
+            }
+        } finally {
+            if (loadingOverlay) loadingOverlay.classList.remove('active');
+        }
+
     } else {
         // Fallback to normal save for web
         saveLayout();

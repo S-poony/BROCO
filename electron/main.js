@@ -235,7 +235,19 @@ app.whenReady().then(() => {
         }
     });
 
-    // Handle Save As Dialog
+    // Handle Save As Dialog (Path Selection Only)
+    ipcMain.handle('dialog:showSave', async (event, defaultName) => {
+        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save Layout',
+            defaultPath: defaultName || `layout-${new Date().toISOString().split('T')[0]}.broco`,
+            filters: [{ name: 'Broco Layout', extensions: ['broco'] }]
+        });
+
+        if (canceled || !filePath) return { canceled: true };
+        return { success: true, path: filePath };
+    });
+
+    // Handle Save As Dialog (Legacy / Combined)
     ipcMain.handle('file:save-dialog', async (event, data) => {
         const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
             title: 'Save Layout',

@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onSaveLayout: (callback) => ipcRenderer.on('shortcut:save-layout', () => callback()),
     onSaveLayoutAs: (callback) => ipcRenderer.on('shortcut:save-layout-as', () => callback()),
     saveFile: (data, path) => ipcRenderer.invoke('file:save', data, path),
+    showSaveDialog: (defaultName) => ipcRenderer.invoke('dialog:showSave', defaultName),
     saveFileDialog: (data) => ipcRenderer.invoke('file:save-dialog', data),
     readFile: (path) => ipcRenderer.invoke('file:read', path),
     updateDirtyStatus: (isDirty, path) => ipcRenderer.send('update-dirty-status', isDirty, path),
