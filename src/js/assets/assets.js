@@ -3,7 +3,7 @@ import { state, getCurrentPage } from '../core/state.js';
 import { findNodeById, renderAndRestoreFocus, swapNodesContent } from '../layout/layout.js';
 import { A4_PAPER_ID } from '../core/constants.js';
 import { showConfirm, showAlert } from '../core/utils.js';
-import { toast, ensureArray } from '../core/errorHandler.js';
+import { toast, ensureArray, withErrorHandling } from '../core/errorHandler.js';
 import { assetManager } from './AssetManager.js';
 import { dragDropService } from '../ui/DragDropService.js';
 import { AssetGridView } from './AssetGridView.js';
@@ -368,49 +368,50 @@ function handleDropLogic(target) {
     };
 
     if (targetAssetView && dragData.sourceRect) {
-        saveState();
-        const sourceNode = findNodeById(getCurrentPage(), dragData.sourceRect.id);
-        if (sourceNode) {
+        withErrorHandling(async () => {
+            saveState();
+            const sourceNode = findNodeById(getCurrentPage(), dragData.sourceRect.id);
+            if (!sourceNode) throw new Error('Source node not found');
+
             if (dragData.asset) sourceNode.image = null;
             if (dragData.text !== undefined) {
                 sourceNode.text = null;
                 sourceNode.textAlign = null;
             }
-        }
-        renderAndRestoreFocus(getCurrentPage());
-        document.dispatchEvent(new CustomEvent('layoutUpdated'));
-    } else if (targetElement) {
-        const targetNode = findNodeById(getCurrentPage(), targetElement.id);
-        if (targetNode && targetNode.splitState === 'unsplit') {
-            const sourceRect = dragDropService.sourceRect;
-            const sourceNode = sourceRect ? findNodeById(getCurrentPage(), sourceRect.id) : null;
-
-            saveState();
-
-            if (sourceNode) {
-                // SWAP logic when dragging between rectangles
-                swapNodesContent(sourceNode, targetNode);
-                renderAndRestoreFocus(getCurrentPage());
-                document.dispatchEvent(new CustomEvent('layoutUpdated'));
-                return; // async handling above
-            } else {
-                // OVERWRITE logic when dragging from sidebar
-                if (dragData.asset) {
-                    targetNode.image = {
-                        assetId: dragData.asset.id,
-                        fit: 'cover'
-                    };
-                    targetNode.text = null;
-                } else if (dragData.text !== undefined) {
-                    targetNode.text = dragData.text;
-                    targetNode.textAlign = dragData.textAlign;
-                    targetNode.image = null;
-                }
-            }
-
             renderAndRestoreFocus(getCurrentPage());
             document.dispatchEvent(new CustomEvent('layoutUpdated'));
-        }
+        }, 'Failed to remove content');
+    } else if (targetElement) {
+        withErrorHandling(async () => {
+            const targetNode = findNodeById(getCurrentPage(), targetElement.id);
+            if (targetNode && targetNode.splitState === 'unsplit') {
+                const sourceRect = dragDropService.sourceRect;
+                const sourceNode = sourceRect ? findNodeById(getCurrentPage(), sourceRect.id) : null;
+
+                saveState();
+
+                if (sourceNode) {
+                    // SWAP logic when dragging between rectangles
+                    swapNodesContent(sourceNode, targetNode);
+                } else {
+                    // OVERWRITE logic when dragging from sidebar
+                    if (dragData.asset) {
+                        targetNode.image = {
+                            assetId: dragData.asset.id,
+                            fit: 'cover'
+                        };
+                        targetNode.text = null;
+                    } else if (dragData.text !== undefined) {
+                        targetNode.text = dragData.text;
+                        targetNode.textAlign = dragData.textAlign;
+                        targetNode.image = null;
+                    }
+                }
+
+                renderAndRestoreFocus(getCurrentPage());
+                document.dispatchEvent(new CustomEvent('layoutUpdated'));
+            }
+        }, 'Failed to drop content');
     }
 }
 
@@ -430,6 +431,7 @@ export function handleTouchEnd(e) {
         const target = document.elementFromPoint(touch.clientX, touch.clientY);
         handleDropLogic(target);
     }
+    updateDragFeedback(null);
     dragDropService.endDrag();
 }
 
@@ -576,6 +578,7 @@ export function setupDropHandlers() {
     // Handle custom drops (mouse)
     document.addEventListener('custom-drop', (e) => {
         handleDropLogic(e.detail.target);
+        updateDragFeedback(null);
     });
 
     // Handle custom drag moves for feedback (mouse/touch)
