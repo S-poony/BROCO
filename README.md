@@ -6,6 +6,7 @@ Fast like excel, beautiful like canva, and powerful like obsidian.
 
 **[Live Demo](https://s-poony.github.io/BROCO/)**
 **[Youtube Demo](https://youtu.be/cvfVd9Yq398)**
+**[Releases](https://github.com/s-poony/BROCO/releases)**
 
 ## Features
 
