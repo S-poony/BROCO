@@ -12,7 +12,7 @@ export function handleEditorKeydown(e, editor) {
         const end = editor.selectionEnd;
         const value = editor.value || '';
 
-        const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '*': '*', '_': '_', '`': '`' };
+        const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', '*': '*', '_': '_', '`': '`' };
         const selection = value.substring(start, end);
 
         // Auto-pairing
