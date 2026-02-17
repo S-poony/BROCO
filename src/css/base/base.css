@@ -14,6 +14,22 @@ body {
     color: var(--color-text-main, #374151);
 }
 
+/* Hyperlinks — override default browser blue with the app's primary color */
+a {
+    color: var(--color-primary, #4f46e5);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+}
+
+a:hover {
+    color: var(--color-primary-hover, #4338ca);
+}
+
+a:visited {
+    color: var(--color-primary, #4f46e5);
+}
+
 input,
 textarea,
 [contenteditable="true"] {
