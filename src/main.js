@@ -488,6 +488,21 @@ function setupDelegatedHandlers() {
         }
 
         if (e._brocoProcessed) return;
+
+        // FIX: If a text editor is currently focused and the click is outside it,
+        // blur the editor (triggering normal focusout cleanup) and consume the
+        // entire click so it doesn't trigger splits, editor flips, or other actions.
+        const activeEditor = paper.querySelector('.text-editor:focus');
+        if (activeEditor && !activeEditor.contains(e.target)) {
+            // Allow clicks on text-controls buttons (align, remove) to pass through
+            if (!e.target.closest('.text-controls')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e._brocoProcessed = true;
+                activeEditor.blur();
+                return;
+            }
+        }
         const divider = e.target.closest('.divider');
         if (divider) {
             // Feature: Ctrl + Click to merge
@@ -601,6 +616,9 @@ function setupDelegatedHandlers() {
         // Preview -> Editor flip
         const preview = e.target.closest('.markdown-content');
         if (preview) {
+            // Safety net: if we just finished editing, don't immediately re-enter edit mode on another node
+            if (window._justFinishedEditing) return;
+
             // If modifiers are pressed, we don't want to enter edit mode, but we DO want to potentially split (fallthrough)
             if (!e.shiftKey && !e.ctrlKey && !e.altKey) {
                 const container = preview.closest('.rectangle-base');
