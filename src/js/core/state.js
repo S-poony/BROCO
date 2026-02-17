@@ -42,8 +42,10 @@ export function addPage() {
         image: null,
         text: null
     };
-    state.pages.push(newPage);
-    state.currentPageIndex = state.pages.length - 1;
+    // Insert after the currently selected page
+    const insertIndex = state.currentPageIndex + 1;
+    state.pages.splice(insertIndex, 0, newPage);
+    state.currentPageIndex = insertIndex;
     return state.currentPageIndex;
 }
 
