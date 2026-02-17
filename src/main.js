@@ -492,13 +492,20 @@ function setupDelegatedHandlers() {
         // FIX: If a text editor is currently focused and the click is outside it,
         // blur the editor (triggering normal focusout cleanup) and consume the
         // entire click so it doesn't trigger splits, editor flips, or other actions.
-        const activeEditor = paper.querySelector('.text-editor:focus');
+        // NOTE: We use document.activeElement instead of :focus selector because
+        // the :focus pseudo-class in querySelector is unreliable in Electron.
+        const activeEl = document.activeElement;
+        const activeEditor = activeEl?.classList.contains('text-editor') && paper.contains(activeEl) ? activeEl : null;
         if (activeEditor && !activeEditor.contains(e.target)) {
             // Allow clicks on text-controls buttons (align, remove) to pass through
             if (!e.target.closest('.text-controls')) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 e._brocoProcessed = true;
+                // Flag for the click handler: stopImmediatePropagation on mousedown
+                // does NOT prevent the separate click event from firing.
+                window._brocoEditorExiting = true;
+                setTimeout(() => { window._brocoEditorExiting = false; }, 200);
                 activeEditor.blur();
                 return;
             }
@@ -564,6 +571,14 @@ function setupDelegatedHandlers() {
     // Global click delegation
     paper.addEventListener('click', (e) => {
         if (e._brocoProcessed) return;
+
+        // FIX: Consume clicks that arrive right after an editor exit.
+        // stopImmediatePropagation on mousedown does NOT prevent the click event,
+        // so we need this explicit flag-based guard.
+        if (window._brocoEditorExiting || window._justFinishedEditing) {
+            e.stopPropagation();
+            return;
+        }
 
         // Only handle primary button (left click) or synthetic events (which usually have button 0)
         // This prevents double-triggering when right-click also dispatches a click event.

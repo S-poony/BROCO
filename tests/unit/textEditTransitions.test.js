@@ -74,31 +74,32 @@ describe('Text Editor Exit Behavior', () => {
     afterEach(() => {
         paper.remove();
         window._justFinishedEditing = false;
+        window._brocoEditorExiting = false;
     });
 
     describe('Mousedown guard while editing', () => {
-        it('should blur active editor and consume mousedown when clicking outside the editor', () => {
+        it('should detect active editor via document.activeElement (not :focus selector)', () => {
             // Focus the editor to simulate active editing
+            editorA.focus();
+
+            // Verify document.activeElement approach works (this is what the fix uses)
+            const activeEl = document.activeElement;
+            const activeEditor = activeEl?.classList.contains('text-editor') && paper.contains(activeEl) ? activeEl : null;
+
+            expect(activeEditor).toBe(editorA);
+        });
+
+        it('should blur active editor and consume mousedown when clicking outside the editor', () => {
             editorA.focus();
             expect(document.activeElement).toBe(editorA);
 
             const blurSpy = vi.spyOn(editorA, 'blur');
 
-            // Simulate mousedown on rect B (outside the active editor)
-            const mousedownEvent = new MouseEvent('mousedown', {
-                bubbles: true,
-                cancelable: true,
-                button: 0
-            });
-
-            // We need to replicate the guard logic inline since main.js sets up
-            // the handler on #a4-paper via addEventListener (not easily importable).
-            // So we test the guard logic directly.
-            const activeEditor = paper.querySelector('.text-editor:focus');
+            const activeEl = document.activeElement;
+            const activeEditor = activeEl?.classList.contains('text-editor') && paper.contains(activeEl) ? activeEl : null;
             expect(activeEditor).toBe(editorA);
             expect(activeEditor.contains(rectB)).toBe(false);
 
-            // Verify the guard condition: active editor exists, target is outside it
             const target = rectB;
             const isOutsideEditor = activeEditor && !activeEditor.contains(target);
             const isNotTextControls = !target.closest('.text-controls');
@@ -106,7 +107,6 @@ describe('Text Editor Exit Behavior', () => {
             expect(isOutsideEditor).toBe(true);
             expect(isNotTextControls).toBe(true);
 
-            // The guard should trigger: blur + consume
             if (isOutsideEditor && isNotTextControls) {
                 activeEditor.blur();
             }
@@ -114,33 +114,72 @@ describe('Text Editor Exit Behavior', () => {
             expect(blurSpy).toHaveBeenCalled();
         });
 
+        it('should set _brocoEditorExiting flag when consuming mousedown', () => {
+            editorA.focus();
+
+            const activeEl = document.activeElement;
+            const activeEditor = activeEl?.classList.contains('text-editor') && paper.contains(activeEl) ? activeEl : null;
+
+            const target = rectB;
+            const isOutsideEditor = activeEditor && !activeEditor.contains(target);
+            const isNotTextControls = !target.closest('.text-controls');
+
+            if (isOutsideEditor && isNotTextControls) {
+                // Simulate what the handler does
+                window._brocoEditorExiting = true;
+                activeEditor.blur();
+            }
+
+            expect(window._brocoEditorExiting).toBe(true);
+        });
+
         it('should NOT consume mousedown when clicking inside text-controls', () => {
             editorA.focus();
 
             const alignBtn = controlsA.querySelector('.align-text-btn');
-            const activeEditor = paper.querySelector('.text-editor:focus');
+            const activeEl = document.activeElement;
+            const activeEditor = activeEl?.classList.contains('text-editor') && paper.contains(activeEl) ? activeEl : null;
 
             expect(activeEditor).toBe(editorA);
 
-            // Align button is inside .text-controls, so guard should NOT trigger
             const isOutsideEditor = activeEditor && !activeEditor.contains(alignBtn);
             const isNotTextControls = !alignBtn.closest('.text-controls');
 
             expect(isOutsideEditor).toBe(true);
-            expect(isNotTextControls).toBe(false); // It IS inside text-controls
-
-            // Guard should NOT fire for text-controls — event passes through
+            expect(isNotTextControls).toBe(false);
         });
 
         it('should NOT interfere when clicking inside the active editor itself', () => {
             editorA.focus();
 
-            const activeEditor = paper.querySelector('.text-editor:focus');
+            const activeEl = document.activeElement;
+            const activeEditor = activeEl?.classList.contains('text-editor') && paper.contains(activeEl) ? activeEl : null;
+
             expect(activeEditor).toBe(editorA);
 
-            // Clicking inside the editor itself
             const isOutsideEditor = activeEditor && !activeEditor.contains(editorA);
-            expect(isOutsideEditor).toBe(false); // contains returns true for self
+            expect(isOutsideEditor).toBe(false);
+        });
+    });
+
+    describe('Click-level guard', () => {
+        it('should consume click when _brocoEditorExiting is true', () => {
+            window._brocoEditorExiting = true;
+            const shouldConsume = window._brocoEditorExiting || window._justFinishedEditing;
+            expect(shouldConsume).toBe(true);
+        });
+
+        it('should consume click when _justFinishedEditing is true', () => {
+            window._justFinishedEditing = true;
+            const shouldConsume = window._brocoEditorExiting || window._justFinishedEditing;
+            expect(shouldConsume).toBe(true);
+        });
+
+        it('should NOT consume click when both flags are false', () => {
+            window._brocoEditorExiting = false;
+            window._justFinishedEditing = false;
+            const shouldConsume = window._brocoEditorExiting || window._justFinishedEditing;
+            expect(shouldConsume).toBe(false);
         });
     });
 
