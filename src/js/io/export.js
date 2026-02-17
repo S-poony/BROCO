@@ -332,6 +332,11 @@ async function performExport(format, qualityMultiplier) {
         return;
     }
 
+    // Derive export filename from the saved layout name, or fall back to timestamped default
+    const baseName = state.currentFilePath
+        ? state.currentFilePath.replace(/\\/g, '/').split('/').pop().replace(/\.broco$/i, '')
+        : `layout-export-${Date.now()}`;
+
     const isSingleImageExport = (format === 'png' || format === 'jpeg') && state.pages.length === 1;
     const zip = (format === 'png' || format === 'jpeg') && state.pages.length > 1 ? new JSZip() : null;
 
@@ -351,8 +356,7 @@ async function performExport(format, qualityMultiplier) {
             if (result.error) throw new Error(result.error);
 
             const blob = new Blob([result.data], { type: 'application/pdf' });
-            const timestamp = new Date().getTime();
-            downloadBlob(blob, `layout-export-${timestamp}.pdf`);
+            downloadBlob(blob, `${baseName}.pdf`);
 
         } else {
             // Image Export
@@ -378,8 +382,7 @@ async function performExport(format, qualityMultiplier) {
                 const blob = new Blob([result.data], { type: mime });
 
                 if (isSingleImageExport) {
-                    const timestamp = new Date().getTime();
-                    downloadBlob(blob, `layout-export-${timestamp}.${ext}`);
+                    downloadBlob(blob, `${baseName}.${ext}`);
                 } else if (zip) {
                     zip.file(`page-${i + 1}.${ext}`, blob);
                 }
@@ -387,9 +390,8 @@ async function performExport(format, qualityMultiplier) {
 
             if (zip) {
                 if (progressText) progressText.textContent = 'Creating ZIP archive...';
-                const timestamp = new Date().getTime();
                 const content = await zip.generateAsync({ type: 'blob' });
-                downloadBlob(content, `layout-export-${timestamp}.zip`);
+                downloadBlob(content, `${baseName}.zip`);
             }
         }
     } catch (error) {
