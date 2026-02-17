@@ -129,11 +129,14 @@
 
 .delete-page-btn {
     right: 5px;
+    top: 5px;
     background: var(--color-danger);
 }
 
 .duplicate-page-btn {
-    right: 30px;
+    right: 5px;
+    top: 32px;
+    /* 22px + 10px gap */
     background: var(--color-primary);
     font-size: 12px;
 }
@@ -231,10 +234,16 @@
         width: 16px;
         height: 16px;
         font-size: 10px;
+        right: 2px;
+    }
+
+    .delete-page-btn {
+        top: 2px;
     }
 
     .duplicate-page-btn {
-        right: 24px;
+        top: 20px;
+        /* 16px + 4px gap */
         font-size: 9px;
     }
 }
