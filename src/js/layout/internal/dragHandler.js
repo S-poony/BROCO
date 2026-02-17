@@ -270,14 +270,51 @@ export function stopDrag() {
 
     state.activeDivider = null;
 
-    if (pA <= MIN_AREA_PERCENT) {
-        const modifiedParent = deleteNodeFromTree(getCurrentPage(), divider.rectAId);
-        if (modifiedParent) renderAndRestoreFocus(getCurrentPage(), modifiedParent.id);
-    } else if (pB <= MIN_AREA_PERCENT) {
-        const modifiedParent = deleteNodeFromTree(getCurrentPage(), divider.rectBId);
-        if (modifiedParent) renderAndRestoreFocus(getCurrentPage(), modifiedParent.id);
+    // --- Smart zero-area sweep ---
+    // Collect squished nodes from both affected subtrees, then delete bottom-up.
+    // Only walks the two siblings' subtrees (not the full tree).
+    // If a node (leaf or container) falls below threshold, it's marked for
+    // deletion as a whole — no need to recurse into its children.
+    // Tree depth is typically very shallow (5-10 levels), so no pruning needed.
+    const page = getCurrentPage();
+    const squished = [];
+
+    const collectSquished = (node, effectivePct) => {
+        if (!node) return;
+        // If this node's effective area is at or below threshold,
+        // delete it entirely (whether it's a leaf or a container)
+        if (effectivePct <= MIN_AREA_PERCENT) {
+            squished.push(node.id);
+            return;
+        }
+        // Otherwise recurse into split children
+        if (node.splitState === 'split' && node.children) {
+            for (const child of node.children) {
+                const childPct = parseFloat(child.size) || 50;
+                const childEffective = effectivePct * (childPct / 100);
+                collectSquished(child, childEffective);
+            }
+        }
+    };
+
+    const nodeA = findNodeById(page, divider.rectAId);
+    const nodeB = findNodeById(page, divider.rectBId);
+    collectSquished(nodeA, pA);
+    collectSquished(nodeB, pB);
+
+    if (squished.length > 0) {
+        // Delete bottom-up to avoid corrupting parent references mid-deletion
+        let lastModified = null;
+        for (const id of squished) {
+            const result = deleteNodeFromTree(page, id);
+            if (result) lastModified = result;
+        }
+        if (lastModified) {
+            renderAndRestoreFocus(page, lastModified.id);
+        }
     } else {
         // Just resized - ensure sidebar thumbnails update to show new proportions
         document.dispatchEvent(new CustomEvent('layoutUpdated'));
     }
 }
+
