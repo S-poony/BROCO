@@ -38,6 +38,9 @@ export function renderPageList() {
     const pagesList = document.getElementById('pages-list');
     if (!pagesList) return;
 
+    // Preserve scroll position across re-renders
+    const savedScrollTop = pagesList.scrollTop;
+
     pagesList.innerHTML = '';
 
     state.pages.forEach((page, index) => {
@@ -165,6 +168,9 @@ export function renderPageList() {
 
         pagesList.appendChild(item);
     });
+
+    // Restore scroll position
+    pagesList.scrollTop = savedScrollTop;
 }
 
 function updatePageDragFeedback(target) {
