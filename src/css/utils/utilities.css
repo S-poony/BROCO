@@ -120,3 +120,8 @@
     mask-image: url('../../assets/icons/image.svg');
     -webkit-mask-image: url('../../assets/icons/image.svg');
 }
+
+.icon-app {
+    mask-image: url('../../assets/icons/brocoApp.svg');
+    -webkit-mask-image: url('../../assets/icons/brocoApp.svg');
+}
