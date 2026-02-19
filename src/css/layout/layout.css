@@ -151,6 +151,10 @@
     .edge-handle {
         display: none !important;
     }
+
+    body.is-electron .edge-handle {
+        display: block !important;
+    }
 }
 
 .edge-handle::after {

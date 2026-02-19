@@ -206,6 +206,7 @@ function initialize() {
 
     // Detect Electron and add class to body for styling
     const isElectron = (window.electronAPI && window.electronAPI.isElectron) || /Electron/i.test(navigator.userAgent);
+    state.isElectron = isElectron;
     if (isElectron) {
         document.body.classList.add('is-electron');
     }

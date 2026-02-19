@@ -95,7 +95,7 @@ export function startDrag(event, dividerElement = null) {
  * @param {string} edge 
  */
 export function startEdgeDrag(event, edge) {
-    if (window.innerWidth < LAPTOP_BREAKPOINT) return;
+    if (window.innerWidth < LAPTOP_BREAKPOINT && !state.isElectron) return;
 
     event.preventDefault();
     event.stopPropagation();
