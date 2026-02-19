@@ -22,6 +22,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 let mainWindow;
+let exportWin = null; // Singleton export window to avoid overhead and leaks
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -119,6 +120,15 @@ function createWindow() {
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
         autoUpdater.checkForUpdatesAndNotify();
+    });
+
+    // Cleanup background windows when main window is closed
+    mainWindow.on('closed', () => {
+        if (exportWin && !exportWin.isDestroyed()) {
+            exportWin.destroy();
+        }
+        exportWin = null;
+        mainWindow = null;
     });
 }
 
@@ -289,7 +299,7 @@ app.whenReady().then(() => {
     // Handle Asset Picker ... (skipped lines 122-166)
 
     // Singleton export window to avoid overhead and leaks
-    let exportWin = null;
+    // Moved to global scope at top of file
 
     async function getExportWindow() {
         if (exportWin && !exportWin.isDestroyed()) {
@@ -321,7 +331,18 @@ app.whenReady().then(() => {
         const { pageLayout, pageLayouts, width, height, format, settings, assets } = options;
         const requestId = Math.random().toString(36).substring(7);
 
+        // Fail early if main window is already closing/closed
+        if (!mainWindow || mainWindow.isDestroyed()) {
+            throw new Error('Application is closing, export cancelled.');
+        }
+
         const win = await getExportWindow();
+
+        // Immediate failure if export window is closed mid-operation
+        const onUnexpectedClose = () => {
+            throw new Error('Export window was closed unexpectedly.');
+        };
+        win.once('closed', onUnexpectedClose);
 
         try {
             // Resize to requested dimensions
@@ -414,6 +435,10 @@ app.whenReady().then(() => {
                 // win.destroy(); // Optional: destroy on error to recover from bad state
             }
             throw err;
+        } finally {
+            if (win && !win.isDestroyed()) {
+                win.removeListener('closed', onUnexpectedClose);
+            }
         }
     });
 });
