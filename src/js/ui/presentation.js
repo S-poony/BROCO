@@ -1,4 +1,7 @@
 import { toast } from '../core/errorHandler.js';
+import { state, switchPage, getCurrentPage } from '../core/state.js';
+import { renderAndRestoreFocus } from '../layout/layout.js';
+import { renderPageList } from '../layout/pages.js';
 
 export function setupPresentationHandlers() {
     const fullscreenBtn = document.getElementById('fullscreen-btn');
@@ -96,4 +99,50 @@ export function setupPresentationHandlers() {
             }
         }
     });
+
+    // --- Presentation Navigation ---
+
+    function updateView() {
+        renderAndRestoreFocus(getCurrentPage());
+        renderPageList();
+    }
+
+    function goToNextPage() {
+        if (state.currentPageIndex < state.pages.length - 1) {
+            switchPage(state.currentPageIndex + 1);
+            updateView();
+        }
+    }
+
+    function goToPrevPage() {
+        if (state.currentPageIndex > 0) {
+            switchPage(state.currentPageIndex - 1);
+            updateView();
+        }
+    }
+
+    // Mouse Sliding: clicking the glass overlay advances the page
+    overlay.addEventListener('click', (e) => {
+        if (e.button === 0) {
+            goToNextPage();
+        }
+    });
+
+    // Keyboard Control & Bulletproof Blocking
+    window.addEventListener('keydown', (e) => {
+        if (!document.body.classList.contains('presentation-mode')) return;
+
+        // Allow Escape for exiting native fullscreen API
+        if (e.key === 'Escape') return;
+
+        // BLOCK ALL OTHER KEYPRESSES from trickling down into the editor engine
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) {
+            goToNextPage();
+        } else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) {
+            goToPrevPage();
+        }
+    }, { capture: true });
 }
