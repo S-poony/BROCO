@@ -16,8 +16,8 @@ export { findNodeByIdInternal as findNodeById, findParentNodeInternal as findPar
 /**
  * Facade for focus restoration
  */
-export function renderAndRestoreFocus(page, explicitFocusId = null) {
-    renderAndRestoreFocusInternal(page, explicitFocusId);
+export function renderAndRestoreFocus(page, explicitFocusId = null, options = {}) {
+    renderAndRestoreFocusInternal(page, explicitFocusId, options);
 }
 
 /**

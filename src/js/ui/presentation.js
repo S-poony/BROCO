@@ -42,6 +42,9 @@ export function setupPresentationHandlers() {
                     workspaceWrapper.appendChild(overlay);
                 }
                 
+                // Hydrate assets
+                renderAndRestoreFocus(getCurrentPage(), null, { useHighResImages: true });
+                
                 toast.info('Press ESC to leave presentation mode', 4000);
             } else {
                 // Exit fullscreen natively
@@ -62,6 +65,10 @@ export function setupPresentationHandlers() {
                 if (workspaceWrapper && !workspaceWrapper.contains(overlay)) {
                     workspaceWrapper.appendChild(overlay);
                 }
+                
+                // Hydrate assets
+                renderAndRestoreFocus(getCurrentPage(), null, { useHighResImages: true });
+                
                 toast.info('Press ESC to leave presentation mode', 4000);
             } else {
                 exitPresentationState();
@@ -74,6 +81,9 @@ export function setupPresentationHandlers() {
         if (overlay.parentElement) {
             overlay.parentElement.removeChild(overlay);
         }
+        
+        // De-hydrate assets safely back to memory-efficient thumbnails
+        renderAndRestoreFocus(getCurrentPage(), null, { useHighResImages: false });
     };
 
     // Listen to native fullscreen changes (e.g. when user presses ESC natively)
@@ -103,7 +113,8 @@ export function setupPresentationHandlers() {
     // --- Presentation Navigation ---
 
     function updateView() {
-        renderAndRestoreFocus(getCurrentPage());
+        // Hydrate the newly requested page natively
+        renderAndRestoreFocus(getCurrentPage(), null, { useHighResImages: true });
         renderPageList();
         
         // Prevent layout element auto-focus from triggering edit-state UI

@@ -7,16 +7,16 @@ import { syncNodeMap } from '../../core/state.js';
  * Helper to restore focus after render
  * @param {Object} page 
  * @param {string|null} explicitFocusId 
+ * @param {Object} options Rendering options
  */
-export function renderAndRestoreFocus(page, explicitFocusId = null) {
+export function renderAndRestoreFocus(page, explicitFocusId = null, options = {}) {
     // Preserve the actual previous active element ID separately from the explicit target
     const originalFocusedId = document.activeElement ? document.activeElement.id : null;
 
     // Ensure the nodeMap is O(1) ready for any subsequent lookups (like auto-focus)
     syncNodeMap();
 
-    renderLayout(document.getElementById(A4_PAPER_ID), page);
-
+    renderLayout(document.getElementById(A4_PAPER_ID), page, options);
 
     // Defer focus restoration until after the browser has finished its layout pass.
     // This prevents "Forced Reflow" violations and layout thrashing.
