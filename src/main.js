@@ -24,6 +24,7 @@ import { showUnsavedChangesModal } from './js/core/utils.js';
 import { handleEditorKeydown } from './js/ui/editor.js';
 import { initializeExportMode, setupExportHandlers } from './js/io/export.js';
 import { tooltipManager } from './js/ui/TooltipManager.js';
+import { setupPresentationHandlers } from './js/ui/presentation.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
@@ -223,6 +224,7 @@ function initialize() {
     setupDelegatedHandlers();
     setupKeyboardNavigation();
     setupExportHandlers();
+    setupPresentationHandlers();
 
     // UI Updates for Dirty State and File Path
     const saveBtn = document.getElementById('save-layout-btn');
