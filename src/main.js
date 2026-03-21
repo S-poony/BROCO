@@ -28,6 +28,14 @@ import { setupPresentationHandlers } from './js/ui/presentation.js';
 
 function setupGlobalHandlers() {
     window.addEventListener('keydown', (e) => {
+        // Toggle Presentation Mode with F5
+        if (e.key === 'F5') {
+            e.preventDefault();
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            if (fullscreenBtn) fullscreenBtn.click();
+            return;
+        }
+
         // Ctrl Key for Cursor (only if Shift and Alt are not held)
         // This ensures AltGr (Ctrl+Alt) doesn't trigger the red 'delete' highlight
         if (e.ctrlKey && !e.shiftKey && !e.altKey) {

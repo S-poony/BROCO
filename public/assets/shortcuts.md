@@ -61,6 +61,7 @@ _right click does the same as alt + click/space everywhere_
 `ctrl + shift + n` = duplicate page
 `ctrl + s` = save layout
 `ctrl + shift + s` = save as
+`f5` = toggle presentation mode
 
 ### Markdown syntax
 _be careful about the spaces between the special characters and the text_

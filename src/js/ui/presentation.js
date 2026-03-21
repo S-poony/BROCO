@@ -137,6 +137,15 @@ export function setupPresentationHandlers() {
     window.addEventListener('keydown', (e) => {
         if (!document.body.classList.contains('presentation-mode')) return;
 
+        // Allow F5 to toggle presentation mode off without reloading the page
+        if (e.key === 'F5') {
+            e.preventDefault();
+            e.stopPropagation();
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            if (fullscreenBtn) fullscreenBtn.click();
+            return;
+        }
+
         // Allow Escape for exiting native fullscreen API or manually exit for fallback
         if (e.key === 'Escape') {
             if (!document.fullscreenElement) {
