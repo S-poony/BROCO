@@ -105,6 +105,11 @@ export function setupPresentationHandlers() {
     function updateView() {
         renderAndRestoreFocus(getCurrentPage());
         renderPageList();
+        
+        // Prevent layout element auto-focus from triggering edit-state UI
+        if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+        }
     }
 
     function goToNextPage() {

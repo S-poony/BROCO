@@ -219,11 +219,22 @@ body.presentation-mode .splittable-rect:focus::after {
     display: none !important;
 }
 
+/* Disable edit handles in visually clean presentation */
+body.presentation-mode .divider,
+body.presentation-mode .edge-handle,
+body.presentation-mode .floating-btn,
+body.presentation-mode .image-controls,
+body.presentation-mode .text-controls {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
 /* Presentation Mode: The Glass Overlay */
 .presentation-overlay {
     position: absolute;
     inset: 0;
-    z-index: 50;
+    z-index: 999999;
     cursor: default;
     background: transparent;
 }
