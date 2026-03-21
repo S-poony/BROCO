@@ -137,8 +137,13 @@ export function setupPresentationHandlers() {
     window.addEventListener('keydown', (e) => {
         if (!document.body.classList.contains('presentation-mode')) return;
 
-        // Allow Escape for exiting native fullscreen API
-        if (e.key === 'Escape') return;
+        // Allow Escape for exiting native fullscreen API or manually exit for fallback
+        if (e.key === 'Escape') {
+            if (!document.fullscreenElement) {
+                exitPresentationState();
+            }
+            return;
+        }
 
         // BLOCK ALL OTHER KEYPRESSES from trickling down into the editor engine
         e.preventDefault();
