@@ -218,3 +218,12 @@ body.presentation-mode .splittable-rect.is-hovered-active::after,
 body.presentation-mode .splittable-rect:focus::after {
     display: none !important;
 }
+
+/* Presentation Mode: The Glass Overlay */
+.presentation-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    cursor: default;
+    background: transparent;
+}

@@ -4,10 +4,26 @@ export function setupPresentationHandlers() {
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     if (!fullscreenBtn) return;
 
-    // Toggle presentation mode when button is clicked
+    const workspaceWrapper = document.querySelector('.workspace-wrapper');
+
+    // Create the overlay once
+    const overlay = document.createElement('div');
+    overlay.id = 'presentation-overlay';
+    overlay.className = 'presentation-overlay';
+
     fullscreenBtn.addEventListener('click', async () => {
         try {
             if (!document.fullscreenElement) {
+                // Pre-enter Cleanup: Blur any active text editors
+                document.querySelectorAll('.text-editor:not(.hidden)').forEach(editor => {
+                    editor.blur();
+                });
+                
+                // Clear active layout focus
+                if (document.activeElement && document.activeElement !== document.body) {
+                    document.activeElement.blur();
+                }
+
                 // Enter fullscreen natively
                 if (document.documentElement.requestFullscreen) {
                     await document.documentElement.requestFullscreen();
@@ -17,10 +33,12 @@ export function setupPresentationHandlers() {
                     await document.documentElement.msRequestFullscreen();
                 }
                 
-                // Add the class for our internal layout overrides
+                // Apply State and Overlay
                 document.body.classList.add('presentation-mode');
+                if (workspaceWrapper && !workspaceWrapper.contains(overlay)) {
+                    workspaceWrapper.appendChild(overlay);
+                }
                 
-                // Notify the user how to exit
                 toast.info('Press ESC to leave presentation mode', 4000);
             } else {
                 // Exit fullscreen natively
@@ -31,36 +49,51 @@ export function setupPresentationHandlers() {
                 } else if (document.msExitFullscreen) { /* IE11 */
                     await document.msExitFullscreen();
                 }
-                // The fullscreenchange event removes the class
             }
         } catch (err) {
             console.error('Error attempting to enable fullscreen:', err);
-            // Fallback: Just toggle class if native fullscreen fails (e.g. in some iframe or unsupported)
-            document.body.classList.toggle('presentation-mode');
-            
-            if (document.body.classList.contains('presentation-mode')) {
+            // Fallback for isolated environments without fullscreen API
+            if (!document.body.classList.contains('presentation-mode')) {
+                document.querySelectorAll('.text-editor:not(.hidden)').forEach(e => e.blur());
+                document.body.classList.add('presentation-mode');
+                if (workspaceWrapper && !workspaceWrapper.contains(overlay)) {
+                    workspaceWrapper.appendChild(overlay);
+                }
                 toast.info('Press ESC to leave presentation mode', 4000);
+            } else {
+                exitPresentationState();
             }
         }
     });
+
+    const exitPresentationState = () => {
+        document.body.classList.remove('presentation-mode');
+        if (overlay.parentElement) {
+            overlay.parentElement.removeChild(overlay);
+        }
+    };
 
     // Listen to native fullscreen changes (e.g. when user presses ESC natively)
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
-            // Exited fullscreen natively
-            document.body.classList.remove('presentation-mode');
+            exitPresentationState();
         } else {
-            // Entered fullscreen natively
+            // Apply overlay robustly
             document.body.classList.add('presentation-mode');
+            if (workspaceWrapper && !workspaceWrapper.contains(overlay)) {
+                workspaceWrapper.appendChild(overlay);
+            }
         }
     });
 
-    // Also handle webkit and ms prefixes for the event
     document.addEventListener('webkitfullscreenchange', () => {
         if (!document.webkitFullscreenElement) {
-            document.body.classList.remove('presentation-mode');
+            exitPresentationState();
         } else {
             document.body.classList.add('presentation-mode');
+            if (workspaceWrapper && !workspaceWrapper.contains(overlay)) {
+                workspaceWrapper.appendChild(overlay);
+            }
         }
     });
 }
