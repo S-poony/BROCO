@@ -199,3 +199,22 @@
         justify-content: center;
     }
 }
+
+/* Presentation Mode Overrides */
+body.presentation-mode .file-actions,
+body.presentation-mode #left-sidebars-container,
+body.presentation-mode #right-sidebars-container {
+    display: none !important;
+}
+
+body.presentation-mode .workspace-wrapper {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 / -1 !important;
+    padding: 0 !important;
+    max-height: 100vh;
+}
+
+body.presentation-mode .splittable-rect.is-hovered-active::after,
+body.presentation-mode .splittable-rect:focus::after {
+    display: none !important;
+}

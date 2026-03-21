@@ -125,3 +125,8 @@
     mask-image: url('../../assets/icons/brocoApp.svg');
     -webkit-mask-image: url('../../assets/icons/brocoApp.svg');
 }
+
+.icon-fullscreen {
+    mask-image: url('../../assets/icons/full-screen.svg');
+    -webkit-mask-image: url('../../assets/icons/full-screen.svg');
+}
