@@ -230,7 +230,13 @@ export class AssetManager extends EventTarget {
      * @param {Asset} asset 
      */
     async rehydrateAsset(asset) {
-        if (!asset.isReference || !asset.absolutePath) return;
+        if (!asset.isReference || !asset.absolutePath) return { success: true, asset };
+
+        if (!window.electronAPI || !window.electronAPI.isElectron) {
+            console.warn(`Cannot rehydrate linked asset in web mode: ${asset.name}`);
+            this.updateAsset(asset.id, { isBroken: true });
+            return { error: new Error('Cannot read local files in web mode'), asset };
+        }
 
         try {
             // Fetch via our custom broco-local protocol
@@ -252,9 +258,11 @@ export class AssetManager extends EventTarget {
                 fullResData: null, // Keep it null/reference
                 isBroken: false
             });
+            return { success: true, asset };
         } catch (err) {
             console.warn(`Could not rehydrate asset: ${asset.name} at ${asset.absolutePath}`, err);
             this.updateAsset(asset.id, { isBroken: true });
+            return { error: err, asset };
         }
     }
 

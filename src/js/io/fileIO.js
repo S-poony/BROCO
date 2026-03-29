@@ -206,12 +206,24 @@ export async function openLayout(forcedPath = null) {
             saveState();
 
             assetManager.dispose();
+            
+            const rehydrationPromises = [];
+
             data.assets.forEach(asset => {
                 assetManager.addAsset(asset);
                 if (asset.isReference && !asset.lowResData) {
-                    assetManager.rehydrateAsset(asset);
+                    rehydrationPromises.push(assetManager.rehydrateAsset(asset));
                 }
             });
+
+            if (rehydrationPromises.length > 0) {
+                Promise.all(rehydrationPromises).then(results => {
+                    const failures = results.filter(r => r && r.error);
+                    if (failures.length > 0) {
+                        toast.error(`Failed to load ${failures.length} linked asset(s). Make sure they haven't been moved or deleted.`, 8000);
+                    }
+                });
+            }
 
             state.pages = data.pages;
             state.currentPageIndex = data.currentPageIndex || 0;
