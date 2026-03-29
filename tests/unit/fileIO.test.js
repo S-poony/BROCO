@@ -106,13 +106,13 @@ describe('fileIO.js', () => {
     });
 
     describe('saveLayout', () => {
-        it('should save current state and settings to a JSON file', () => {
+        it('should save current state and settings to a JSON file', async () => {
             // ... save logic
             state.pages = [{ id: 'rect-1' }];
             const mockSettings = { test: 'settings' };
             exportSettings.mockReturnValue(mockSettings);
 
-            saveLayout();
+            await saveLayout();
 
             expect(exportSettings).toHaveBeenCalled();
             expect(mockUrlCreate).toHaveBeenCalled();

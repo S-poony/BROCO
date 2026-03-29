@@ -11,28 +11,66 @@ import { exportSettings, loadSettings } from '../ui/settings.js';
 /**
  * Prepares the layout data for saving
  */
-function prepareSaveData() {
+async function prepareSaveData() {
     const settings = exportSettings();
-    const useFileReferences = settings.electron?.useFileReferences;
+    const useFileReferences = settings.electron?.useFileReferences === true;
+
+    const assets = await Promise.all(assetManager.getAssets().map(async asset => {
+        let isRef = (useFileReferences && asset.absolutePath);
+
+        let fullResData = asset.fullResData;
+        let lowResData = asset.lowResData;
+
+        // If global setting says EMBED, but the asset currently has NO full profile data natively
+        // (meaning it was imported during reference mode), we must Deep Embed it.
+        if (!isRef && !fullResData && asset.absolutePath) {
+             if (window.electronAPI && window.electronAPI.isElectron) {
+                 try {
+                     const url = `broco-local://${encodeURIComponent(asset.absolutePath)}`;
+                     const response = await fetch(url);
+                     if (!response.ok) throw new Error('File not found');
+
+                     const blob = await response.blob();
+                     fullResData = await new Promise((resolve, reject) => {
+                         const reader = new FileReader();
+                         reader.onload = () => resolve(reader.result);
+                         reader.onerror = reject;
+                         reader.readAsDataURL(blob);
+                     });
+
+                     // Ensure we also grab the thumbnail for backward-compatibility limits
+                     if (!lowResData) {
+                         // We access the semi-private generate helper in AssetManager to reconstruct it safely
+                         lowResData = await assetManager._createThumbnailFromBase64(fullResData);
+                     }
+                 } catch (err) {
+                     console.warn(`Could not deep-embed reference ${asset.name}. Saving as a reference instead.`, err);
+                     isRef = true; // Fallback to reference mode to ensure no blank breaks!
+                 }
+             } else {
+                 // Web mode has no drive access, so we are forced to keep it a reference
+                 console.warn(`Cannot deep-embed in Web mode! Falling back to reference for ${asset.name}`);
+                 isRef = true;
+             }
+        }
+
+        return {
+            ...asset,
+            isReference: !!isRef,
+            // Strip data strings explicitly if it successfully remains a reference
+            fullResData: isRef ? null : fullResData,
+            lowResData: isRef ? null : lowResData,
+            // Crucial: we ALWAYS keep absolutePath mapped so it can be un-embedded later
+            absolutePath: asset.absolutePath 
+        };
+    }));
 
     return {
         version: '1.0',
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
         currentId: state.currentId,
-        assets: assetManager.getAssets().map(asset => {
-            // If the global setting is ON and we have a path, force reference mode.
-            // Also keep as reference if it already was one (we might not have the full data in memory to embed it).
-            const shouldBeReference = (useFileReferences && asset.absolutePath) || asset.isReference;
-
-            return {
-                ...asset,
-                isReference: !!shouldBeReference,
-                // Strip image data if it's a reference to keep JSON tiny
-                fullResData: shouldBeReference ? null : asset.fullResData,
-                lowResData: shouldBeReference ? null : asset.lowResData
-            };
-        }),
+        assets: assets,
         settings: settings
     };
 }
@@ -69,7 +107,7 @@ export async function saveLayout(options = {}) {
             // Show loading immediately
             await showLoading();
 
-            const data = prepareSaveData();
+            const data = await prepareSaveData();
             const result = await window.electronAPI.saveFile(data, state.currentFilePath);
 
             if (result.success) {
@@ -96,7 +134,7 @@ export async function saveLayout(options = {}) {
             await showLoading();
 
             // Step 3: Prepare & Save
-            const data = prepareSaveData();
+            const data = await prepareSaveData();
             const result = await window.electronAPI.saveFile(data, filePath);
 
             if (result.success) {
@@ -112,7 +150,7 @@ export async function saveLayout(options = {}) {
 
         } else {
             // Case 3: Web Save (Download)
-            const data = prepareSaveData();
+            const data = await prepareSaveData();
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -138,7 +176,6 @@ export async function saveLayout(options = {}) {
  * Explicit Save As functionality
  */
 export async function saveLayoutAs() {
-    const data = prepareSaveData();
     const isElectron = window.electronAPI && window.electronAPI.isElectron;
 
     const settings = exportSettings();
@@ -171,7 +208,7 @@ export async function saveLayoutAs() {
 
         try {
             // Step 3: Prepare Data (Heavy) & Write
-            const data = prepareSaveData();
+            const data = await prepareSaveData();
             const result = await window.electronAPI.saveFile(data, filePath);
 
             if (result.success) {
