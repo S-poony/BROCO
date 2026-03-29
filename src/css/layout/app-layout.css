@@ -223,7 +223,13 @@ body.presentation-mode .splittable-rect:focus::after {
 body.presentation-mode .edge-handle,
 body.presentation-mode .floating-btn,
 body.presentation-mode .image-controls,
-body.presentation-mode .text-controls {
+body.presentation-mode .text-controls,
+body.presentation-mode .empty-node-controls,
+body.presentation-mode .remove-image-btn,
+body.presentation-mode .remove-text-btn,
+body.presentation-mode .align-text-btn,
+body.presentation-mode .flip-image-btn,
+body.presentation-mode .import-image-btn {
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
