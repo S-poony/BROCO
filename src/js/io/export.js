@@ -316,18 +316,11 @@ async function performExport(format, qualityMultiplier) {
     const loadingStatus = document.getElementById('loading-status');
     const progressText = document.getElementById('loading-progress');
 
-    if (loadingOverlay) {
-        loadingOverlay.classList.add('active');
-        const formatText = format.toUpperCase();
-        if (loadingStatus) loadingStatus.textContent = `Generating ${formatText === 'JPEG' ? 'JPG' : formatText}...`;
-    }
-
     const { width: layoutWidth, height: layoutHeight } = calculatePaperDimensions();
     const width = Math.round(layoutWidth * qualityMultiplier);
     const height = Math.round(layoutHeight * qualityMultiplier);
 
     if (!state.pages || state.pages.length === 0) {
-        if (loadingOverlay) loadingOverlay.classList.remove('active');
         toast.error('No pages to export.');
         return;
     }
@@ -338,7 +331,48 @@ async function performExport(format, qualityMultiplier) {
         : `layout-export-${Date.now()}`;
 
     const isSingleImageExport = (format === 'png' || format === 'jpeg') && state.pages.length === 1;
-    const zip = (format === 'png' || format === 'jpeg') && state.pages.length > 1 ? new JSZip() : null;
+    const isZipExport = (format === 'png' || format === 'jpeg') && state.pages.length > 1;
+    const zip = isZipExport ? new JSZip() : null;
+    let exportPath = null;
+
+    if (window.electronAPI && window.electronAPI.isElectron) {
+        let filters = [];
+        let defaultExtension = '';
+        if (format === 'pdf') {
+            filters = [{ name: 'PDF Document', extensions: ['pdf'] }];
+            defaultExtension = '.pdf';
+        } else if (isZipExport) {
+            filters = [{ name: 'ZIP Archive', extensions: ['zip'] }];
+            defaultExtension = '.zip';
+        } else if (format === 'png') {
+            filters = [{ name: 'PNG Image', extensions: ['png'] }];
+            defaultExtension = '.png';
+        } else if (format === 'jpeg') {
+            filters = [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
+            defaultExtension = '.jpg';
+        }
+
+        const dialogResult = await window.electronAPI.showSaveDialog({
+            title: 'Export Layout',
+            defaultPath: `${baseName}${defaultExtension}`,
+            filters: filters
+        });
+
+        if (dialogResult.canceled || !dialogResult.path) {
+            return;
+        }
+        exportPath = dialogResult.path;
+    }
+
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+        const formatText = format.toUpperCase();
+        if (loadingStatus) loadingStatus.textContent = `Generating ${formatText === 'JPEG' ? 'JPG' : formatText}...`;
+    }
+
+    // Now that we have the path, let the UI update the loading state
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
         if (format === 'pdf') {
@@ -355,8 +389,13 @@ async function performExport(format, qualityMultiplier) {
 
             if (result.error) throw new Error(result.error);
 
-            const blob = new Blob([result.data], { type: 'application/pdf' });
-            downloadBlob(blob, `${baseName}.pdf`);
+            if (exportPath) {
+                await window.electronAPI.saveBinaryFile(result.data, exportPath);
+                toast.success('Export saved successfully');
+            } else {
+                const blob = new Blob([result.data], { type: 'application/pdf' });
+                downloadBlob(blob, `${baseName}.pdf`);
+            }
 
         } else {
             // Image Export
@@ -379,19 +418,31 @@ async function performExport(format, qualityMultiplier) {
 
                 const ext = format === 'jpeg' ? 'jpg' : 'png';
                 const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-                const blob = new Blob([result.data], { type: mime });
-
+                
                 if (isSingleImageExport) {
-                    downloadBlob(blob, `${baseName}.${ext}`);
+                    if (exportPath) {
+                        await window.electronAPI.saveBinaryFile(result.data, exportPath);
+                        toast.success('Export saved successfully');
+                    } else {
+                        const blob = new Blob([result.data], { type: mime });
+                        downloadBlob(blob, `${baseName}.${ext}`);
+                    }
                 } else if (zip) {
+                    const blob = new Blob([result.data], { type: mime });
                     zip.file(`page-${i + 1}.${ext}`, blob);
                 }
             }
 
             if (zip) {
                 if (progressText) progressText.textContent = 'Creating ZIP archive...';
-                const content = await zip.generateAsync({ type: 'blob' });
-                downloadBlob(content, `${baseName}.zip`);
+                if (exportPath) {
+                    const content = await zip.generateAsync({ type: 'uint8array' });
+                    await window.electronAPI.saveBinaryFile(content, exportPath);
+                    toast.success('Export saved successfully');
+                } else {
+                    const content = await zip.generateAsync({ type: 'blob' });
+                    downloadBlob(content, `${baseName}.zip`);
+                }
             }
         }
     } catch (error) {

@@ -8,7 +8,7 @@ const { autoUpdater } = electronUpdater;
 
 // Register custom protocol early
 protocol.registerSchemesAsPrivileged([
-    { scheme: 'broco-local', privileges: { bypassCSP: true, stream: true } }
+    { scheme: 'broco-local', privileges: { bypassCSP: true, stream: true, supportFetchAPI: true, corsEnabled: true, secure: true } }
 ]);
 
 // High-DPI / Zoom Fixes for Windows
@@ -246,15 +246,33 @@ app.whenReady().then(() => {
     });
 
     // Handle Save As Dialog (Path Selection Only)
-    ipcMain.handle('dialog:showSave', async (event, defaultName) => {
-        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-            title: 'Save Layout',
-            defaultPath: defaultName || `layout-${new Date().toISOString().split('T')[0]}.broco`,
-            filters: [{ name: 'Broco Layout', extensions: ['broco'] }]
-        });
+    ipcMain.handle('dialog:showSave', async (event, options) => {
+        let dialogOptions;
+        if (typeof options === 'string') {
+            dialogOptions = {
+                title: 'Save Layout',
+                defaultPath: options || `layout-${new Date().toISOString().split('T')[0]}.broco`,
+                filters: [{ name: 'Broco Layout', extensions: ['broco'] }]
+            };
+        } else {
+            dialogOptions = options;
+        }
+
+        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, dialogOptions);
 
         if (canceled || !filePath) return { canceled: true };
         return { success: true, path: filePath };
+    });
+
+    // Handle Binary File Save
+    ipcMain.handle('file:save-binary', async (event, { data, path }) => {
+        try {
+            fs.writeFileSync(path, Buffer.from(data));
+            return { success: true };
+        } catch (err) {
+            console.error('Binary save error:', err);
+            return { success: false, error: err.message };
+        }
     });
 
     // Handle Save As Dialog (Legacy / Combined)
