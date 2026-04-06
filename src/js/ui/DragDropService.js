@@ -37,6 +37,7 @@ export class DragDropService {
         // Global pointer handlers
         this.onPointerMove = this.onPointerMove.bind(this);
         this.onPointerUp = this.onPointerUp.bind(this);
+        this._getCoords = this._getCoords.bind(this);
 
         // Cleanup on page visibility change to prevent ghost leaks
         document.addEventListener('visibilitychange', () => {
@@ -44,6 +45,15 @@ export class DragDropService {
                 this.endDrag();
             }
         });
+    }
+
+    _getCoords(e) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        } else if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
     }
 
     /**
@@ -59,8 +69,9 @@ export class DragDropService {
         this.sourceTextNode = data.sourceTextNode || null;
         this.draggedTextAlign = data.textAlign || undefined;
 
-        this.startX = event.clientX;
-        this.startY = event.clientY;
+        const coords = this._getCoords(event);
+        this.startX = coords.x;
+        this.startY = coords.y;
         this.dragging = false; // Not dragging until threshold exceeded
 
         // Add document-level listeners for pointer movement
@@ -89,9 +100,14 @@ export class DragDropService {
     onPointerMove(e) {
         if (!this.pendingData) return;
 
+        const coords = this._getCoords(e);
+        const { x, y } = coords;
+
+        if (x === undefined || y === undefined) return;
+
         if (!this.dragging) {
-            const dx = e.clientX - this.startX;
-            const dy = e.clientY - this.startY;
+            const dx = x - this.startX;
+            const dy = y - this.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             // Calculate threshold based on paper scale
@@ -117,11 +133,11 @@ export class DragDropService {
         if (this.dragging) {
             // Once dragging, we prevent default to stop scrolling/native behavior
             if (e.cancelable) e.preventDefault();
-            this.updateGhostPosition(e.clientX, e.clientY);
+            this.updateGhostPosition(x, y);
 
-            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const target = document.elementFromPoint(x, y);
             document.dispatchEvent(new CustomEvent('custom-drag-move', {
-                detail: { target, x: e.clientX, y: e.clientY }
+                detail: { target, x, y }
             }));
             return { target };
         }
@@ -133,11 +149,14 @@ export class DragDropService {
     onPointerUp(e) {
         if (!this.pendingData) return;
 
-        if (this.dragging) {
+        const coords = this._getCoords(e);
+        const { x, y } = coords;
+
+        if (this.dragging && x !== undefined && y !== undefined) {
             // Only finalize if we actually started a drag
-            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const target = document.elementFromPoint(x, y);
             const dropEvent = new CustomEvent('custom-drop', {
-                detail: { target, clientX: e.clientX, clientY: e.clientY }
+                detail: { target, clientX: x, clientY: y }
             });
             document.dispatchEvent(dropEvent);
         }
@@ -185,7 +204,8 @@ export class DragDropService {
             ghost.style.fontSize = '24px';
         }
 
-        this.updateGhostPosition(e.clientX, e.clientY, ghost);
+        const coords = this._getCoords(e);
+        this.updateGhostPosition(coords.x, coords.y, ghost);
 
         document.body.appendChild(ghost);
         this.touchGhost = ghost;
