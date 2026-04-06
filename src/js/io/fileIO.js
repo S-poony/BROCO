@@ -91,7 +91,8 @@ export async function saveLayout(options = {}) {
     const loadingProgress = document.getElementById('loading-progress');
 
     const showLoading = async () => {
-        if (!useFileReferences && loadingOverlay) {
+        const needsDeepEmbed = !useFileReferences && assetManager.getAssets().some(asset => !asset.fullResData && asset.absolutePath);
+        if (needsDeepEmbed && loadingOverlay) {
             loadingOverlay.classList.add('active');
             if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
             if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
@@ -198,12 +199,15 @@ export async function saveLayoutAs() {
         const loadingProgress = document.getElementById('loading-progress');
 
         if (!useFileReferences && loadingOverlay) {
-            loadingOverlay.classList.add('active');
-            if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
-            if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
-            // Allow UI to update
-            await new Promise(resolve => requestAnimationFrame(resolve));
-            await new Promise(resolve => setTimeout(resolve, 50));
+            const needsDeepEmbed = assetManager.getAssets().some(asset => !asset.fullResData && asset.absolutePath);
+            if (needsDeepEmbed) {
+                loadingOverlay.classList.add('active');
+                if (loadingStatus) loadingStatus.textContent = 'Saving Layout...';
+                if (loadingProgress) loadingProgress.textContent = 'Embedding assets...';
+                // Allow UI to update
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
         }
 
         try {
