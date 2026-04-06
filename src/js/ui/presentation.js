@@ -14,6 +14,26 @@ export function setupPresentationHandlers() {
     overlay.id = 'presentation-overlay';
     overlay.className = 'presentation-overlay';
 
+    const exitBtn = document.createElement('button');
+    exitBtn.className = 'presentation-exit-btn';
+    exitBtn.innerHTML = '✖';
+    exitBtn.title = 'Exit Presentation Mode';
+    exitBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        
+        if (document.fullscreenElement && document.exitFullscreen) {
+            await document.exitFullscreen();
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+            await document.webkitExitFullscreen();
+        } else if (document.msFullscreenElement && document.msExitFullscreen) {
+            await document.msExitFullscreen();
+        } else {
+            // Because the function is accessed asynchronously in the click, it's safe to call here
+            exitPresentationState();
+        }
+    });
+    overlay.appendChild(exitBtn);
+
     fullscreenBtn.addEventListener('click', async () => {
         try {
             if (!document.fullscreenElement) {
@@ -137,10 +157,14 @@ export function setupPresentationHandlers() {
         }
     }
 
-    // Mouse Sliding: clicking the glass overlay advances the page
+    // Screen Tapping: Left half goes back, Right half advances
     overlay.addEventListener('click', (e) => {
         if (e.button === 0) {
-            goToNextPage();
+            if (e.clientX < window.innerWidth / 2) {
+                goToPrevPage();
+            } else {
+                goToNextPage();
+            }
         }
     });
 
