@@ -81,6 +81,9 @@ export class TooltipManager {
         const settings = getSettings();
         if (!settings.electron.enableTooltips) return;
 
+        const laptopBreakpoint = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--breakpoint-laptop')) || 1024;
+        if (window.innerWidth <= laptopBreakpoint) return;
+
         this.element.textContent = text;
         this.element.classList.add('visible');
         this.isVisible = true;
