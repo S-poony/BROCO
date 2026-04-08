@@ -128,17 +128,21 @@
 }
 
 .delete-page-btn {
-    right: 5px;
+    left: 7px;
     top: 5px;
     background: var(--color-danger);
 }
 
 .duplicate-page-btn {
-    right: 5px;
+    left: 7px;
     top: 32px;
     /* 22px + 10px gap */
     background: var(--color-primary);
     font-size: 12px;
+}
+
+.page-thumbnail-item:hover .page-number {
+    opacity: 0;
 }
 
 .page-thumbnail-item:hover .delete-page-btn,
@@ -234,7 +238,7 @@
         width: 16px;
         height: 16px;
         font-size: 10px;
-        right: 2px;
+        left: 5px;
     }
 
     .delete-page-btn {
