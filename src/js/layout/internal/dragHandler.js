@@ -58,20 +58,8 @@ export function startDrag(event, dividerElement = null) {
         state.parentFullSize = parentRect.height;
     }
 
-    // Cache other dividers for alignment snapping
-    state.cachedDividers = [];
-    if (!event.noSnap) {
-        const otherDividers = document.querySelectorAll(`.divider[data-orientation="${orientation}"]`);
-        for (const other of otherDividers) {
-            if (other === divider) continue;
-            const otherRect = other.getBoundingClientRect();
-            const center = (orientation === 'vertical' ? otherRect.left + otherRect.width / 2 : otherRect.top + otherRect.height / 2);
-            state.cachedDividers.push({ center, type: SNAP_TYPES.GLOBAL });
-        }
-    }
-
     // Cache dynamic snap points (percentages) for proportional snapping
-    state.cachedSnapPoints = calculateDynamicSnaps(divider, orientation);
+    state.cachedSnapPoints = event.noSnap ? [] : calculateDynamicSnaps(divider, orientation);
 
     divider.rectA = rectA;
     divider.rectB = rectB;
@@ -186,27 +174,15 @@ function onDrag(event) {
         let snapType = null;
         let snapId = null; // Unique ID to identify this specific snap point
 
-        // 1. Divider Alignment Snapping (using cache)
-        if (state.cachedDividers) {
-            for (const item of state.cachedDividers) {
-                if (Math.abs(projectedCenter - item.center) < SNAP_THRESHOLD) {
-                    snappedCenter = item.center;
-                    snapType = item.type;
-                    snapId = `divider-${item.center}`;
-                    break;
-                }
-            }
-        }
-
-        // 2. Proportional Snapping (using cache)
-        if (snappedCenter === null && state.cachedSnapPoints) {
+        // Check Dynamic Snapping (Grid, Proportional, Size Match, Global)
+        if (state.cachedSnapPoints) {
             for (const item of state.cachedSnapPoints) {
                 // targetCenter = start of first rect + (percentage of combined rect sizes) + half of divider
                 const targetCenter = state.contentOrigin + (item.value / 100) * state.availableSpace + state.dividerSize / 2;
                 if (Math.abs(projectedCenter - targetCenter) < SNAP_THRESHOLD) {
                     snappedCenter = targetCenter;
                     snapType = item.type;
-                    snapId = `prop-${item.value}`;
+                    snapId = `snap-${item.value}-${item.type}`;
                     break;
                 }
             }
