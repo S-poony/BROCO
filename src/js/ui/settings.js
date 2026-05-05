@@ -1,6 +1,6 @@
 import { DIVIDER_SIZE, A4_PAPER_ID } from '../core/constants.js';
 import { getCurrentPage } from '../core/state.js';
-// import { renderCoverImage } from './renderer.js'; // REMOVED to break circular dependency
+import { toast } from '../core/errorHandler.js';
 
 /**
  * Default settings configuration
@@ -8,7 +8,9 @@ import { getCurrentPage } from '../core/state.js';
 const defaultSettings = {
     layout: {
         ratio: 1.414, // A4 default (approx)
-        isLandscape: false
+        isLandscape: false,
+        customX: 16,
+        customY: 9
     },
     text: {
         fontFamily: 'sans-serif',
@@ -70,12 +72,18 @@ export function updateSetting(category, key, value) {
 
 export function calculatePaperDimensions() {
     // Rule: width + height = 2000px
-    // Ratio = width / height (if landscape) or height / width (if portrait)?
-    // Actually typically ratio is long / short.
-    // Let's assume ratio input describes the shape (e.g., 1.618).
+
+    let effectiveRatio;
+    if (settings.layout.ratio === 'custom') {
+        const x = Number(settings.layout.customX) || 1;
+        const y = Number(settings.layout.customY) || 1;
+        effectiveRatio = Math.max(x, y) / Math.min(x, y);
+    } else {
+        effectiveRatio = parseFloat(settings.layout.ratio);
+    }
 
     // We treat ratio as LongSide / ShortSide
-    const r = Math.max(settings.layout.ratio, 1);
+    const r = Math.max(effectiveRatio, 1);
 
     // h + w = 2000
     // w = r * h (if w is long side)
@@ -273,9 +281,30 @@ function syncFormWithSettings() {
     // Layout
     const ratioSelect = document.getElementById('setting-layout-ratio');
     const landscapeToggle = document.getElementById('setting-layout-landscape');
+    const customControls = document.getElementById('custom-ratio-controls');
+    const customXInput = document.getElementById('setting-custom-ratio-x');
+    const customYInput = document.getElementById('setting-custom-ratio-y');
+    const customSlider = document.getElementById('setting-custom-ratio-slider');
 
     if (ratioSelect) ratioSelect.value = settings.layout.ratio;
     if (landscapeToggle) landscapeToggle.checked = settings.layout.isLandscape;
+    
+    if (customControls) {
+        if (settings.layout.ratio === 'custom') {
+            customControls.style.display = 'block';
+            if (customXInput) customXInput.value = settings.layout.customX;
+            if (customYInput) customYInput.value = settings.layout.customY;
+            if (customSlider) {
+                const x = settings.layout.customX;
+                const y = settings.layout.customY;
+                const sliderVal = Math.round((x / (x + y)) * 100);
+                // Clamp slider value visually between 1 and 99
+                customSlider.value = Math.max(1, Math.min(99, sliderVal));
+            }
+        } else {
+            customControls.style.display = 'none';
+        }
+    }
 
     // Text
     const fontSelect = document.getElementById('setting-font-family');
@@ -498,7 +527,9 @@ function setupLayoutControls() {
     if (ratioSelect) {
         ratioSelect.value = settings.layout.ratio;
         ratioSelect.addEventListener('change', (e) => {
-            updateSetting('layout', 'ratio', parseFloat(e.target.value));
+            const val = e.target.value === 'custom' ? 'custom' : parseFloat(e.target.value);
+            updateSetting('layout', 'ratio', val);
+            syncFormWithSettings();
         });
     }
 
@@ -506,7 +537,68 @@ function setupLayoutControls() {
     if (landscapeToggle) {
         landscapeToggle.checked = settings.layout.isLandscape;
         landscapeToggle.addEventListener('change', (e) => {
-            updateSetting('layout', 'isLandscape', e.target.checked);
+            const isLand = e.target.checked;
+            if (settings.layout.ratio === 'custom') {
+                const oldX = settings.layout.customX;
+                const oldY = settings.layout.customY;
+                if ((isLand && oldX < oldY) || (!isLand && oldX > oldY)) {
+                    settings.layout.customX = oldY;
+                    settings.layout.customY = oldX;
+                }
+            }
+            updateSetting('layout', 'isLandscape', isLand);
+            syncFormWithSettings();
+        });
+    }
+    
+    const customXInput = document.getElementById('setting-custom-ratio-x');
+    const customYInput = document.getElementById('setting-custom-ratio-y');
+    const customSlider = document.getElementById('setting-custom-ratio-slider');
+
+    function handleCustomInput() {
+        let x = parseFloat(customXInput.value);
+        let y = parseFloat(customYInput.value);
+        
+        if (isNaN(x) || x <= 0 || isNaN(y) || y <= 0) {
+            toast.error('Aspect ratio must be a positive number greater than 0.');
+            syncFormWithSettings(); // Revert to valid
+            return;
+        }
+
+        settings.layout.customX = x;
+        settings.layout.customY = y;
+        
+        // Auto update landscape toggle based on input
+        if (x !== y) {
+            settings.layout.isLandscape = x > y;
+        }
+        
+        updateSetting('layout', 'ratio', 'custom');
+        syncFormWithSettings();
+    }
+
+    if (customXInput) customXInput.addEventListener('change', handleCustomInput);
+    if (customYInput) customYInput.addEventListener('change', handleCustomInput);
+    
+    if (customSlider) {
+        customSlider.addEventListener('input', (e) => {
+            const s = parseInt(e.target.value, 10);
+            const sum = settings.layout.customX + settings.layout.customY;
+            let newX = Number((sum * (s / 100)).toFixed(2));
+            let newY = Number((sum * ((100 - s) / 100)).toFixed(2));
+            
+            if (newX <= 0) newX = 0.1;
+            if (newY <= 0) newY = 0.1;
+
+            settings.layout.customX = newX;
+            settings.layout.customY = newY;
+            
+            if (newX !== newY) {
+                settings.layout.isLandscape = newX > newY;
+            }
+            
+            updateSetting('layout', 'ratio', 'custom');
+            syncFormWithSettings();
         });
     }
 }

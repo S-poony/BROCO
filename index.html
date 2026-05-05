@@ -172,7 +172,19 @@
                                             <option value="1.777">16:9 Widescreen</option>
                                             <option value="1">1:1 Square</option>
                                             <option value="2.35">2.35:1 Cinematic</option>
+                                            <option value="custom">Custom</option>
                                         </select>
+                                    </div>
+                                    <div id="custom-ratio-controls" class="settings-group" style="display: none;">
+                                        <div class="settings-label-row">
+                                            <label>Custom Ratio (W : H)</label>
+                                        </div>
+                                        <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                                            <input type="number" id="setting-custom-ratio-x" min="0.01" step="0.1" value="16" style="flex: 1; padding: 6px; border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary);" aria-label="Width Ratio">
+                                            <span>:</span>
+                                            <input type="number" id="setting-custom-ratio-y" min="0.01" step="0.1" value="9" style="flex: 1; padding: 6px; border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary);" aria-label="Height Ratio">
+                                        </div>
+                                        <input type="range" id="setting-custom-ratio-slider" min="1" max="99" value="64" class="settings-slider">
                                     </div>
                                     <div class="settings-group settings-toggle-group">
                                         <label for="setting-layout-landscape">Landscape Orientation</label>
