@@ -529,6 +529,9 @@ function setupLayoutControls() {
         ratioSelect.addEventListener('change', (e) => {
             const val = e.target.value === 'custom' ? 'custom' : parseFloat(e.target.value);
             updateSetting('layout', 'ratio', val);
+            if (val === 'custom') {
+                updateSetting('layout', 'isLandscape', settings.layout.customX > settings.layout.customY);
+            }
             syncFormWithSettings();
         });
     }
@@ -561,6 +564,11 @@ function setupLayoutControls() {
         
         if (isNaN(x) || x <= 0 || isNaN(y) || y <= 0) {
             toast.error('Aspect ratio must be a positive number greater than 0.');
+            syncFormWithSettings(); // Revert to valid
+            return;
+        }
+        if (x > 5120 || y > 5120) {
+            toast.error('Aspect ratio values cannot exceed 5120.');
             syncFormWithSettings(); // Revert to valid
             return;
         }
