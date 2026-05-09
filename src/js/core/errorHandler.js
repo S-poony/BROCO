@@ -31,7 +31,7 @@ function ensureContainer() {
  * @param {number} duration - Duration in ms (0 for persistent)
  * @returns {HTMLElement} The toast element
  */
-export function showToast(message, type = 'info', duration = DEFAULT_DURATION) {
+export function showToast(message, type = 'info', duration = DEFAULT_DURATION, onClick = null) {
     ensureContainer();
 
     const toast = document.createElement('div');
@@ -50,13 +50,24 @@ export function showToast(message, type = 'info', duration = DEFAULT_DURATION) {
     closeBtn.className = 'toast-close';
     closeBtn.innerHTML = '×';
     closeBtn.setAttribute('aria-label', 'Dismiss');
-    closeBtn.onclick = () => removeToast(toast);
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        removeToast(toast);
+    };
 
-    if (type === 'error') {
+    if (onClick) {
+        toast.style.cursor = 'pointer';
+        toast.title = 'Click to open file location';
+        toast.onclick = (e) => {
+            if (!e.target.closest('.toast-close')) {
+                onClick();
+                removeToast(toast);
+            }
+        };
+    } else if (type === 'error') {
         toast.style.cursor = 'pointer';
         toast.title = 'Click to open developer tools for debugging';
         toast.onclick = (e) => {
-            // Only trigger if we didn't click the close button
             if (!e.target.closest('.toast-close')) {
                 if (window.electronAPI && window.electronAPI.openDevTools) {
                     window.electronAPI.openDevTools();
@@ -113,7 +124,7 @@ function getIconForType(type) {
  * Convenience methods
  */
 export const toast = {
-    success: (msg, duration) => showToast(msg, 'success', duration),
+    success: (msg, duration, onClick) => showToast(msg, 'success', duration, onClick),
     error: (msg, duration) => showToast(msg, 'error', duration ?? 6000),
     warning: (msg, duration) => showToast(msg, 'warning', duration),
     info: (msg, duration) => showToast(msg, 'info', duration)

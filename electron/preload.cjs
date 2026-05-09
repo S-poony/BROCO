@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     forceClose: () => ipcRenderer.send('app:force-close'),
     openDevTools: () => ipcRenderer.invoke('app:open-devtools'),
 
+    showItemInFolder: (path) => ipcRenderer.invoke('app:show-item-in-folder', path),
+
     // Export APIs
     renderExport: (options) => ipcRenderer.invoke('render-export', options),
     sendReadyToRender: (requestId) => ipcRenderer.send('ready-to-render', { requestId }),

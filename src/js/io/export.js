@@ -391,7 +391,11 @@ async function performExport(format, qualityMultiplier) {
 
             if (exportPath) {
                 await window.electronAPI.saveBinaryFile(result.data, exportPath);
-                toast.success('Export saved successfully');
+                toast.success('Export saved successfully', 4000, () => {
+                    if (exportPath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                        window.electronAPI.showItemInFolder(exportPath);
+                    }
+                });
             } else {
                 const blob = new Blob([result.data], { type: 'application/pdf' });
                 downloadBlob(blob, `${baseName}.pdf`);
@@ -423,7 +427,11 @@ async function performExport(format, qualityMultiplier) {
                 if (isSingleImageExport) {
                     if (exportPath) {
                         await window.electronAPI.saveBinaryFile(result.data, exportPath);
-                        toast.success('Export saved successfully');
+                        toast.success('Export saved successfully', 4000, () => {
+                            if (exportPath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                                window.electronAPI.showItemInFolder(exportPath);
+                            }
+                        });
                     } else {
                         const blob = new Blob([result.data], { type: mime });
                         downloadBlob(blob, `${baseName}.${ext}`);
@@ -439,7 +447,11 @@ async function performExport(format, qualityMultiplier) {
                 if (exportPath) {
                     const content = await zip.generateAsync({ type: 'uint8array' });
                     await window.electronAPI.saveBinaryFile(content, exportPath);
-                    toast.success('Export saved successfully');
+                    toast.success('Export saved successfully', 4000, () => {
+                        if (exportPath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                            window.electronAPI.showItemInFolder(exportPath);
+                        }
+                    });
                 } else {
                     const content = await zip.generateAsync({ type: 'blob' });
                     downloadBlob(content, `${baseName}.zip`);

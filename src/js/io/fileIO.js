@@ -113,7 +113,11 @@ export async function saveLayout(options = {}) {
 
             if (result.success) {
                 setDirty(false);
-                toast.success(successMessage);
+                toast.success(successMessage, 4000, () => {
+                    if (state.currentFilePath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                        window.electronAPI.showItemInFolder(state.currentFilePath);
+                    }
+                });
                 if (options.closeAfterSave) window.close();
                 return true;
             } else {
@@ -141,7 +145,11 @@ export async function saveLayout(options = {}) {
             if (result.success) {
                 setCurrentFilePath(filePath);
                 setDirty(false);
-                toast.success(successMessage);
+                toast.success(successMessage, 4000, () => {
+                    if (filePath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                        window.electronAPI.showItemInFolder(filePath);
+                    }
+                });
                 if (options.closeAfterSave) window.close();
                 return true;
             } else {
@@ -218,7 +226,11 @@ export async function saveLayoutAs() {
             if (result.success) {
                 setCurrentFilePath(filePath);
                 setDirty(false);
-                toast.success(successMessage);
+                toast.success(successMessage, 4000, () => {
+                    if (filePath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                        window.electronAPI.showItemInFolder(filePath);
+                    }
+                });
             } else {
                 toast.error(`Failed to save: ${result.error}`);
             }

@@ -223,6 +223,17 @@ app.whenReady().then(() => {
         }
     });
 
+    // Handle Show Item in Folder (open file explorer at path)
+    ipcMain.handle('app:show-item-in-folder', async (event, filePath) => {
+        try {
+            shell.showItemInFolder(filePath);
+            return { success: true };
+        } catch (err) {
+            console.error('showItemInFolder error:', err);
+            return { success: false, error: err.message };
+        }
+    });
+
     // Handle File Save (Overwrite)
     ipcMain.handle('file:save', async (event, data, filePath) => {
         try {
