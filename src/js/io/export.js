@@ -32,6 +32,10 @@ export async function initializeExportMode() {
 
     document.body.appendChild(paper);
 
+    // Cache of last-applied asset signature, so we skip re-hydration
+    // when the same assets are sent across many page renders.
+    let lastAssetsSig = null;
+
     // Initial ready signal to main process
     const urlParams = new URLSearchParams(window.location.search);
     const requestId = urlParams.get('rid');
@@ -39,7 +43,9 @@ export async function initializeExportMode() {
         window.electronAPI.sendReadyToRender(requestId);
     }
 
-    // Listen for content to render
+    // Listen for content to render. The export window is a long-lived singleton,
+    // so this handler may be invoked many times for many different pages without
+    // any URL reload. Each call replaces the DOM atomically.
     if (window.electronAPI && window.electronAPI.onRenderContent) {
         window.electronAPI.onRenderContent(async (data) => {
             const { requestId, pageLayout, pageLayouts, width, height, settings, assets, pageNumber: explicitPageNumber } = data;
@@ -53,19 +59,31 @@ export async function initializeExportMode() {
                     applySettings();
                 }
 
-                // 2. Hydrate Assets
+                // 2. Hydrate Assets - but skip if signature matches the last hydration.
+                // This is a major win when rendering many pages back-to-back, since
+                // hydration is expensive (data URLs, image decode, etc).
                 if (assets && Array.isArray(assets)) {
-                    assetManager.dispose();
-                    assets.forEach(asset => {
-                        assetManager.addAsset(asset);
-                    });
+                    const sig = assets.length === 0
+                        ? 'empty'
+                        : assets.map(a => `${a.id || a.assetId || a.name || ''}:${(a.fullResData || a.lowResData || a.data || '').length}`).join('|');
+                    if (sig !== lastAssetsSig) {
+                        assetManager.dispose();
+                        assets.forEach(asset => {
+                            assetManager.addAsset(asset);
+                        });
+                        lastAssetsSig = sig;
+                    }
                 }
 
-                // Inject dynamic page size CSS for PDF export
-                // This corresponds to preferCSSPageSize: true in Electron
-                const pageStyle = document.createElement('style');
+                // Inject dynamic page size CSS for PDF export.
+                // We re-create the @page rule each call (it may have changed dimensions).
+                let pageStyle = document.getElementById('export-page-style');
+                if (!pageStyle) {
+                    pageStyle = document.createElement('style');
+                    pageStyle.id = 'export-page-style';
+                    document.head.appendChild(pageStyle);
+                }
                 pageStyle.innerHTML = `@page { size: ${width}px ${height}px; margin: 0; }`;
-                document.head.appendChild(pageStyle);
 
                 const layouts = pageLayouts || [pageLayout];
 
@@ -76,13 +94,15 @@ export async function initializeExportMode() {
                     pageWrapper.className = 'a4-paper is-exporting';
                     pageWrapper.id = `export-page-${i}`;
 
-                    // Set explicit dimensions
-                    pageWrapper.style.width = width + 'px';
-                    pageWrapper.style.height = height + 'px';
-                    pageWrapper.style.setProperty('--paper-current-width', `${width}px`);
-                    pageWrapper.style.setProperty('--paper-current-height', `${height}px`);
+                    // Set explicit dimensions (integer pixels)
+                    const intW = Math.round(width);
+                    const intH = Math.round(height);
+                    pageWrapper.style.width = intW + 'px';
+                    pageWrapper.style.height = intH + 'px';
+                    pageWrapper.style.setProperty('--paper-current-width', `${intW}px`);
+                    pageWrapper.style.setProperty('--paper-current-height', `${intH}px`);
                     // Specifically set the ratio to ensure aspect-ratio CSS rule works correctly
-                    pageWrapper.style.setProperty('--ratio', `${width / height}`);
+                    pageWrapper.style.setProperty('--ratio', `${intW / intH}`);
 
                     pageWrapper.style.position = 'relative';
                     pageWrapper.style.margin = '0';
@@ -105,9 +125,22 @@ export async function initializeExportMode() {
                 await waitForImages(paper);
                 await document.fonts.ready;
 
+                // CRITICAL: Snap all flex layout to integer pixel boundaries.
+                // This eliminates sub-pixel rendering artifacts at divider intersections
+                // (1px gaps, overlaps, fuzzy edges) that Chromium otherwise produces
+                // when rasterizing percentage-based flex layouts at high resolution.
+                const wrappers = paper.querySelectorAll('.a4-paper');
+                wrappers.forEach((wrapper) => {
+                    snapLayoutToIntegerPixels(wrapper);
+                });
+
+                // Force a reflow + extra paint frame so the snapped layout is committed
+                // before the main process captures.
+                void paper.offsetHeight;
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
                 // Extract links for Flipbook if needed
                 const allLinks = [];
-                const wrappers = paper.querySelectorAll('.a4-paper');
                 wrappers.forEach((wrapper) => {
                     const links = extractLinksForExport(wrapper);
                     allLinks.push(links);
@@ -120,6 +153,134 @@ export async function initializeExportMode() {
             }
         });
     }
+}
+
+/**
+ * Walk the rendered layout tree and snap every flex split to integer pixels.
+ *
+ * Why: the editor uses `flex-grow: <percent>` with `flex-basis: 0` for split
+ * children and `flex-basis: <thickness>` for dividers. At export resolutions,
+ * Chromium computes fractional widths/heights for percentage-grow children
+ * (e.g. 387.6px), and its rasterizer rounds these inconsistently across
+ * siblings, producing 1px gaps or overlaps at divider intersections.
+ *
+ * We fix this by measuring each split container's actual content size,
+ * subtracting integer divider thicknesses, and distributing the remaining
+ * pixels among children using largest-remainder rounding (so the integer
+ * sum equals the parent dimension exactly). We then set children to
+ * `flex: 0 0 <integer>px`, which makes Chromium paint pixel-perfect edges.
+ *
+ * @param {HTMLElement} root - The .a4-paper wrapper (export page)
+ */
+export function snapLayoutToIntegerPixels(root) {
+    if (!root) return;
+
+    // First, snap all divider thicknesses to integers (CSS already uses round(),
+    // but we make it explicit here as well to avoid any rounding races).
+    const dividers = root.querySelectorAll('.divider');
+    dividers.forEach(d => {
+        const cs = window.getComputedStyle(d);
+        const isVertical = d.classList.contains('vertical-divider');
+        const thickness = isVertical ? parseFloat(cs.width) : parseFloat(cs.height);
+        const intThickness = Math.max(1, Math.round(thickness));
+        if (isVertical) {
+            d.style.width = `${intThickness}px`;
+            d.style.minWidth = `${intThickness}px`;
+            d.style.maxWidth = `${intThickness}px`;
+        } else {
+            d.style.height = `${intThickness}px`;
+            d.style.minHeight = `${intThickness}px`;
+            d.style.maxHeight = `${intThickness}px`;
+        }
+        d.style.flexBasis = `${intThickness}px`;
+        d.style.flexShrink = '0';
+        d.style.flexGrow = '0';
+    });
+
+    // Recursively snap each split container's children to integer pixels.
+    // We walk top-down so parent sizes are already final integers when we
+    // distribute pixels among children.
+    function processContainer(container) {
+        const splitState = container.getAttribute && container.getAttribute('data-split-state');
+        if (splitState !== 'split') return;
+
+        // Determine orientation from the divider class on a child
+        const dividerChild = Array.from(container.children).find(c => c.classList && c.classList.contains('divider'));
+        if (!dividerChild) return;
+        const isVerticalSplit = dividerChild.classList.contains('vertical-divider');
+        // 'vertical-divider' = vertical line => container is flex-row (children side-by-side)
+        // 'horizontal-divider' = horizontal line => container is flex-col (children stacked)
+        const axis = isVerticalSplit ? 'width' : 'height';
+
+        const contRect = container.getBoundingClientRect();
+        const totalSize = Math.round(axis === 'width' ? contRect.width : contRect.height);
+
+        // Sum all divider sizes (children of this container that are dividers)
+        const dividerKids = Array.from(container.children).filter(c => c.classList && c.classList.contains('divider'));
+        let dividerTotal = 0;
+        dividerKids.forEach(d => {
+            const ds = d.getBoundingClientRect();
+            dividerTotal += Math.round(axis === 'width' ? ds.width : ds.height);
+        });
+
+        const available = Math.max(0, totalSize - dividerTotal);
+
+        // Identify rect children (non-dividers)
+        const rectKids = Array.from(container.children).filter(c => !c.classList || !c.classList.contains('divider'));
+        if (rectKids.length === 0) return;
+
+        // Read each rect's current desired share. We use its current rendered
+        // size (which is what flex resolved) as the target proportion.
+        const sizes = rectKids.map(r => {
+            const rs = r.getBoundingClientRect();
+            return axis === 'width' ? rs.width : rs.height;
+        });
+        const sumSizes = sizes.reduce((a, b) => a + b, 0) || 1;
+
+        // Largest-remainder rounding so integer sum exactly equals `available`.
+        const exact = sizes.map(s => (s / sumSizes) * available);
+        const floored = exact.map(v => Math.floor(v));
+        let remainder = available - floored.reduce((a, b) => a + b, 0);
+        const remainders = exact.map((v, i) => ({ i, frac: v - Math.floor(v) }));
+        remainders.sort((a, b) => b.frac - a.frac);
+        for (let k = 0; k < remainder; k++) {
+            floored[remainders[k % remainders.length].i] += 1;
+        }
+
+        // Apply integer pixel sizes to children.
+        rectKids.forEach((r, i) => {
+            const px = floored[i];
+            // Override flex completely with explicit pixels.
+            r.style.flex = `0 0 ${px}px`;
+            r.style.flexBasis = `${px}px`;
+            r.style.flexGrow = '0';
+            r.style.flexShrink = '0';
+            if (axis === 'width') {
+                r.style.width = `${px}px`;
+                r.style.minWidth = `${px}px`;
+                r.style.maxWidth = `${px}px`;
+            } else {
+                r.style.height = `${px}px`;
+                r.style.minHeight = `${px}px`;
+                r.style.maxHeight = `${px}px`;
+            }
+        });
+
+        // Force a reflow before recursing into children, so their getBoundingClientRect
+        // reflects the new integer sizing.
+        void container.offsetHeight;
+
+        // Recurse into rect kids (which may themselves be split containers)
+        rectKids.forEach(r => processContainer(r));
+    }
+
+    // Find the root rect inside the .a4-paper wrapper (the rect-1 that is the
+    // direct child) and start processing from there.
+    Array.from(root.children).forEach(child => {
+        if (child.classList && child.classList.contains('splittable-rect')) {
+            processContainer(child);
+        }
+    });
 }
 
 export function extractLinksForExport(container) {
@@ -378,14 +539,43 @@ async function performExport(format, qualityMultiplier) {
         if (format === 'pdf') {
             if (progressText) progressText.textContent = 'Rendering PDF...';
 
-            const result = await window.electronAPI.renderExport({
-                pageLayouts: state.pages,
-                width,
-                height,
-                format: 'pdf',
-                settings: getSettings(),
-                assets: assetManager.getAssets()
-            });
+            // Hook up incremental progress reporting from the main process.
+            // For multi-page PDFs we render page-by-page in the export window
+            // and merge via pdf-lib in the main process. This bounds memory
+            // usage to a single page regardless of total page count, which
+            // is what makes the app handle hundreds of image-heavy pages.
+            let unsubscribeProgress = null;
+            if (window.electronAPI.onExportProgress) {
+                unsubscribeProgress = window.electronAPI.onExportProgress(({ current, total }) => {
+                    if (progressText) progressText.textContent = `Rendering page ${current} of ${total}...`;
+                });
+            }
+
+            let result;
+            try {
+                if (state.pages.length > 1 && window.electronAPI.renderExportPdfStreaming) {
+                    // Streaming path - bounded memory, per-page rendering.
+                    result = await window.electronAPI.renderExportPdfStreaming({
+                        pageLayouts: state.pages,
+                        width,
+                        height,
+                        settings: getSettings(),
+                        assets: assetManager.getAssets()
+                    });
+                } else {
+                    // Single-page or fallback path.
+                    result = await window.electronAPI.renderExport({
+                        pageLayouts: state.pages,
+                        width,
+                        height,
+                        format: 'pdf',
+                        settings: getSettings(),
+                        assets: assetManager.getAssets()
+                    });
+                }
+            } finally {
+                if (typeof unsubscribeProgress === 'function') unsubscribeProgress();
+            }
 
             if (result.error) throw new Error(result.error);
 
@@ -400,6 +590,7 @@ async function performExport(format, qualityMultiplier) {
                 const blob = new Blob([result.data], { type: 'application/pdf' });
                 downloadBlob(blob, `${baseName}.pdf`);
             }
+
 
         } else {
             // Image Export

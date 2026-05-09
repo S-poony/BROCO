@@ -1,9 +1,10 @@
-import { app, BrowserWindow, shell, dialog, ipcMain, globalShortcut, protocol, net, Menu } from 'electron';
+import { app, BrowserWindow, shell, dialog, ipcMain, globalShortcut, protocol, net, Menu, nativeImage } from 'electron';
 import { join, dirname, relative, basename } from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import electronUpdater from 'electron-updater';
 import log from 'electron-log';
+import { PDFDocument } from 'pdf-lib';
 const { autoUpdater } = electronUpdater;
 
 // Register custom protocol early
@@ -23,6 +24,8 @@ const __dirname = dirname(__filename);
 
 let mainWindow;
 let exportWin = null; // Singleton export window to avoid overhead and leaks
+let exportWinReady = false; // Whether the export window has loaded the export-mode app
+let exportWinReadyPromise = null;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -128,6 +131,8 @@ function createWindow() {
             exportWin.destroy();
         }
         exportWin = null;
+        exportWinReady = false;
+        exportWinReadyPromise = null;
         mainWindow = null;
     });
 }
@@ -325,152 +330,393 @@ app.whenReady().then(() => {
         }
     });
 
-    // Handle Asset Picker ... (skipped lines 122-166)
+    // ============================================================
+    // EXPORT WINDOW MANAGEMENT
+    // ============================================================
+    // Singleton, lazily-created, kept-loaded export window.
+    // We avoid reloading the URL on every export. Instead, the renderer
+    // listens for `render-content` messages and re-renders its DOM.
+    // This eliminates the cost of reloading the entire app + handshake
+    // for every export call (significant for multi-page jobs).
+    // ============================================================
 
-    // Singleton export window to avoid overhead and leaks
-    // Moved to global scope at top of file
+    /**
+     * Downsample over-sized images to roughly the export resolution.
+     *
+     * Why: Chromium's printToPDF embeds images at their *original* resolution
+     * regardless of how small they're displayed. A 6000x4000 photo placed in a
+     * 800x600 region of a PDF page balloons the file size by 50-100x for no
+     * visible quality benefit. Online compressors strip exactly this redundancy.
+     *
+     * We pre-process the assets array: for every image whose natural
+     * dimensions exceed `targetMaxDim` we re-encode at that dimension. The
+     * resulting data URL is what we send to the export window for rendering.
+     *
+     * Quality is preserved because we never downsample below the export
+     * resolution itself - only above. Threshold is `targetMaxDim * 1.5`
+     * to avoid pointless re-encoding when the image is only marginally larger.
+     *
+     * @param {Array} assets - The asset array from the renderer
+     * @param {number} targetMaxDim - Max dimension (px) to downsample to
+     * @returns {Promise<Array>} New asset array with downsampled images
+     */
+    async function downsampleAssetsForExport(assets, targetMaxDim) {
+        if (!Array.isArray(assets) || !targetMaxDim || targetMaxDim <= 0) return assets;
+
+        const SAFETY_MARGIN = 1.5; // Only downsample if the image exceeds 1.5x target
+        const threshold = Math.round(targetMaxDim * SAFETY_MARGIN);
+
+        const out = [];
+        for (const asset of assets) {
+            // Only process images. Text assets pass through unchanged.
+            if (!asset || asset.type !== 'image') {
+                out.push(asset);
+                continue;
+            }
+
+            try {
+                const fullData = asset.fullResData || asset.data;
+                if (!fullData) {
+                    out.push(asset);
+                    continue;
+                }
+
+                // Build a NativeImage from the existing data URL
+                let image;
+                if (typeof fullData === 'string' && fullData.startsWith('data:')) {
+                    image = nativeImage.createFromDataURL(fullData);
+                } else if (asset.absolutePath && fs.existsSync(asset.absolutePath)) {
+                    image = nativeImage.createFromPath(asset.absolutePath);
+                } else {
+                    out.push(asset);
+                    continue;
+                }
+
+                if (!image || image.isEmpty()) {
+                    out.push(asset);
+                    continue;
+                }
+
+                const size = image.getSize();
+                const maxDim = Math.max(size.width, size.height);
+
+                // Skip if already small enough
+                if (maxDim <= threshold) {
+                    out.push(asset);
+                    continue;
+                }
+
+                // Downsample to targetMaxDim on the longer edge, preserving aspect
+                const scale = targetMaxDim / maxDim;
+                const newW = Math.max(1, Math.round(size.width * scale));
+                const newH = Math.max(1, Math.round(size.height * scale));
+
+                const resized = image.resize({ width: newW, height: newH, quality: 'best' });
+
+                // Re-encode. Use JPEG (quality 90) for opaque photos, PNG otherwise.
+                // We can't easily detect transparency from NativeImage, so we use the
+                // original mime type as a hint: PNG/GIF/WebP -> PNG, otherwise JPEG.
+                const originalIsPng = /^data:image\/(png|gif|webp)/i.test(fullData) ||
+                    /\.(png|gif|webp)$/i.test(asset.path || asset.name || '');
+                let newDataUrl;
+                if (originalIsPng) {
+                    const buf = resized.toPNG();
+                    newDataUrl = `data:image/png;base64,${buf.toString('base64')}`;
+                } else {
+                    const buf = resized.toJPEG(90);
+                    newDataUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
+                }
+
+                // Return a shallow-cloned asset with the downsampled data.
+                // We mutate fullResData (high-res field used during export) and
+                // also `data` for compatibility. We do NOT touch the absolutePath
+                // because the renderer might still try to fetch via broco-local;
+                // we override that by clearing `isReference`/`absolutePath` so the
+                // renderer falls back to fullResData.
+                out.push({
+                    ...asset,
+                    fullResData: newDataUrl,
+                    data: newDataUrl,
+                    isReference: false,
+                    absolutePath: undefined,
+                    _downsampled: true
+                });
+            } catch (err) {
+                log.warn('Failed to downsample asset', asset && asset.name, err && err.message);
+                out.push(asset);
+            }
+        }
+        return out;
+    }
 
     async function getExportWindow() {
-        if (exportWin && !exportWin.isDestroyed()) {
+        if (exportWin && !exportWin.isDestroyed() && exportWinReady) {
             return exportWin;
         }
 
-        exportWin = new BrowserWindow({
-            show: false,
-            width: 1280,
-            height: 800,
-            useContentSize: true,
-            frame: false,
-            webPreferences: {
-                offscreen: true,
-                preload: join(__dirname, 'preload.cjs'),
-                contextIsolation: true,
-                nodeIntegration: false
+        if (exportWinReadyPromise) {
+            // Already in the process of creating/loading
+            await exportWinReadyPromise;
+            return exportWin;
+        }
+
+        exportWinReadyPromise = (async () => {
+            if (!exportWin || exportWin.isDestroyed()) {
+                exportWin = new BrowserWindow({
+                    show: false,
+                    width: 1280,
+                    height: 800,
+                    useContentSize: true,
+                    frame: false,
+                    webPreferences: {
+                        offscreen: true,
+                        preload: join(__dirname, 'preload.cjs'),
+                        contextIsolation: true,
+                        nodeIntegration: false,
+                        backgroundThrottling: false
+                    }
+                });
+
+                // When the export window emits ready-to-render, mark it as ready
+                // and resolve any waiters. We use a single bootstrap rid for the
+                // initial load; subsequent renders reuse the loaded window.
+                const bootstrapRid = '__bootstrap__';
+                const readyHandler = (event, data) => {
+                    if (data && data.requestId === bootstrapRid) {
+                        exportWinReady = true;
+                        ipcMain.removeListener('ready-to-render', readyHandler);
+                    }
+                };
+                ipcMain.on('ready-to-render', readyHandler);
+
+                const exportUrl = !app.isPackaged
+                    ? `http://localhost:5173?mode=export&rid=${bootstrapRid}`
+                    : pathToFileURL(join(__dirname, '../dist/index.html')).toString() + `?mode=export&rid=${bootstrapRid}`;
+
+                await exportWin.loadURL(exportUrl);
+
+                // Wait for ready-to-render with a timeout
+                const start = Date.now();
+                while (!exportWinReady && Date.now() - start < 15000) {
+                    await new Promise(r => setTimeout(r, 50));
+                }
+                if (!exportWinReady) {
+                    ipcMain.removeListener('ready-to-render', readyHandler);
+                    throw new Error('Export window failed to initialize.');
+                }
             }
-        });
+        })();
 
-        // Optional: Increase memory limit for heavy exports if needed
-        // exportWin.webContents.setAudioMuted(true); 
-
+        try {
+            await exportWinReadyPromise;
+        } finally {
+            exportWinReadyPromise = null;
+        }
         return exportWin;
     }
 
-    // Handle Off-screen Export
-    ipcMain.handle('render-export', async (event, options) => {
-        const { pageLayout, pageLayouts, width, height, format, settings, assets, pageNumber } = options;
-        const requestId = Math.random().toString(36).substring(7);
+    /**
+     * Wait for the renderer to signal completion for a given requestId.
+     * Returns the metadata object sent with render-complete.
+     */
+    function waitForRenderComplete(requestId, timeoutMs = 60000) {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                ipcMain.removeListener('render-complete', onComplete);
+                reject(new Error('Export render timed out (render-complete)'));
+            }, timeoutMs);
 
-        // Fail early if main window is already closing/closed
+            function onComplete(event, data) {
+                if (data && data.requestId === requestId) {
+                    clearTimeout(timeout);
+                    ipcMain.removeListener('render-complete', onComplete);
+                    resolve(data);
+                }
+            }
+            ipcMain.on('render-complete', onComplete);
+        });
+    }
+
+    /**
+     * Replace fixed-time waits with a deterministic settle:
+     * 1. Wait for fonts.ready
+     * 2. Decode all images
+     * 3. Wait two animation frames so paint flushes in OSR
+     * Reduces export latency dramatically vs. blanket setTimeout(500).
+     */
+    async function waitForPaintSettle(win) {
+        try {
+            await win.webContents.executeJavaScript(`
+                (async () => {
+                    if (document.fonts && document.fonts.ready) {
+                        await document.fonts.ready;
+                    }
+                    const imgs = Array.from(document.images || []);
+                    await Promise.all(imgs.map(img => {
+                        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                        return new Promise(res => {
+                            img.addEventListener('load', res, { once: true });
+                            img.addEventListener('error', res, { once: true });
+                        });
+                    }));
+                    // Two RAF flush
+                    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                    return true;
+                })();
+            `, true);
+        } catch {
+            // Fallback short wait if executeJavaScript fails for any reason
+            await new Promise(r => setTimeout(r, 100));
+        }
+    }
+
+    /**
+     * Render a single payload (one or many pages) in the export window
+     * and capture the result.
+     * Used for image export and as a building block for PDF.
+     */
+    async function renderAndCapture({ pageLayout, pageLayouts, width, height, format, settings, assets, pageNumber }) {
+        const win = await getExportWindow();
+        const requestId = Math.random().toString(36).substring(2, 10);
+
+        // Resize window to requested capture dimensions
+        win.setSize(Math.max(width, 100), Math.max(height, 100));
+        win.setContentSize(Math.max(width, 100), Math.max(height, 100));
+        win.webContents.setZoomFactor(1.0);
+
+        // Send the render request to the (already loaded) export renderer.
+        // The renderer clears its DOM and re-renders. No URL reload happens.
+        const completePromise = waitForRenderComplete(requestId, 60000);
+        win.webContents.send('render-content', {
+            requestId,
+            pageLayout,
+            pageLayouts,
+            width,
+            height,
+            settings,
+            assets,
+            pageNumber
+        });
+
+        const metadata = await completePromise;
+        if (metadata.error) throw new Error(metadata.error);
+
+        // Deterministic settle (replaces hardcoded 500ms wait)
+        await waitForPaintSettle(win);
+
+        let buffer;
+        if (format === 'pdf') {
+            buffer = await win.webContents.printToPDF({
+                printBackground: true,
+                preferCSSPageSize: true,
+                generateTaggedPDF: false,
+                generateDocumentOutline: false
+            });
+        } else {
+            const image = await win.webContents.capturePage();
+            buffer = (format === 'jpeg' || format === 'jpg') ? image.toJPEG(92) : image.toPNG();
+        }
+
+        return { data: buffer, links: metadata.links };
+    }
+
+    // Handle Off-screen Export (single render call - used for images and small PDFs)
+    ipcMain.handle('render-export', async (event, options) => {
         if (!mainWindow || mainWindow.isDestroyed()) {
             throw new Error('Application is closing, export cancelled.');
         }
 
-        const win = await getExportWindow();
-
-        // Immediate failure if export window is closed mid-operation
-        const onUnexpectedClose = () => {
-            throw new Error('Export window was closed unexpectedly.');
-        };
-        win.once('closed', onUnexpectedClose);
-
         try {
-            // Resize to requested dimensions
-            win.setSize(width, height);
-            win.setContentSize(width, height);
-            win.webContents.setZoomFactor(1.0);
-
-            // Load mode if not already loaded or if we need to reset
-            // Using a query param to trigger clean state in renderer
-            const exportUrl = !app.isPackaged
-                ? `http://localhost:5173?mode=export&rid=${requestId}`
-                : pathToFileURL(join(__dirname, '../dist/index.html')).toString() + `?mode=export&rid=${requestId}`;
-
-            // Handshake: Prepare the listener BEFORE loading the URL to avoid race conditions
-            const handshakePromise = new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    ipcMain.removeListener('ready-to-render', onReady);
-                    reject(new Error('Export window handshake timed out (ready-to-render)'));
-                }, 10000);
-
-                function onReady(event, data) {
-                    if (data.requestId === requestId) {
-                        clearTimeout(timeout);
-                        ipcMain.removeListener('ready-to-render', onReady);
-                        resolve();
-                    }
-                }
-                ipcMain.on('ready-to-render', onReady);
-            });
-
-            await win.loadURL(exportUrl);
-
-            // Wait for handshake
-            await handshakePromise;
-
-            // Send layout data
-            win.webContents.send('render-content', {
-                requestId,
-                pageLayout,
-                pageLayouts,
-                width,
-                height,
-                settings,
-                assets,
-                pageNumber
-            });
-
-            // Wait for completion signal
-            const metadata = await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    ipcMain.removeListener('render-complete', onComplete);
-                    reject(new Error('Export render timed out (render-complete)'));
-                }, 30000);
-
-                function onComplete(event, data) {
-                    // Check if it's our request
-                    if (data && data.requestId === requestId) {
-                        clearTimeout(timeout);
-                        ipcMain.removeListener('render-complete', onComplete);
-                        resolve(data);
-                    }
-                }
-                ipcMain.on('render-complete', onComplete);
-            });
-
-            if (metadata.error) throw new Error(metadata.error);
-
-            // Capture logic
-            let buffer;
-            if (format === 'pdf') {
-                buffer = await win.webContents.printToPDF({
-                    printBackground: true,
-                    preferCSSPageSize: true
-                });
-            } else {
-                // Ensure paint is done (OSR can be tricky). 
-                // Increased wait to ensure high-res images and complex layouts are fully painted.
-                await new Promise(resolve => setTimeout(resolve, 500));
-                const image = await win.webContents.capturePage();
-                buffer = (format === 'jpeg' || format === 'jpg') ? image.toJPEG(90) : image.toPNG();
-            }
-
-            return {
-                data: buffer,
-                links: metadata.links
-            };
+            // Pre-process assets: downsample any image significantly larger than
+            // the export canvas. The longer dimension of any embedded image
+            // never needs to exceed the export's longer dimension.
+            const targetMax = Math.max(options.width || 0, options.height || 0);
+            const downsampledAssets = await downsampleAssetsForExport(options.assets, targetMax);
+            const result = await renderAndCapture({ ...options, assets: downsampledAssets });
+            return result;
         } catch (err) {
             console.error('Export error (main):', err);
-            // If it's a critical error (like crash), we might want to destroy the window
-            if (win && !win.isDestroyed()) {
-                // win.destroy(); // Optional: destroy on error to recover from bad state
-            }
             throw err;
-        } finally {
-            if (win && !win.isDestroyed()) {
-                win.removeListener('closed', onUnexpectedClose);
-            }
         }
     });
+
+    /**
+     * Streaming multi-page PDF export.
+     * Renders each page individually in the export window (bounded memory),
+     * then merges all single-page PDFs into a final document via pdf-lib.
+     *
+     * This is the recommended path for documents with many pages or many images.
+     */
+    ipcMain.handle('render-export-pdf-streaming', async (event, options) => {
+        if (!mainWindow || mainWindow.isDestroyed()) {
+            throw new Error('Application is closing, export cancelled.');
+        }
+
+        const { pageLayouts, width, height, settings, assets } = options;
+        if (!Array.isArray(pageLayouts) || pageLayouts.length === 0) {
+            throw new Error('pageLayouts is required');
+        }
+
+        // Downsample assets ONCE for the whole job, then reuse across pages.
+        // The export-window asset cache (signature-based) ensures we don't
+        // re-hydrate them between pages either.
+        const targetMax = Math.max(width || 0, height || 0);
+        const downsampledAssets = await downsampleAssetsForExport(assets, targetMax);
+
+        const merged = await PDFDocument.create();
+        const allLinks = [];
+
+        for (let i = 0; i < pageLayouts.length; i++) {
+            // Notify renderer of progress (best-effort)
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('export:progress', {
+                    current: i + 1,
+                    total: pageLayouts.length
+                });
+            }
+
+            const { data, links } = await renderAndCapture({
+                pageLayout: pageLayouts[i],
+                width,
+                height,
+                format: 'pdf',
+                settings,
+                assets: downsampledAssets,
+                pageNumber: i + 1
+            });
+
+            allLinks.push(links && links.length > 0 ? links[0] : []);
+
+            // Load the single-page PDF and copy its page into the merged doc
+            const single = await PDFDocument.load(data, { ignoreEncryption: true });
+            const copiedPages = await merged.copyPages(single, single.getPageIndices());
+            copiedPages.forEach(p => merged.addPage(p));
+        }
+
+        // Save with object stream compression for smaller file size
+        const finalBytes = await merged.save({
+            useObjectStreams: true,
+            addDefaultPage: false
+        });
+
+        return {
+            data: Buffer.from(finalBytes),
+            links: allLinks
+        };
+    });
+
+    // Pre-warm the export window in the background after main window is ready.
+    // This makes the first export feel instant without delaying app startup.
+    if (mainWindow) {
+        mainWindow.webContents.once('did-finish-load', () => {
+            // Defer slightly so we don't compete with main window paint
+            setTimeout(() => {
+                getExportWindow().catch(err => {
+                    log.warn('Failed to pre-warm export window:', err.message);
+                });
+            }, 2000);
+        });
+    }
 });
 
 app.on('window-all-closed', () => {

@@ -25,6 +25,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Export APIs
     renderExport: (options) => ipcRenderer.invoke('render-export', options),
+    renderExportPdfStreaming: (options) => ipcRenderer.invoke('render-export-pdf-streaming', options),
+    onExportProgress: (callback) => {
+        const handler = (event, data) => callback(data);
+        ipcRenderer.on('export:progress', handler);
+        return () => ipcRenderer.removeListener('export:progress', handler);
+    },
     sendReadyToRender: (requestId) => ipcRenderer.send('ready-to-render', { requestId }),
     onRenderContent: (callback) => ipcRenderer.on('render-content', (event, data) => callback(data)),
     sendRenderComplete: (metadata) => ipcRenderer.send('render-complete', metadata)
