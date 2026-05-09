@@ -108,6 +108,12 @@ export function reorderPage(fromIndex, toIndex) {
     } else if (fromIndex > state.currentPageIndex && toIndex <= state.currentPageIndex) {
         state.currentPageIndex++;
     }
+    // After reordering, update page root IDs to reflect new positions
+    state.pages.forEach((page, idx) => {
+        page.id = `rect-${idx + 1}`;
+    });
+    // Ensure currentId stays ahead of the highest page ID
+    state.currentId = Math.max(state.currentId, state.pages.length + 1);
 }
 
 export function updateLayout(newLayout) {

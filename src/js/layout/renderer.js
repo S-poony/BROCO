@@ -383,6 +383,7 @@ function renderPageNumber(container, options = {}) {
 
     // Use provided page number or fall back to current state
     const number = options.pageNumber !== undefined ? options.pageNumber : (state.currentPageIndex + 1);
+    // Note: when called from editor (no explicit pageNumber), we fall back to state.currentPageIndex + 1.
 
     const pageNumber = document.createElement('div');
     pageNumber.className = 'paper-page-number';

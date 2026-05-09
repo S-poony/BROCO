@@ -346,7 +346,7 @@ app.whenReady().then(() => {
 
     // Handle Off-screen Export
     ipcMain.handle('render-export', async (event, options) => {
-        const { pageLayout, pageLayouts, width, height, format, settings, assets } = options;
+        const { pageLayout, pageLayouts, width, height, format, settings, assets, pageNumber } = options;
         const requestId = Math.random().toString(36).substring(7);
 
         // Fail early if main window is already closing/closed
@@ -404,7 +404,8 @@ app.whenReady().then(() => {
                 width,
                 height,
                 settings,
-                assets
+                assets,
+                pageNumber
             });
 
             // Wait for completion signal

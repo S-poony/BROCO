@@ -42,7 +42,7 @@ export async function initializeExportMode() {
     // Listen for content to render
     if (window.electronAPI && window.electronAPI.onRenderContent) {
         window.electronAPI.onRenderContent(async (data) => {
-            const { requestId, pageLayout, pageLayouts, width, height, settings, assets } = data;
+            const { requestId, pageLayout, pageLayouts, width, height, settings, assets, pageNumber: explicitPageNumber } = data;
             try {
                 // Clear existing content for window reuse case
                 paper.innerHTML = '';
@@ -98,7 +98,7 @@ export async function initializeExportMode() {
                     await renderLayout(pageWrapper, layout, {
                         useHighResImages: true,
                         hideControls: true,
-                        pageNumber: i + 1
+                        pageNumber: explicitPageNumber !== undefined ? explicitPageNumber : (i + 1)
                     });
                 }
 
@@ -411,7 +411,8 @@ async function performExport(format, qualityMultiplier) {
                     height,
                     format: format,
                     settings: getSettings(),
-                    assets: assetManager.getAssets()
+                    assets: assetManager.getAssets(),
+                    pageNumber: i + 1
                 });
 
                 if (result.error) throw new Error(result.error);
@@ -485,8 +486,9 @@ async function performPublishFlipbook(qualityMultiplier) {
                 height,
                 format: 'jpeg',
                 settings: getSettings(),
-                assets: assetManager.getAssets()
-            });
+                assets: assetManager.getAssets(),
+                    pageNumber: i + 1
+                });
 
             if (result.error) throw new Error(result.error);
 
