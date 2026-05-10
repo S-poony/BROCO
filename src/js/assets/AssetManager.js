@@ -53,7 +53,8 @@ export class AssetManager extends EventTarget {
 
         try {
             const [fullResData, bitmap] = await Promise.all([base64Promise, bitmapPromise]);
-            const lowResData = this._generateThumbnailFromImageSource(bitmap);
+            const thumbFormat = file.type === 'image/png' || file.type === 'image/gif' || file.type === 'image/webp' ? 'png' : 'jpeg';
+            const lowResData = this._generateThumbnailFromImageSource(bitmap, thumbFormat);
             bitmap.close(); // verified: release memory
 
             return {
@@ -117,7 +118,7 @@ export class AssetManager extends EventTarget {
      * @param {CanvasImageSource} source 
      * @returns {string} Low res base64 data
      */
-    _generateThumbnailFromImageSource(source) {
+    _generateThumbnailFromImageSource(source, formatHint = 'jpeg') {
         const canvas = document.createElement('canvas');
         let width = source.width;
         let height = source.height;
@@ -140,6 +141,10 @@ export class AssetManager extends EventTarget {
         if (!ctx) throw new Error('Could not get canvas context');
         ctx.drawImage(source, 0, 0, width, height);
 
+        const format = (formatHint === 'png' || formatHint === 'gif' || formatHint === 'webp') ? 'png' : 'jpeg';
+        if (format === 'png') {
+            return canvas.toDataURL('image/png');
+        }
         return canvas.toDataURL('image/jpeg', ASSET_THUMBNAIL_QUALITY);
     }
 
@@ -154,7 +159,8 @@ export class AssetManager extends EventTarget {
             img.onerror = () => reject(new Error('Failed to load image'));
             img.onload = () => {
                 try {
-                    const thumb = this._generateThumbnailFromImageSource(img);
+                    const thumbFormat = base64Data.startsWith('data:image/png') || base64Data.startsWith('data:image/gif') || base64Data.startsWith('data:image/webp') ? 'png' : 'jpeg';
+                    const thumb = this._generateThumbnailFromImageSource(img, thumbFormat);
                     resolve(thumb);
                 } catch (err) {
                     reject(err);
@@ -254,7 +260,10 @@ export class AssetManager extends EventTarget {
                 reader.readAsDataURL(blob);
             });
 
-            const lowResData = await this._createThumbnailFromBase64(dataUrl);
+            // Detect format from the original file extension for rehydrated assets
+            const ext = (asset.path || asset.name || '').split('.').pop().toLowerCase();
+            const rehydrateFormat = (ext === 'png' || ext === 'gif' || ext === 'webp') ? 'png' : 'jpeg';
+            const lowResData = await this._createThumbnailFromBase64(dataUrl, rehydrateFormat);
             this.updateAsset(asset.id, {
                 lowResData,
                 fullResData: null, // Keep it null/reference
