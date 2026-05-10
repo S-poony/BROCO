@@ -163,6 +163,22 @@ function setupGlobalHandlers() {
             }
         }
     });
+
+    // Global dragover/drop prevention to stop browser from navigating to dropped files outside our drop zones
+    document.addEventListener('dragover', (e) => {
+        const validDropZone = e.target.closest('#asset-grid-view, #asset-list-view, #a4-paper');
+        if (!validDropZone) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'none';
+        }
+    });
+
+    document.addEventListener('drop', (e) => {
+        const validDropZone = e.target.closest('#asset-grid-view, #asset-list-view, #a4-paper');
+        if (!validDropZone) {
+            e.preventDefault();
+        }
+    });
 }
 
 

@@ -30,7 +30,9 @@ export class AssetManager extends EventTarget {
         }
 
         if (!file.type.startsWith('image/')) {
-            throw new Error('File is not an image');
+            const ext = file.name.split('.').pop().toLowerCase();
+            const supportedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'txt', 'md'];
+            throw new Error(`Unsupported file type: "${file.type || ext}". Only images (${supportedExts.slice(0, -2).join(', ')}), text files (.txt, .md) are supported.`);
         }
 
         const maxBytes = MAX_FILE_SIZE_MB * 1024 * 1024;

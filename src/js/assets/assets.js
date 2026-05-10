@@ -173,6 +173,8 @@ export function setupAssetHandlers() {
                             finalizeAsset(asset, tempId);
                         } catch (e) {
                             document.querySelector(`[data-temp-id="${tempId}"]`)?.remove();
+                            console.error(`Failed to process ${file.name}:`, e);
+                            toast.error(`Failed to import ${file.name}: ${e.message}`);
                         }
                         resolve();
                     });
@@ -206,6 +208,8 @@ export function setupAssetHandlers() {
                         finalizeAsset(asset, tempId);
                     } catch (e) {
                         document.querySelector(`[data-temp-id="${tempId}"]`)?.remove();
+                        console.error(`Failed to process ${file.name}:`, e);
+                        toast.error(`Failed to import ${file.name}: ${e.message}`);
                     }
                 })());
             }
