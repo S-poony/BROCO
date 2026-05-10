@@ -1,4 +1,34 @@
 import { toast } from '../core/errorHandler.js';
+import TurndownService from 'turndown';
+
+// Singleton Turndown service for HTML-to-Markdown conversion
+const turndownService = new TurndownService({
+    headingStyle: 'atx',
+    codeBlockStyle: 'fenced',
+    emDelimiter: '*',
+    bulletListMarker: '-',
+    linkStyle: 'inlined',
+    linkReferenceStyle: 'full'
+});
+
+/**
+ * Read HTML content from the system clipboard (if available).
+ */
+async function readHtmlFromClipboard() {
+    try {
+        if (!navigator.clipboard.read) return null;
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+            if (item.types.includes('text/html')) {
+                const blob = await item.getType('text/html');
+                return await blob.text();
+            }
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Handles specialized keyboard interactions for the markdown text editor
@@ -145,3 +175,28 @@ export function handleEditorKeydown(e, editor) {
         toast.error('Editor action failed. Click to debug.');
     }
 }
+
+/**
+ * Handle paste events in the text editor: convert pasted HTML to Markdown.
+ * @param {ClipboardEvent} e
+ * @param {HTMLTextAreaElement} editor
+ */
+export async function handleEditorPaste(e, editor) {
+    // Only intercept if HTML content is available on the clipboard
+    const html = await readHtmlFromClipboard();
+    if (!html) return; // Let the default paste behavior handle plain text
+
+    e.preventDefault();
+    e._brocoProcessed = true;
+
+    const markdown = turndownService.turndown(html);
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const value = editor.value || '';
+
+    editor.value = value.substring(0, start) + markdown + value.substring(end);
+    editor.selectionStart = editor.selectionEnd = start + markdown.length;
+
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+}
+

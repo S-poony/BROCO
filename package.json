@@ -31,7 +31,8 @@
     "electron-updater": "^6.7.3",
     "jszip": "^3.10.1",
     "marked": "^17.0.1",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "turndown": "^7.2.4"
   },
   "build": {
     "appId": "com.spoony.broco",

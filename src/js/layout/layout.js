@@ -9,6 +9,37 @@ import { snapDivider as snapDividerInternal } from './internal/snapping.js';
 import { renderAndRestoreFocus as renderAndRestoreFocusInternal } from './internal/focusManager.js';
 import * as dragInternal from './internal/dragHandler.js';
 import { toast, withErrorHandling } from '../core/errorHandler.js';
+import TurndownService from 'turndown';
+
+// Singleton Turndown service for HTML-to-Markdown conversion
+const turndownService = new TurndownService({
+    headingStyle: 'atx',       // Use # style headings
+    codeBlockStyle: 'fenced',  // Use ``` for code blocks
+    emDelimiter: '*',          // Use * for emphasis
+    bulletListMarker: '-',     // Use - for list items
+    linkStyle: 'inlined',      // Use [text](url) format
+    linkReferenceStyle: 'full'
+});
+
+/**
+ * Read HTML content from the system clipboard (if available).
+ * Falls back to null if no HTML is present or the API is unavailable.
+ */
+async function readHtmlFromClipboard() {
+    try {
+        if (!navigator.clipboard.read) return null;
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+            if (item.types.includes('text/html')) {
+                const blob = await item.getType('text/html');
+                return await blob.text();
+            }
+        }
+        return null;
+    } catch {
+        return null; // Permission denied or API not available
+    }
+}
 
 // Re-export tree utils for other modules
 export { findNodeByIdInternal as findNodeById, findParentNodeInternal as findParentNode };
@@ -354,21 +385,14 @@ export async function pasteNodeContent(nodeId) {
         const text = await navigator.clipboard.readText();
         if (!text) return;
 
+        // --- Priority 1: Internal broco-content (JSON with images) ---
         let parsed = null;
         try {
             parsed = JSON.parse(text);
         } catch (e) {
-            // Not JSON, treat as raw text
-            saveState();
-            node.text = text;
-            node.image = null; // Overwrite image if pasting text
-            // Preserve existing alignment if it exists, otherwise leave as default (left)
-            renderAndRestoreFocus(getCurrentPage(), nodeId);
-            toast.success('Text pasted');
-            return;
+            // Not JSON — fall through to HTML/plain text handling below
         }
 
-        // Validate "broco-content"
         if (parsed && parsed.type === 'broco-content' && parsed.data) {
             saveState();
             const data = parsed.data;
@@ -391,14 +415,25 @@ export async function pasteNodeContent(nodeId) {
 
             renderAndRestoreFocus(getCurrentPage(), nodeId);
             toast.success('Content pasted');
-        } else {
-            // JSON but not ours? Treat as text.
-            saveState();
-            node.text = text;
-            node.image = null;
-            // Preserve existing alignment
-            renderAndRestoreFocus(getCurrentPage(), nodeId);
-            toast.success('Text pasted');
+            return;
         }
+
+        // --- Priority 2: HTML content from clipboard → Markdown ---
+        const html = await readHtmlFromClipboard();
+        if (html) {
+            saveState();
+            node.text = turndownService.turndown(html);
+            node.image = null;
+            renderAndRestoreFocus(getCurrentPage(), nodeId);
+            toast.success('Formatted text pasted');
+            return;
+        }
+
+        // --- Priority 3: Plain text fallback ---
+        saveState();
+        node.text = text;
+        node.image = null;
+        renderAndRestoreFocus(getCurrentPage(), nodeId);
+        toast.success('Text pasted');
     }, 'Failed to paste content');
 }

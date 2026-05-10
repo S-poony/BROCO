@@ -21,7 +21,7 @@ import { findNodeById, toggleTextAlignment, startDrag, startEdgeDrag, handleDivi
 import { dragDropService } from './js/ui/DragDropService.js';
 import { setupPlatformAdapters } from './js/core/platform.js';
 import { showUnsavedChangesModal } from './js/core/utils.js';
-import { handleEditorKeydown } from './js/ui/editor.js';
+import { handleEditorKeydown, handleEditorPaste } from './js/ui/editor.js';
 import { initializeExportMode, setupExportHandlers } from './js/io/export.js';
 import { tooltipManager } from './js/ui/TooltipManager.js';
 import { setupPresentationHandlers } from './js/ui/presentation.js';
@@ -709,6 +709,17 @@ function setupDelegatedHandlers() {
 
     // Consolidated editor keydown logic (tab, enter, auto-pairing, etc.)
     paper.addEventListener('keydown', (e) => {
+    // Paste handler for text editors (HTML → Markdown)
+    paper.addEventListener('paste', async (e) => {
+        const editor = e.target.closest('.text-editor');
+        if (editor) {
+            await handleEditorPaste(e, editor);
+        }
+    }, true);
+
+
+
+
         const editor = e.target.closest('.text-editor');
         if (editor) {
             handleEditorKeydown(e, editor);
