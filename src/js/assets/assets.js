@@ -603,11 +603,36 @@ export function setupDropHandlers() {
         }
     });
 
-    paper.addEventListener('drop', (e) => {
+    paper.addEventListener('drop', async (e) => {
         const targetElement = e.target.closest('.splittable-rect');
         if (targetElement) {
             e.preventDefault();
-            handleDropLogic(targetElement);
+            // Check if this is an external file drop (not an internal drag)
+            if (!dragDropService.sourceRect && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                // External file drop: import the file and assign to the target node
+                const file = e.dataTransfer.files[0];
+                try {
+                    const asset = await assetManager.processFile(file, file.name);
+                    assetManager.addAsset(asset);
+                    saveState();
+                    const targetNode = findNodeById(getCurrentPage(), targetElement.id);
+                    if (targetNode && targetNode.splitState === 'unsplit') {
+                        targetNode.image = {
+                            assetId: asset.id,
+                            fit: 'cover'
+                        };
+                        targetNode.text = null;
+                        renderAndRestoreFocus(getCurrentPage());
+                        document.dispatchEvent(new CustomEvent('layoutUpdated'));
+                    }
+                } catch (err) {
+                    console.error('Failed to import dropped file:', err);
+                    toast.error(`Failed to import ${file.name}: ${err.message}`);
+                }
+            } else {
+                // Internal drag: use existing drag logic
+                handleDropLogic(targetElement);
+            }
         }
         dragDropService.endDrag();
     });
